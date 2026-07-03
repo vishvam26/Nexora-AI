@@ -1,0 +1,29 @@
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.db.session import get_db
+from app.schemas.user import UserCreate
+from app.services.auth_service import AuthService
+
+router = APIRouter(
+    prefix="/auth",
+    tags=["Authentication"]
+)
+
+
+@router.post("/register")
+def register(
+    user: UserCreate,
+    db: Session = Depends(get_db)
+):
+
+    AuthService.register(
+        db=db,
+        full_name=user.full_name,
+        email=user.email,
+        password=user.password
+    )
+
+    return {
+        "message": "User created successfully"
+    }

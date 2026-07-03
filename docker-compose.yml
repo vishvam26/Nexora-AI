@@ -19,7 +19,6 @@ services:
     image: dpage/pgadmin4
     container_name: nexora-pgadmin
     restart: unless-stopped
-
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@nexora.ai
       PGADMIN_DEFAULT_PASSWORD: admin123
