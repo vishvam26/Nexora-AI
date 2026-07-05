@@ -1,6 +1,9 @@
 # --- Cache and DB ---
 .cache/
 *.db
+apps/backend/qdrant_db/
+apps/backend/storage/
+
 
 # --- Environment Variables ---
 .env

@@ -1,33 +1,113 @@
+version: '3.8'
+
 services:
+  # 1. PostgreSQL Persistent DB
   postgres:
-    image: postgres:16
+    image: postgres:16-alpine
     container_name: nexora-postgres
     restart: unless-stopped
-
     environment:
-      POSTGRES_USER: nexora
-      POSTGRES_PASSWORD: nexora123
-      POSTGRES_DB: nexora_ai
-
-    ports:
-      - "5432:5432"
-
+      POSTGRES_USER: ${POSTGRES_USER:-nexora}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexora123}
+      POSTGRES_DB: ${POSTGRES_DB:-nexora_ai}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexora -d nexora_ai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: nexora-pgadmin
+  # 2. Qdrant Vector Store
+  qdrant:
+    image: qdrant/qdrant:v1.9.0
+    container_name: nexora-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 3. Redis Session Cache Node
+  redis:
+    image: redis:7-alpine
+    container_name: nexora-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 4. Backend Python API Application
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: ../../docker/backend.Dockerfile
+    container_name: nexora-backend
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@nexora.ai
-      PGADMIN_DEFAULT_PASSWORD: admin123
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-nexora}:${POSTGRES_PASSWORD:-nexora123}@postgres:5432/${POSTGRES_DB:-nexora_ai}
+      - SECRET_KEY=${SECRET_KEY:-nexorasecretkeychangeinproduction123}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - ENABLE_PROMETHEUS=${ENABLE_PROMETHEUS:-true}
 
-    ports:
-      - "5050:80"
-
+    volumes:
+      - nexora_storage:/app/storage
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health/ready')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+
+  # 5. Next.js Frontend Client
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: ../../docker/frontend.Dockerfile
+    container_name: nexora-frontend
+    restart: unless-stopped
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost/api/v1}
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # 6. Nginx Reverse Proxy Gateway
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nexora-gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - frontend
 
 volumes:
   postgres_data:
+  qdrant_data:
+  redis_data:
+  nexora_storage:

@@ -24,6 +24,8 @@ from app.models.retrieval_log import RetrievalLog
 from app.models.chat_feedback import ChatFeedback
 from app.models.dataset_project import DatasetProject, DatasetVersion, DatasetReviewItem
 from app.models.training_project import TrainingProject, TrainingRun, TrainingArtifact, TrainingLog
+from app.models.calendar_event import CalendarEvent
+
 
 
 

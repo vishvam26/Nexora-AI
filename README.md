@@ -11,9 +11,10 @@ Nexora-AI is an enterprise-grade, full-stack AI development platform designed fo
 ## 🚀 Key Features
 
 * **Modular AI Core:** Scalable models and agent architectures.
+* **Intelligent Multi-Agent Orchestration:** Hierarchical planner agent leveraging specialized sub-agents (Analytics, ML, RAG, Memory, Report).
+* **Billing & Token Cost Tracker:** Granular diagnostic tracking and cost auditing per model session.
 * **Unified Pipeline:** Seamless integration between backend APIs, model training, and frontend interfaces.
 * **Production Ready:** Pre-configured Docker environments for seamless orchestration.
-* **Developer First:** Built with comprehensive testing, notebooks for research, and automated GitHub workflows.
 
 ---
 
@@ -23,18 +24,12 @@ The project is organized as follows:
 
 ```text
 Nexora-AI/
-├── .github/          # GitHub actions, workflows, and templates
 ├── apps/             # Application applications/services
-│   ├── backend/      # Backend service (API, DB handlers, AI Orchestration)
-│   └── frontend/     # Web dashboard / User interface
-├── assets/           # Media files, logos, and static resources
-├── datasets/         # Data ingestion pipelines, preprocessing, and storage
-├── docker/           # Dockerfiles, docker-compose configuration
-├── docs/             # Comprehensive documentation and project architecture
-├── models/           # Pre-trained models, checkpoints, and weights
-├── notebooks/        # Jupyter notebooks for experimentation and EDA
-├── scripts/          # Helper scripts for deployment and maintenance
-└── tests/            # Automated test suite (unit, integration, end-to-end)
+│   ├── backend/      # Backend service (FastAPI, Qdrant Client, SQLite/PG database)
+│   └── frontend/     # Web dashboard / User interface (Next.js React Client)
+├── docker/           # Production backend/frontend Dockerfiles and Nginx configurations
+├── Makefile          # Orchestration automation shortcuts
+└── docker-compose.yml# Production multi-tier stack services (PG, Qdrant, Redis, Nginx, App)
 ```
 
 ---
@@ -46,24 +41,35 @@ Nexora-AI/
 * Node.js v18+
 * Docker & Docker Compose
 
-### Installation
+### Production Deployment
 
-1. **Clone the repository:**
+1. **Configure Environment Variables:**
+   Create `.env.production` in the project root:
    ```bash
-   git clone https://github.com/your-username/Nexora-AI.git
-   cd Nexora-AI
+   cp .env.production.example .env.production
+   # Open .env.production and paste your secret keys
    ```
 
-2. **Configure Environment Variables:**
-   Copy the example environment file and configure the settings:
+2. **Launch the Container Stack:**
+   Use the Makefile helper to build and run all services (Nginx, Backend, Frontend, Qdrant, Redis, Postgres):
    ```bash
-   cp .env.example .env
+   make up
    ```
 
-3. **Spin up using Docker:**
+3. **Initialize Database Schema:**
+   Apply database migrations inside the active backend container:
    ```bash
-   docker-compose up --build
+   make migrate
    ```
+
+4. **Verify Application Health:**
+   Ensure all containers are healthy:
+   ```bash
+   make status
+   ```
+   Open `http://localhost` in your browser. Nginx reverse proxies request routing:
+   * `/` routes to the Next.js Frontend
+   * `/api` routes to the FastAPI Backend
 
 ---
 

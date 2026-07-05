@@ -18,7 +18,12 @@ interface ChatState {
   isStreaming: boolean;
   theme: "light" | "dark";
   sidebarOpen: boolean;
-  activeView: "chat" | "knowledge" | "analytics" | "ml";
+  activeView: "chat" | "knowledge" | "analytics" | "ml" | "report" | "agents" | "sql" | "python" | "email" | "calendar" | "eval";
+
+
+
+
+
   
   // Knowledge Bases
   knowledgeBases: KnowledgeBase[];
@@ -42,7 +47,12 @@ interface ChatState {
   setTheme: (theme: "light" | "dark") => void;
   toggleTheme: () => void;
   toggleSidebar: () => void;
-  setActiveView: (view: "chat" | "knowledge" | "analytics" | "ml") => void;
+  setActiveView: (view: "chat" | "knowledge" | "analytics" | "ml" | "report" | "agents" | "sql" | "python" | "email" | "calendar" | "eval") => void;
+
+
+
+
+
   setKnowledgeBases: (bases: KnowledgeBase[]) => void;
   setActiveKnowledgeBase: (base: KnowledgeBase | null) => void;
   setDocuments: (docs: KnowledgeDocument[]) => void;

@@ -33,6 +33,22 @@ from app.api.v1.endpoints.monitoring import router as monitoring_router
 from app.api.v1.endpoints.dataset_projects import router as dataset_projects_router
 from app.api.v1.endpoints.training_projects import router as training_projects_router
 from app.api.v1.endpoints.ml import router as ml_router
+from app.api.v1.endpoints.reports import router as reports_router
+from app.api.v1.endpoints.agents import router as agents_router
+from app.api.v1.endpoints.agent_metrics import router as agent_metrics_router
+from app.api.v1.endpoints.mcp import router as mcp_router
+from app.api.v1.endpoints.python_agent import router as python_agent_router
+from app.api.v1.endpoints.email_agent import router as email_agent_router
+from app.api.v1.endpoints.calendar_agent import router as calendar_agent_router
+from app.api.v1.endpoints.eval import router as eval_router
+from app.api.v1.endpoints.health import router as health_router
+
+
+
+
+
+
+
 
 api_router = APIRouter()
 
@@ -69,6 +85,22 @@ api_router.include_router(replay_router)
 api_router.include_router(monitoring_router)
 api_router.include_router(dataset_projects_router)
 api_router.include_router(training_projects_router)
+api_router.include_router(reports_router)
+api_router.include_router(agents_router)
+api_router.include_router(agent_metrics_router)
+api_router.include_router(mcp_router)
+api_router.include_router(python_agent_router)
+api_router.include_router(email_agent_router)
+api_router.include_router(calendar_agent_router)
+api_router.include_router(eval_router)
+api_router.include_router(health_router)
+
+
+
+
+
+
+
 
 
 

@@ -1,7 +1,9 @@
 from typing import Optional
+import logging
 from app.services.document_processing.extractors import DocumentExtractorFactory
 
 logger = logging.getLogger("app.services.document_processing.document_processor")
+
 
 
 class DocumentProcessor:

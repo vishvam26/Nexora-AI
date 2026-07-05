@@ -18,3 +18,10 @@ sentence-transformers>=2.6.0
 pandas>=2.0.0
 scikit-learn>=1.2.0
 joblib>=1.2.0
+# Step 10: Report Generator
+reportlab>=4.0.0
+python-pptx>=0.6.21
+Pillow>=10.0.0
+shap>=0.44.0
+sentry-sdk[fastapi]>=2.0.0
+slowapi>=0.1.9

@@ -1,0 +1,243 @@
+"use client";
+
+import { useState, useCallback } from "react";
+import { useChatStore } from "../stores/chat-store";
+import {
+  Terminal, Play, Loader2, AlertCircle, CheckCircle2,
+  Code, Sparkles, Send, FileText, Image as ImageIcon,
+  ChevronDown, HelpCircle, RefreshCw
+} from "lucide-react";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+interface SandboxResult {
+  stdout: string;
+  stderr: string;
+  return_code: number;
+  chart_path?: string;
+  chart_id?: string;
+}
+
+export default function PythonStudio() {
+  const { token, documents } = useChatStore();
+
+  // Document context
+  const [selectedDocId, setSelectedDocId] = useState<number | null>(null);
+
+  // Editor/Script state
+  const [code, setCode] = useState(
+    "# Injected: df = pd.read_csv(DF_PATH)\nprint(df.info())\n\n# Generate a sample histogram plot:\n# df.hist(bins=15)\n# plt.show()"
+  );
+  const [result, setResult] = useState<SandboxResult | null>(null);
+  const [running, setRunning] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  // AI Copilot state
+  const [naturalLanguage, setNaturalLanguage] = useState("");
+  const [generatingCode, setGeneratingCode] = useState(false);
+
+  const headers = useCallback(() => ({
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`
+  }), [token]);
+
+  const handleRunCode = async () => {
+    if (!selectedDocId) {
+      setErrorMsg("Please select a target dataset document first.");
+      return;
+    }
+    if (!code.trim()) return;
+
+    setRunning(true);
+    setErrorMsg("");
+    setResult(null);
+
+    try {
+      const res = await fetch(`${API_BASE}/python/execute/${selectedDocId}`, {
+        method: "POST",
+        headers: headers(),
+        body: JSON.stringify({ code })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || "Sandbox script crashed.");
+      }
+      setResult(data);
+    } catch (e: any) {
+      setErrorMsg(e.message || "Execution error occurred");
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const handleAICopilot = async () => {
+    if (!naturalLanguage.trim()) return;
+    setGeneratingCode(true);
+    try {
+      const prompt = `Convert this natural language data request to a clean Pandas/Matplotlib script. The load path is automatically set as global DF_PATH variable. Load dataframe as: df = pd.read_csv(DF_PATH). Task: "${naturalLanguage}". Reply ONLY with the python script code block. No markdown backticks.`;
+      
+      const res = await fetch(`${API_BASE}/chat/message`, {
+        method: "POST",
+        headers: headers(),
+        body: JSON.stringify({
+          conversation_id: 1, // Broad system fallback conversation
+          content: prompt
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.content) {
+        const cleanCode = data.content.replace(/```python|```/g, "").trim();
+        setCode(cleanCode);
+      }
+    } catch { /* ignore */ }
+    setGeneratingCode(false);
+  };
+
+  // Construct absolute image download source (points to backend root static storage)
+  const BACKEND_ROOT = API_BASE.replace("/api/v1", "");
+  const chartUrl = result?.chart_path ? `${BACKEND_ROOT}${result.chart_path}` : null;
+
+  return (
+    <div className="flex h-screen w-full overflow-hidden bg-[#09090b] text-[#f4f4f5]">
+      {/* ── Left Workspace: Editor & Copilot ─────────────────────────── */}
+      <div className="flex flex-1 flex-col border-r border-zinc-800 overflow-hidden">
+        {/* Workspace Toolbar */}
+        <div className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20 border border-indigo-500/30">
+              <Code className="h-4 w-4 text-indigo-400" />
+            </div>
+            <div>
+              <h2 className="text-xs font-bold text-white uppercase tracking-wider">Python Sandbox</h2>
+              <p className="text-[10px] text-zinc-500">Isolate Pandas & Matplotlib executions</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Target Selector */}
+            <div className="relative">
+              <select
+                value={selectedDocId ?? ""}
+                onChange={(e) => setSelectedDocId(Number(e.target.value) || null)}
+                className="appearance-none rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none pr-8"
+              >
+                <option value="">— Select Dataset —</option>
+                {documents.map((doc) => (
+                  <option key={doc.id} value={doc.id}>
+                    {doc.file_name || `Document ${doc.id}`}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-3.5 w-3.5 text-zinc-500" />
+            </div>
+
+            <button
+              onClick={handleRunCode}
+              disabled={running || !selectedDocId || !code.trim()}
+              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-indigo-500 disabled:opacity-50 transition"
+            >
+              {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+              Run Script
+            </button>
+          </div>
+        </div>
+
+        {/* Editor Box */}
+        <div className="flex-1 p-5 flex flex-col gap-4 overflow-hidden">
+          <div className="flex-1 relative rounded-xl border border-zinc-700 bg-zinc-900 overflow-hidden flex flex-col">
+            <div className="border-b border-zinc-800 bg-zinc-950 px-4 py-2 flex items-center gap-1.5">
+              <Terminal className="h-3.5 w-3.5 text-indigo-400" />
+              <span className="font-mono text-[10px] text-zinc-500">main.py (Read-Only Dataset Mode)</span>
+            </div>
+            <textarea
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className="flex-1 w-full bg-[#0d0d0e] p-4 font-mono text-xs text-indigo-200 placeholder:text-zinc-700 focus:outline-none resize-none overflow-y-auto"
+            />
+          </div>
+
+          {/* AI SQL Copilot */}
+          <div className="flex items-center gap-2.5 rounded-xl border border-indigo-500/20 bg-indigo-500/5 px-4 py-2.5">
+            <Sparkles className="h-4 w-4 text-indigo-400 shrink-0" />
+            <input
+              type="text"
+              value={naturalLanguage}
+              onChange={(e) => setNaturalLanguage(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleAICopilot(); }}
+              placeholder="Ask AI Copilot to code (e.g. 'Plot hist of Age column' or 'group by department and average salary')"
+              className="flex-1 bg-transparent text-xs text-zinc-200 placeholder:text-zinc-500 focus:outline-none"
+            />
+            <button
+              onClick={handleAICopilot}
+              disabled={generatingCode || !naturalLanguage.trim()}
+              className="rounded p-1 text-indigo-400 hover:bg-indigo-500/10 disabled:opacity-30"
+            >
+              {generatingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Right Panel: Outputs Console & Generated Charts ─────────── */}
+      <div className="flex w-96 shrink-0 flex-col overflow-hidden bg-zinc-950/20">
+        <div className="border-b border-zinc-800 px-5 py-4">
+          <h2 className="text-xs font-bold text-white uppercase tracking-wider">Console & Visualizations</h2>
+          <p className="text-[10px] text-zinc-500">Subprocess log outputs</p>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
+          {errorMsg && (
+            <div className="flex items-start gap-2.5 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+              <p className="text-xs text-red-300">{errorMsg}</p>
+            </div>
+          )}
+
+          {result ? (
+            <div className="flex flex-col gap-5">
+              {/* STDOUT console logs */}
+              <div className="rounded-xl border border-zinc-800 bg-[#0d0d0e] overflow-hidden">
+                <div className="border-b border-zinc-800 bg-zinc-900 px-4 py-2">
+                  <span className="text-[9px] font-semibold text-zinc-400 uppercase tracking-wider">Console output (STDOUT)</span>
+                </div>
+                <div className="p-4 font-mono text-[10px] text-zinc-300 leading-relaxed max-h-40 overflow-y-auto whitespace-pre-wrap">
+                  {result.stdout || <span className="text-zinc-700">Script completed with no STDOUT messages.</span>}
+                </div>
+              </div>
+
+              {/* Chart Plot Visualizer */}
+              {chartUrl ? (
+                <div className="rounded-xl border border-indigo-500/15 bg-indigo-500/5 overflow-hidden">
+                  <div className="border-b border-indigo-500/10 bg-indigo-500/10 px-4 py-2 flex items-center gap-1.5">
+                    <ImageIcon className="h-3.5 w-3.5 text-indigo-400" />
+                    <span className="text-[9px] font-semibold text-indigo-300 uppercase tracking-wider">Exported plot visualization</span>
+                  </div>
+                  <div className="p-4 flex items-center justify-center bg-white/5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={chartUrl} alt="Generated Matplotlib Chart" className="max-h-64 object-contain rounded" />
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4 text-center text-zinc-600 text-xs">
+                  No visual charts exported by Matplotlib.
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-1 flex-col items-center justify-center gap-4 py-12 text-center text-zinc-600">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800">
+                <Terminal className="h-6 w-6 text-zinc-700" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-zinc-500">No logs generated</h3>
+                <p className="mt-1 max-w-xs text-[10px] text-zinc-700">
+                  Select a document and click Run Script. Output logs and generated plots will load dynamically.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

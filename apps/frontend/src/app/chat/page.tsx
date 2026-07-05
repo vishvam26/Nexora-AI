@@ -9,7 +9,19 @@ import ChatArea from "../../components/chat-area";
 import KnowledgeArea from "../../components/knowledge-area";
 import AnalyticsArea from "../../components/analytics-area";
 import MLArea from "../../components/ml-area";
+import ReportArea from "../../components/report-area";
+import AgentStudio from "../../components/agent-studio";
+import SQLStudio from "../../components/sql-studio";
+import PythonStudio from "../../components/python-studio";
+import EmailStudio from "../../components/email-studio";
+import CalendarStudio from "../../components/calendar-studio";
+import EvalDashboard from "../../components/eval-dashboard";
 import { Loader2 } from "lucide-react";
+
+
+
+
+
 
 export default function ChatPage() {
   const router = useRouter();
@@ -108,9 +120,28 @@ export default function ChatPage() {
         <KnowledgeArea />
       ) : activeView === "analytics" ? (
         <AnalyticsArea />
+      ) : activeView === "report" ? (
+        <ReportArea />
+      ) : activeView === "agents" ? (
+        <AgentStudio />
+      ) : activeView === "sql" ? (
+        <SQLStudio />
+      ) : activeView === "python" ? (
+        <PythonStudio />
+      ) : activeView === "email" ? (
+        <EmailStudio />
+      ) : activeView === "calendar" ? (
+        <CalendarStudio />
+      ) : activeView === "eval" ? (
+        <EvalDashboard />
       ) : (
         <MLArea />
       )}
     </div>
+
+
+
+
+
   );
 }

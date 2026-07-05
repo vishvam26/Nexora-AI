@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
 
 
 class Settings(BaseSettings):
@@ -59,22 +60,48 @@ class Settings(BaseSettings):
     QDRANT_COLLECTION: str = "nexora_chunks"
     EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
 
+    # Observability Configuration
+    SENTRY_DSN: str = ""
+    ENABLE_PROMETHEUS: bool = True
+
+    # SMTP Mail Server Configuration
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = "noreply@nexora.ai"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
-
-
-
 
 
 settings = Settings()
 
-import os
 if settings.HF_TOKEN:
     os.environ["HF_TOKEN"] = settings.HF_TOKEN
 
 if settings.HF_HOME:
     os.environ["HF_HOME"] = settings.HF_HOME
-    # Also set HF_HUB_CACHE to ensure the sub-directories map directly
     os.environ["HF_HUB_CACHE"] = os.path.join(settings.HF_HOME, "hub")
 
-
-
+# Initialize Sentry if DSN is set
+if settings.SENTRY_DSN:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+        from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+        
+        sentry_sdk.init(
+            dsn=settings.SENTRY_DSN,
+            environment="production" if not settings.DEBUG else "development",
+            integrations=[
+                FastApiIntegration(),
+                SqlalchemyIntegration(),
+            ],
+            traces_sample_rate=1.0,
+            profiles_sample_rate=1.0,
+        )
+        print("[System] Sentry SDK initialized successfully.")
+    except ImportError:
+        print("[System] Sentry integration skipped: sentry-sdk package not installed.")
+    except Exception as e:
+        print(f"[System] Failed to initialize Sentry SDK: {e}")

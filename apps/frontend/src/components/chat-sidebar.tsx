@@ -7,7 +7,11 @@ import {
   Plus, MessageSquare, Folder, FolderOpen, Search, Pin, 
   Archive, Trash2, LogOut, Sun, Moon, Settings, Cpu,
   ChevronDown, ChevronRight, User, MoreVertical, Database,
-  BarChart3, Brain
+  BarChart3, Brain, FileText, Sparkles, Terminal, Mail, Calendar, Activity
+
+
+
+
 } from "lucide-react";
 
 export default function ChatSidebar() {
@@ -369,6 +373,99 @@ export default function ChatSidebar() {
           >
             <Brain className="h-4 w-4" />
             <span>ML Studio</span>
+          </button>
+
+          {/* Agent Studio — flagship feature */}
+          <button
+            onClick={() => setActiveView("agents")}
+            className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              activeView === "agents" 
+                ? "bg-indigo-600/20 text-indigo-300 border border-indigo-500/30" 
+                : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+            }`}
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>Agent Studio</span>
+            <span className="ml-auto rounded-full bg-indigo-600 px-1.5 py-0.5 text-[8px] font-black text-white tracking-wide">
+              NEW
+            </span>
+          </button>
+
+          {/* SQL Studio — Step 13 */}
+          <button
+            onClick={() => setActiveView("sql")}
+            className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              activeView === "sql" 
+                ? "bg-indigo-600/20 text-indigo-300 border border-indigo-500/30" 
+                : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+            }`}
+          >
+            <Database className="h-4 w-4" />
+            <span>SQL Studio</span>
+          </button>
+
+          {/* Python Studio — Step 14 */}
+          <button
+            onClick={() => setActiveView("python")}
+            className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              activeView === "python" 
+                ? "bg-indigo-600/20 text-indigo-300 border border-indigo-500/30" 
+                : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+            }`}
+          >
+            <Terminal className="h-4 w-4" />
+            <span>Python Sandbox</span>
+          </button>
+
+          {/* Email Studio — Step 15 */}
+          <button
+            onClick={() => setActiveView("email")}
+            className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              activeView === "email" 
+                ? "bg-indigo-600/20 text-indigo-300 border border-indigo-500/30" 
+                : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+            }`}
+          >
+            <Mail className="h-4 w-4" />
+            <span>Email Studio</span>
+          </button>
+
+          {/* Calendar Studio — Step 16 */}
+          <button
+            onClick={() => setActiveView("calendar")}
+            className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              activeView === "calendar" 
+                ? "bg-indigo-600/20 text-indigo-300 border border-indigo-500/30" 
+                : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+            }`}
+          >
+            <Calendar className="h-4 w-4" />
+            <span>Calendar Studio</span>
+          </button>
+
+          {/* AI Evaluation — Volume 4 */}
+          <button
+            onClick={() => setActiveView("eval")}
+            className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              activeView === "eval" 
+                ? "bg-indigo-600/20 text-indigo-300 border border-indigo-500/30" 
+                : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+            }`}
+          >
+            <Activity className="h-4 w-4" />
+            <span>AI Evaluation</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView("report")}
+            className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              activeView === "report" 
+                ? "bg-indigo-600/10 text-indigo-400 border border-indigo-500/10" 
+                : "text-zinc-500 hover:text-zinc-400"
+            }`}
+          >
+            <FileText className="h-4 w-4" />
+            <span>Report Studio</span>
           </button>
         </div>
 
