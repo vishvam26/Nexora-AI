@@ -90,9 +90,11 @@ class NexoraProvider(AIProviderInterface):
                 logger.info(f"Loading PeftConfig from adapter path: '{model_id}'")
                 
                 # Resolve base model
+                is_peft = False
                 try:
                     peft_config = PeftConfig.from_pretrained(model_id, token=settings.HF_TOKEN or None)
                     base_model_id = peft_config.base_model_name_or_path
+                    is_peft = True
                     logger.info(f"Resolved base model from adapter config: '{base_model_id}'")
                 except Exception as config_err:
                     base_model_id = settings.NEXORA_BASE_MODEL_ID
@@ -161,21 +163,25 @@ class NexoraProvider(AIProviderInterface):
                         token=settings.HF_TOKEN or None
                     )
 
-                # Load PEFT LoRA adapter
-                logger.info(f"Wrapping base model with LoRA adapter from: '{model_id}'")
-                peft_model = PeftModel.from_pretrained(
-                    base_model,
-                    model_id,
-                    token=settings.HF_TOKEN or None
-                )
+                if is_peft:
+                    # Load PEFT LoRA adapter
+                    logger.info(f"Wrapping base model with LoRA adapter from: '{model_id}'")
+                    peft_model = PeftModel.from_pretrained(
+                        base_model,
+                        model_id,
+                        token=settings.HF_TOKEN or None
+                    )
 
-                # On CPU, avoid merge_and_unload to prevent RAM spikes and speed up loading
-                if device_map is None or device_map == "cpu":
-                    logger.info("Running on CPU. Keeping PEFT model without merging to save RAM...")
-                    cls._model = peft_model
+                    # On CPU, avoid merge_and_unload to prevent RAM spikes and speed up loading
+                    if device_map is None or device_map == "cpu":
+                        logger.info("Running on CPU. Keeping PEFT model without merging to save RAM...")
+                        cls._model = peft_model
+                    else:
+                        logger.info("Merging LoRA weights into base model and unloading adapter...")
+                        cls._model = peft_model.merge_and_unload()
                 else:
-                    logger.info("Merging LoRA weights into base model and unloading adapter...")
-                    cls._model = peft_model.merge_and_unload()
+                    logger.info("Model is loaded directly as base model (no PEFT wrapping required).")
+                    cls._model = base_model
                 cls._model.eval()
 
                 cls._loaded = True
