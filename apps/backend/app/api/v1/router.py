@@ -32,6 +32,7 @@ from app.api.v1.endpoints.replay import router as replay_router
 from app.api.v1.endpoints.monitoring import router as monitoring_router
 from app.api.v1.endpoints.dataset_projects import router as dataset_projects_router
 from app.api.v1.endpoints.training_projects import router as training_projects_router
+from app.api.v1.endpoints.ml import router as ml_router
 
 api_router = APIRouter()
 
@@ -58,6 +59,7 @@ api_router.include_router(workspace_imports_router)
 api_router.include_router(knowledge_router)
 api_router.include_router(advanced_search_router)
 api_router.include_router(analytics_router)
+api_router.include_router(ml_router)
 api_router.include_router(rag_debug_router)
 api_router.include_router(feedback_router)
 api_router.include_router(quality_router)

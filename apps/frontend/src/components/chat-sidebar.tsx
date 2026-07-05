@@ -7,7 +7,7 @@ import {
   Plus, MessageSquare, Folder, FolderOpen, Search, Pin, 
   Archive, Trash2, LogOut, Sun, Moon, Settings, Cpu,
   ChevronDown, ChevronRight, User, MoreVertical, Database,
-  BarChart3
+  BarChart3, Brain
 } from "lucide-react";
 
 export default function ChatSidebar() {
@@ -357,6 +357,18 @@ export default function ChatSidebar() {
           >
             <BarChart3 className="h-4 w-4" />
             <span>Analytics Engine</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView("ml")}
+            className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              activeView === "ml" 
+                ? "bg-indigo-600/10 text-indigo-400 border border-indigo-500/10" 
+                : "text-zinc-500 hover:text-zinc-400"
+            }`}
+          >
+            <Brain className="h-4 w-4" />
+            <span>ML Studio</span>
           </button>
         </div>
 

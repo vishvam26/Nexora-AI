@@ -8,6 +8,7 @@ import ChatSidebar from "../../components/chat-sidebar";
 import ChatArea from "../../components/chat-area";
 import KnowledgeArea from "../../components/knowledge-area";
 import AnalyticsArea from "../../components/analytics-area";
+import MLArea from "../../components/ml-area";
 import { Loader2 } from "lucide-react";
 
 export default function ChatPage() {
@@ -105,8 +106,10 @@ export default function ChatPage() {
         <ChatArea />
       ) : activeView === "knowledge" ? (
         <KnowledgeArea />
-      ) : (
+      ) : activeView === "analytics" ? (
         <AnalyticsArea />
+      ) : (
+        <MLArea />
       )}
     </div>
   );
