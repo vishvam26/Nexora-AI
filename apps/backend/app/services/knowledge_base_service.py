@@ -13,7 +13,7 @@ from app.repositories.document_chunk_repository import DocumentChunkRepository
 from app.services.document_processing.document_processor import DocumentProcessor
 from app.services.document_processing.chunking_engine import ChunkingEngine
 from app.services.embedding.embedding_service import EmbeddingService
-from app.services.vector_store.memory_vector_store import MemoryVectorStore
+from app.services.vector_store.qdrant_vector_store import QdrantVectorStore
 from app.services.storage.local_storage import LocalStorage
 
 logger = logging.getLogger("app.services.knowledge_base_service")
@@ -23,7 +23,7 @@ _storage = LocalStorage(base_upload_dir="uploads/knowledge")
 _processor = DocumentProcessor()
 _chunker = ChunkingEngine()
 _embedder = EmbeddingService()
-_vector_store = MemoryVectorStore()
+_vector_store = QdrantVectorStore()
 
 
 class KnowledgeBaseService:
@@ -136,9 +136,13 @@ class KnowledgeBaseService:
                     chunk_id=chunk.id,
                     embedding=emb,
                     metadata={
-                        "document_id": doc.id,
-                        "knowledge_base_id": kb_id,
                         "workspace_id": kb.workspace_id,
+                        "document_id": doc.id,
+                        "page_number": chunk.page or 1,
+                        "section_title": chunk.section or "",
+                        "token_count": chunk.token_count,
+                        "file_name": doc.filename,
+                        "created_at": doc.created_at.isoformat(),
                     }
                 )
 
@@ -180,7 +184,9 @@ class KnowledgeBaseService:
         # Load file bytes from storage
         file_content = _storage.read_file(doc.storage_path)
 
-        # Delete old chunks
+        # Delete old chunks from Qdrant and SQL DB
+        if hasattr(_vector_store, "delete_by_document"):
+            _vector_store.delete_by_document(doc_id)
         DocumentChunkRepository.delete_by_document(db, doc_id)
 
         # Re-run pipeline (reuse upload logic)
@@ -198,6 +204,8 @@ class KnowledgeBaseService:
         doc = KnowledgeDocumentRepository.get_by_id(db, doc_id)
         if not doc:
             raise HTTPException(status_code=404, detail="Document not found.")
+        if hasattr(_vector_store, "delete_by_document"):
+            _vector_store.delete_by_document(doc_id)
         DocumentChunkRepository.delete_by_document(db, doc_id)
         try:
             _storage.delete_file(doc.storage_path)

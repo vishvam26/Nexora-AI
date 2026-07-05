@@ -53,6 +53,12 @@ class Settings(BaseSettings):
     GRAPH_MAX_DEPTH: int = 2
     CONFIDENCE_THRESHOLD: float = 0.50
 
+    # Qdrant & Embedding Configuration
+    QDRANT_URL: str = ""
+    QDRANT_API_KEY: str = ""
+    QDRANT_COLLECTION: str = "nexora_chunks"
+    EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
