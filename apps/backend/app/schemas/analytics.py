@@ -27,3 +27,13 @@ class RAGDebugBreakdown(BaseModel):
     chunks_rejected: int
     raw_context_size_chars: int
     token_estimate: int
+
+
+class ChartDataRequest(BaseModel):
+    x_column: str
+    y_column: str
+    aggregation: Optional[str] = "sum"
+
+
+class InsightRequest(BaseModel):
+    query: Optional[str] = None

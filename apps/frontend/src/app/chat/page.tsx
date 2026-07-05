@@ -7,6 +7,7 @@ import { apiService } from "../../services/api-service";
 import ChatSidebar from "../../components/chat-sidebar";
 import ChatArea from "../../components/chat-area";
 import KnowledgeArea from "../../components/knowledge-area";
+import AnalyticsArea from "../../components/analytics-area";
 import { Loader2 } from "lucide-react";
 
 export default function ChatPage() {
@@ -100,7 +101,13 @@ export default function ChatPage() {
       <ChatSidebar />
 
       {/* 2. Main Workspace Panel */}
-      {activeView === "chat" ? <ChatArea /> : <KnowledgeArea />}
+      {activeView === "chat" ? (
+        <ChatArea />
+      ) : activeView === "knowledge" ? (
+        <KnowledgeArea />
+      ) : (
+        <AnalyticsArea />
+      )}
     </div>
   );
 }

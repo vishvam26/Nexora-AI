@@ -6,7 +6,8 @@ import { apiService } from "../services/api-service";
 import { 
   Plus, MessageSquare, Folder, FolderOpen, Search, Pin, 
   Archive, Trash2, LogOut, Sun, Moon, Settings, Cpu,
-  ChevronDown, ChevronRight, User, MoreVertical, Database
+  ChevronDown, ChevronRight, User, MoreVertical, Database,
+  BarChart3
 } from "lucide-react";
 
 export default function ChatSidebar() {
@@ -321,13 +322,43 @@ export default function ChatSidebar() {
           </button>
         )}
 
-        <button
-          onClick={() => setActiveView(activeView === "chat" ? "knowledge" : "chat")}
-          className="flex w-full items-center gap-2 text-xs font-medium text-zinc-500 hover:text-foreground transition-colors"
-        >
-          <Database className="h-4 w-4" />
-          <span>{activeView === "chat" ? "Manage Knowledge Base" : "Back to Chat"}</span>
-        </button>
+        <div className="space-y-1">
+          <button
+            onClick={() => setActiveView("chat")}
+            className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              activeView === "chat" 
+                ? "bg-indigo-600/10 text-indigo-400 border border-indigo-500/10" 
+                : "text-zinc-500 hover:text-zinc-400"
+            }`}
+          >
+            <MessageSquare className="h-4 w-4" />
+            <span>Chat Workspace</span>
+          </button>
+          
+          <button
+            onClick={() => setActiveView("knowledge")}
+            className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              activeView === "knowledge" 
+                ? "bg-indigo-600/10 text-indigo-400 border border-indigo-500/10" 
+                : "text-zinc-500 hover:text-zinc-400"
+            }`}
+          >
+            <Database className="h-4 w-4" />
+            <span>Knowledge Base</span>
+          </button>
+
+          <button
+            onClick={() => setActiveView("analytics")}
+            className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              activeView === "analytics" 
+                ? "bg-indigo-600/10 text-indigo-400 border border-indigo-500/10" 
+                : "text-zinc-500 hover:text-zinc-400"
+            }`}
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span>Analytics Engine</span>
+          </button>
+        </div>
 
         <div className="flex items-center justify-between">
           <button
