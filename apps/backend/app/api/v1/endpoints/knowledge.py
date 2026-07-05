@@ -239,7 +239,12 @@ def retrieve_chunks(
         query=schema.query,
         workspace_id=workspace_id,
         knowledge_base_id=schema.knowledge_base_id,
+        document_id=schema.document_id,
+        file_type=schema.file_type,
+        start_date=schema.start_date,
+        end_date=schema.end_date,
         top_k=schema.top_k,
+        offset=schema.offset,
         threshold=schema.threshold,
     )
     chunk_responses = [ChunkResponse(**r) for r in results]

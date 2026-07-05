@@ -102,7 +102,8 @@ class QdrantVectorStore(VectorStoreInterface):
         query_embedding: List[float],
         top_k: int = 5,
         threshold: float = 0.0,
-        filters: Optional[Dict[str, Any]] = None
+        filters: Optional[Dict[str, Any]] = None,
+        offset: int = 0
     ) -> List[Dict[str, Any]]:
         if not self.client:
             logger.warning("Qdrant client not initialized. Search offline.")
@@ -113,13 +114,39 @@ class QdrantVectorStore(VectorStoreInterface):
             if filters:
                 conditions = []
                 for k, v in filters.items():
-                    conditions.append(
-                        models.FieldCondition(
-                            key=k,
-                            match=models.MatchValue(value=v)
+                    if v is None:
+                        continue
+                    if k == "start_date":
+                        conditions.append(
+                            models.FieldCondition(
+                                key="created_at",
+                                range=models.Range(gte=v)
+                            )
                         )
-                    )
-                query_filter = models.Filter(must=conditions)
+                    elif k == "end_date":
+                        conditions.append(
+                            models.FieldCondition(
+                                key="created_at",
+                                range=models.Range(lte=v)
+                            )
+                        )
+                    elif k == "file_type":
+                        # Support checking for mime_type
+                        conditions.append(
+                            models.FieldCondition(
+                                key="mime_type",
+                                match=models.MatchValue(value=v)
+                            )
+                        )
+                    else:
+                        conditions.append(
+                            models.FieldCondition(
+                                key=k,
+                                match=models.MatchValue(value=v)
+                            )
+                        )
+                if conditions:
+                    query_filter = models.Filter(must=conditions)
 
             # Query the dense named vector space
             search_results = self.client.search(
@@ -127,6 +154,7 @@ class QdrantVectorStore(VectorStoreInterface):
                 query_vector=("dense", query_embedding),
                 query_filter=query_filter,
                 limit=top_k,
+                offset=offset,
                 score_threshold=threshold if threshold > 0.0 else None
             )
 

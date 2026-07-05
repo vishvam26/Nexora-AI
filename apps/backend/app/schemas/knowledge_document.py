@@ -47,10 +47,13 @@ class ChunkResponse(BaseModel):
     chunk_id: int
     document_id: int
     text: str
-    score: float
-    page: Optional[int]
-    section: Optional[str]
-    token_count: int
+    vector_score: float
+    keyword_score: float
+    final_score: float
+    page_number: int
+    section_title: str
+    file_name: str
+    created_at: str
 
     model_config = {"from_attributes": True}
 
@@ -58,7 +61,12 @@ class ChunkResponse(BaseModel):
 class RetrievalRequest(BaseModel):
     query: str
     knowledge_base_id: Optional[int] = None
+    document_id: Optional[int] = None
+    file_type: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
     top_k: int = 5
+    offset: int = 0
     threshold: float = 0.0
 
 

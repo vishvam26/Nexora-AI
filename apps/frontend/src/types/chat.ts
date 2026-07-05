@@ -72,3 +72,16 @@ export interface KnowledgeDocument {
   uploaded_by: number;
   created_at: string;
 }
+
+export interface SemanticChunk {
+  chunk_id: number;
+  document_id: number;
+  text: string;
+  vector_score: number;
+  keyword_score: number;
+  final_score: number;
+  page_number: number;
+  section_title: string;
+  file_name: string;
+  created_at: string;
+}

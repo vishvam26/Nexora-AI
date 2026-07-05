@@ -1,23 +1,23 @@
+import time
 import logging
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 
-from app.repositories.knowledge_base_repository import KnowledgeBaseRepository
-from app.repositories.knowledge_document_repository import KnowledgeDocumentRepository
 from app.repositories.document_chunk_repository import DocumentChunkRepository
 from app.services.embedding.embedding_service import EmbeddingService
-from app.services.vector_store.memory_vector_store import MemoryVectorStore
+from app.services.vector_store.qdrant_vector_store import QdrantVectorStore
+from app.models.retrieval_log import RetrievalLog
 
 logger = logging.getLogger("app.services.retrieval_service")
 
 _embedder = EmbeddingService()
-_vector_store = MemoryVectorStore()
+_vector_store = QdrantVectorStore()
 
 
 class RetrievalService:
     """
-    Performs similarity search against document chunks for a given query.
-    Returns ranked list of relevant text chunks to be injected into AI context.
+    Performs similarity search against document chunks for a given query using Qdrant.
+    Records latency metrics and outputs hybrid-ready scoring payloads.
     """
 
     @staticmethod
@@ -26,46 +26,105 @@ class RetrievalService:
         query: str,
         workspace_id: int,
         knowledge_base_id: Optional[int] = None,
+        document_id: Optional[int] = None,
+        file_type: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
         top_k: int = 5,
+        offset: int = 0,
         threshold: float = 0.0,
     ) -> List[Dict[str, Any]]:
         """
         1. Embeds the query.
-        2. Searches vector store with optional KB and workspace filters.
-        3. Fetches matching chunk text from database.
-        4. Returns ranked chunk list with score and metadata.
+        2. Translates filters and queries Qdrant with offset.
+        3. Enriches returned points with SQL database chunk text.
+        4. Calculates vector/keyword/final scores.
+        5. Saves query latency and results to RetrievalLog.
         """
-        query_embedding = _embedder.embed_text(query)
+        start_time = time.perf_counter()
 
-        # Build metadata filters
+        # 1. Embed query
+        query_embedding = _embedder.generate_query_embedding(query)
+
+        # 2. Build metadata filters
         filters: Dict[str, Any] = {"workspace_id": workspace_id}
         if knowledge_base_id:
             filters["knowledge_base_id"] = knowledge_base_id
+        if document_id:
+            filters["document_id"] = document_id
+        if file_type:
+            filters["file_type"] = file_type
+        if start_date:
+            filters["start_date"] = start_date
+        if end_date:
+            filters["end_date"] = end_date
 
-        # Vector similarity search
+        # 3. Search Qdrant
         matches = _vector_store.search(
             query_embedding=query_embedding,
             top_k=top_k,
             threshold=threshold,
             filters=filters,
+            offset=offset
         )
 
+        latency_ms = int((time.perf_counter() - start_time) * 1000)
+
         if not matches:
+            # Write empty log
+            try:
+                log = RetrievalLog(
+                    query=query,
+                    latency_ms=latency_ms,
+                    top_k=top_k,
+                    returned_document_ids=[]
+                )
+                db.add(log)
+                db.commit()
+            except Exception as log_err:
+                logger.warning(f"Failed to save retrieval log: {log_err}")
             return []
 
-        # Enrich with DB chunk text
+        # 4. Enrich chunks and calculate scores
         results = []
+        matched_doc_ids = set()
+
         for match in matches:
             chunk = DocumentChunkRepository.get_by_id(db, match["chunk_id"])
             if chunk:
+                matched_doc_ids.add(chunk.document_id)
+                score = round(match["score"], 4)
+                
+                # Retrieve filename from document relationship if available
+                filename = match["metadata"].get("file_name", "document")
+                created_at = match["metadata"].get("created_at", "")
+
                 results.append({
                     "chunk_id": chunk.id,
                     "document_id": chunk.document_id,
                     "text": chunk.text,
-                    "score": round(match["score"], 4),
-                    "page": chunk.page,
-                    "section": chunk.section,
-                    "token_count": chunk.token_count,
+                    # Hybrid-ready score payload
+                    "vector_score": score,
+                    "keyword_score": 0.0,
+                    "final_score": score,
+                    "page_number": chunk.page or 1,
+                    "section_title": chunk.section or "",
+                    "file_name": filename,
+                    "created_at": created_at,
                 })
+
+        # 5. Persist Retrieval Log
+        try:
+            log = RetrievalLog(
+                query=query,
+                latency_ms=latency_ms,
+                top_k=top_k,
+                returned_document_ids=list(matched_doc_ids)
+            )
+            db.add(log)
+            db.commit()
+            logger.info(f"Saved retrieval log id={log.id} | query='{query}' | latency={latency_ms}ms")
+        except Exception as log_err:
+            logger.warning(f"Failed to save retrieval log: {log_err}")
 
         return results

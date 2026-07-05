@@ -137,11 +137,13 @@ class KnowledgeBaseService:
                     embedding=emb,
                     metadata={
                         "workspace_id": kb.workspace_id,
+                        "knowledge_base_id": kb_id,
                         "document_id": doc.id,
                         "page_number": chunk.page or 1,
                         "section_title": chunk.section or "",
                         "token_count": chunk.token_count,
                         "file_name": doc.filename,
+                        "mime_type": doc.mime_type,
                         "created_at": doc.created_at.isoformat(),
                     }
                 )

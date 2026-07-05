@@ -3,11 +3,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useChatStore } from "../stores/chat-store";
 import { apiService } from "../services/api-service";
-import { KnowledgeBase, KnowledgeDocument } from "../types/chat";
+import { KnowledgeBase, KnowledgeDocument, SemanticChunk } from "../types/chat";
 import { 
   UploadCloud, FileText, Trash2, Plus, Database, 
   CheckCircle2, XCircle, Loader2, RefreshCw, File, 
-  BookOpen, FolderOpen, ArrowLeft
+  ArrowLeft, Search, SlidersHorizontal, Calendar, 
+  ChevronLeft, ChevronRight, HelpCircle
 } from "lucide-react";
 
 interface UploadQueueItem {
@@ -30,20 +31,44 @@ export default function KnowledgeArea() {
     setActiveView
   } = useChatStore();
 
+  // Navigation and Tab State
+  const [activeTab, setActiveTab] = useState<"files" | "search">("files");
+
+  // KB creation forms
   const [kbTitle, setKbTitle] = useState("");
   const [kbDesc, setKbDesc] = useState("");
   const [isCreatingKB, setIsCreatingKB] = useState(false);
+
+  // File Upload Queue State
   const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [isLoadingDocs, setIsLoadingDocs] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Semantic Search State
+  const [queryText, setQueryText] = useState("");
+  const [topK, setTopK] = useState(5);
+  const [offset, setOffset] = useState(0);
+  const [fileTypeFilter, setFileTypeFilter] = useState("");
+  const [startDateFilter, setStartDateFilter] = useState("");
+  const [endDateFilter, setEndDateFilter] = useState("");
+  const [searchResults, setSearchResults] = useState<SemanticChunk[]>([]);
+  const [totalHits, setTotalHits] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
   // Poll for document status updates if any are in "Processing" or "Uploading" state
   useEffect(() => {
     if (!activeKnowledgeBase) return;
 
-    // Load initial documents
+    // Load initial documents and reset tab/results
     setIsLoadingDocs(true);
+    setActiveTab("files");
+    setSearchResults([]);
+    setUploadQueue([]);
+    setQueryText("");
+    setOffset(0);
+    
     apiService.fetchDocuments(activeKnowledgeBase.id)
       .finally(() => setIsLoadingDocs(false));
   }, [activeKnowledgeBase]);
@@ -71,6 +96,13 @@ export default function KnowledgeArea() {
       apiService.fetchKnowledgeBases(activeWorkspace.id);
     }
   }, [activeWorkspace]);
+
+  // Trigger search on pagination (offset) changes
+  useEffect(() => {
+    if (queryText.trim() && activeKnowledgeBase) {
+      executeSearch(true); // run search keeping previous query text
+    }
+  }, [offset]);
 
   const handleCreateKB = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,6 +207,60 @@ export default function KnowledgeArea() {
     }
   };
 
+  // Semantic Search execution
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setOffset(0); // Reset page to 0 on new query submission
+    executeSearch(false);
+  };
+
+  const executeSearch = async (isPagination: boolean = false) => {
+    if (!activeWorkspace || !activeKnowledgeBase || !queryText.trim()) return;
+
+    setIsSearching(true);
+    try {
+      const data = await apiService.retrieveSemanticChunks(
+        activeWorkspace.id,
+        activeKnowledgeBase.id,
+        queryText.trim(),
+        topK,
+        isPagination ? offset : 0,
+        fileTypeFilter || null,
+        startDateFilter || null,
+        endDateFilter || null
+      );
+      setSearchResults(data.results || []);
+      setTotalHits(data.total || 0);
+    } catch (err) {
+      console.error("Vector search failed:", err);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Text highlighting processor
+  const highlightText = (text: string, query: string) => {
+    if (!query.trim()) return text;
+    // Tokenize query words, exclude short noise words
+    const words = query.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+    if (words.length === 0) return text;
+
+    // Regex escape
+    const escapedWords = words.map(w => w.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'));
+    // Match words as boundaries if possible, otherwise character matching
+    const regex = new RegExp(`(${escapedWords.join("|")})`, "gi");
+
+    const parts = text.split(regex);
+    return parts.map((part, index) => 
+      regex.test(part) ? (
+        <mark key={index} className="bg-indigo-500/30 text-indigo-200 px-0.5 rounded border border-indigo-500/30 font-medium">
+          {part}
+        </mark>
+      ) : part
+    );
+  };
+
   const formatSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
@@ -182,6 +268,9 @@ export default function KnowledgeArea() {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
+
+  const pageCount = Math.ceil(totalHits / topK);
+  const currentPage = Math.floor(offset / topK) + 1;
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-[#09090b] text-[#f4f4f5]">
@@ -294,7 +383,7 @@ export default function KnowledgeArea() {
         </div>
       </div>
 
-      {/* Right Panel: Selected KB documents workspace */}
+      {/* Right Panel: Selected KB dashboard */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-zinc-900/10">
         {activeKnowledgeBase ? (
           <div className="p-8 max-w-5xl w-full mx-auto space-y-8">
@@ -309,150 +398,353 @@ export default function KnowledgeArea() {
                   <p className="text-zinc-400 text-sm mt-1.5 leading-relaxed">{activeKnowledgeBase.description}</p>
                 )}
               </div>
-              <div className="flex items-center gap-3 bg-zinc-900/60 border border-zinc-800 px-4 py-2 rounded-xl text-xs text-zinc-400">
-                <div className="flex flex-col text-right">
-                  <span className="font-semibold text-white">{documents.length} Files</span>
-                  <span>Indexed Context</span>
-                </div>
+              
+              {/* Tab Navigation */}
+              <div className="flex bg-zinc-950 border border-zinc-800 p-1 rounded-xl">
+                <button 
+                  onClick={() => setActiveTab("files")}
+                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition ${
+                    activeTab === "files" 
+                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/10" 
+                      : "text-zinc-400 hover:text-zinc-200"
+                  }`}
+                >
+                  Document Files
+                </button>
+                <button 
+                  onClick={() => setActiveTab("search")}
+                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition flex items-center gap-1.5 ${
+                    activeTab === "search" 
+                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/10" 
+                      : "text-zinc-400 hover:text-zinc-200"
+                  }`}
+                >
+                  <Search className="h-3.5 w-3.5" />
+                  Semantic Simulator
+                </button>
               </div>
             </div>
 
-            {/* Drag & Drop upload component */}
-            <div 
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition ${
-                isDragging 
-                  ? "border-indigo-500 bg-indigo-500/5 text-white scale-[0.99]" 
-                  : "border-zinc-800 bg-zinc-950/30 hover:bg-zinc-950/50 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200"
-              }`}
-            >
-              <input 
-                type="file" 
-                multiple
-                ref={fileInputRef}
-                onChange={(e) => e.target.files && handleFiles(e.target.files)}
-                className="hidden" 
-              />
-              <UploadCloud className="h-10 w-10 text-zinc-500 group-hover:text-indigo-400 mb-4 transition" />
-              <h3 className="text-base font-semibold text-white mb-1.5">Drag & Drop Files Here</h3>
-              <p className="text-xs text-zinc-500 text-center max-w-sm mb-1 leading-normal">
-                Supports parallel uploading of CSV, Excel (.xlsx, .xls), PDF, DOCX, TXT, MD, HTML, and Images.
-              </p>
-              <p className="text-[10px] text-zinc-600">Files up to 50MB</p>
-            </div>
+            {/* TAB 1: Document Upload & Management */}
+            {activeTab === "files" && (
+              <>
+                {/* Drag & Drop upload component */}
+                <div 
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition ${
+                    isDragging 
+                      ? "border-indigo-500 bg-indigo-500/5 text-white scale-[0.99]" 
+                      : "border-zinc-800 bg-zinc-950/30 hover:bg-zinc-950/50 hover:border-zinc-700 text-zinc-400 hover:text-zinc-200"
+                  }`}
+                >
+                  <input 
+                    type="file" 
+                    multiple
+                    ref={fileInputRef}
+                    onChange={(e) => e.target.files && handleFiles(e.target.files)}
+                    className="hidden" 
+                  />
+                  <UploadCloud className="h-10 w-10 text-zinc-500 group-hover:text-indigo-400 mb-4 transition" />
+                  <h3 className="text-base font-semibold text-white mb-1.5">Drag & Drop Files Here</h3>
+                  <p className="text-xs text-zinc-500 text-center max-w-sm mb-1 leading-normal">
+                    Supports parallel uploading of CSV, Excel, PDF, DOCX, TXT, MD, HTML, and Images.
+                  </p>
+                  <p className="text-[10px] text-zinc-600">Files up to 50MB</p>
+                </div>
 
-            {/* Active Upload Queue */}
-            {uploadQueue.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Upload Queue</h3>
-                <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
-                  {uploadQueue.map((item) => (
-                    <div key={item.id} className="p-4 rounded-xl border border-zinc-800 bg-zinc-950/40 flex items-center gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800">
-                        <File className="h-5 w-5 text-zinc-400" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="font-semibold text-white truncate pr-2">{item.name}</span>
-                          <span className="text-zinc-500 shrink-0">{item.progress}%</span>
+                {/* Active Upload Queue */}
+                {uploadQueue.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Upload Queue</h3>
+                    <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
+                      {uploadQueue.map((item) => (
+                        <div key={item.id} className="p-4 rounded-xl border border-zinc-800 bg-zinc-950/40 flex items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800">
+                            <File className="h-5 w-5 text-zinc-400" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between text-xs mb-1">
+                              <span className="font-semibold text-white truncate pr-2">{item.name}</span>
+                              <span className="text-zinc-500 shrink-0">{item.progress}%</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full transition-all duration-300 ${
+                                  item.status === "failed" ? "bg-red-500" : "bg-indigo-500"
+                                }`}
+                                style={{ width: `${item.progress}%` }}
+                              />
+                            </div>
+                            {item.error && (
+                              <p className="text-[10px] text-red-400 truncate mt-1">{item.error}</p>
+                            )}
+                          </div>
+                          {item.status === "completed" && <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />}
+                          {item.status === "failed" && <XCircle className="h-5 w-5 text-red-500 shrink-0" />}
+                          {item.status === "uploading" && <Loader2 className="h-4 w-4 text-indigo-500 animate-spin shrink-0" />}
                         </div>
-                        {/* Progress bar */}
-                        <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full transition-all duration-300 ${
-                              item.status === "failed" ? "bg-red-500" : "bg-indigo-500"
-                            }`}
-                            style={{ width: `${item.progress}%` }}
-                          />
-                        </div>
-                        {item.error && (
-                          <p className="text-[10px] text-red-400 truncate mt-1">{item.error}</p>
-                        )}
-                      </div>
-                      {item.status === "completed" && <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />}
-                      {item.status === "failed" && <XCircle className="h-5 w-5 text-red-500 shrink-0" />}
-                      {item.status === "uploading" && <Loader2 className="h-4 w-4 text-indigo-500 animate-spin shrink-0" />}
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                )}
+
+                {/* Uploaded Documents List */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Uploaded Documents</h3>
+                    {isLoadingDocs && <Loader2 className="h-4 w-4 text-zinc-500 animate-spin" />}
+                  </div>
+
+                  {documents.length === 0 ? (
+                    <div className="text-center py-16 border border-zinc-800/80 bg-zinc-950/20 rounded-2xl">
+                      <FileText className="h-12 w-12 text-zinc-700 mx-auto mb-4" />
+                      <h4 className="text-sm font-semibold text-zinc-400">No documents uploaded yet</h4>
+                      <p className="text-xs text-zinc-600 mt-1">Upload files above to compile knowledge for this base.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950/20">
+                      <table className="w-full text-left border-collapse text-sm">
+                        <thead>
+                          <tr className="border-b border-zinc-800 text-xs font-semibold text-zinc-500 uppercase tracking-wider bg-zinc-950/40">
+                            <th className="py-4 px-6">Filename</th>
+                            <th className="py-4 px-6">Mime Type</th>
+                            <th className="py-4 px-6">Size</th>
+                            <th className="py-4 px-6">Status</th>
+                            <th className="py-4 px-6 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-zinc-800/80 text-zinc-300">
+                          {documents.map((doc) => (
+                            <tr key={doc.id} className="hover:bg-zinc-900/20 transition-colors">
+                              <td className="py-3.5 px-6 font-medium text-white truncate max-w-xs">
+                                <div className="flex items-center gap-2.5">
+                                  <FileText className="h-4 w-4 shrink-0 text-indigo-400" />
+                                  <span className="truncate">{doc.filename}</span>
+                                </div>
+                              </td>
+                              <td className="py-3.5 px-6 text-zinc-500 truncate max-w-[150px]" title={doc.mime_type}>
+                                {doc.mime_type}
+                              </td>
+                              <td className="py-3.5 px-6 text-zinc-400 font-mono text-xs">
+                                {formatSize(doc.size)}
+                              </td>
+                              <td className="py-3.5 px-6">
+                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium leading-none ${
+                                  doc.status === "Completed" 
+                                    ? "bg-green-500/10 text-green-400 border border-green-500/20" 
+                                    : doc.status === "Failed"
+                                    ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                                    : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
+                                }`}>
+                                  {doc.status === "Completed" && <CheckCircle2 className="h-3 w-3" />}
+                                  {doc.status === "Failed" && <XCircle className="h-3 w-3" />}
+                                  {(doc.status === "Uploading" || doc.status === "Processing") && (
+                                    <RefreshCw className="h-3 w-3 animate-spin" />
+                                  )}
+                                  {doc.status}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-6 text-right">
+                                <button 
+                                  onClick={() => handleDeleteDoc(doc.id)}
+                                  className="p-1.5 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition"
+                                  title="Delete File"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
-              </div>
+              </>
             )}
 
-            {/* Uploaded Documents List */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">Uploaded Documents</h3>
-                {isLoadingDocs && <Loader2 className="h-4 w-4 text-zinc-500 animate-spin" />}
-              </div>
+            {/* TAB 2: Semantic Search Simulator */}
+            {activeTab === "search" && (
+              <div className="space-y-6">
+                <form onSubmit={handleSearchSubmit} className="space-y-4">
+                  <div className="flex gap-3">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-zinc-500" />
+                      <input 
+                        type="text" 
+                        value={queryText}
+                        onChange={(e) => setQueryText(e.target.value)}
+                        placeholder="Search indexed context (e.g. Sales increase target)..."
+                        required
+                        className="w-full rounded-xl border border-zinc-800 bg-zinc-950 pl-10 pr-4 py-3.5 text-sm text-white placeholder-zinc-600 outline-none focus:border-indigo-500 transition"
+                      />
+                    </div>
+                    <button 
+                      type="submit"
+                      disabled={isSearching}
+                      className="px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 font-semibold text-white transition flex items-center gap-2 text-sm disabled:opacity-55"
+                    >
+                      {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                      Search
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                      className={`p-3 rounded-xl border transition ${
+                        showAdvancedFilters 
+                          ? "border-indigo-500 bg-indigo-500/5 text-indigo-400" 
+                          : "border-zinc-800 hover:bg-zinc-900 text-zinc-400"
+                      }`}
+                      title="Toggle Filters"
+                    >
+                      <SlidersHorizontal className="h-4 w-4" />
+                    </button>
+                  </div>
 
-              {documents.length === 0 ? (
-                <div className="text-center py-16 border border-zinc-800/80 bg-zinc-950/20 rounded-2xl">
-                  <FileText className="h-12 w-12 text-zinc-700 mx-auto mb-4" />
-                  <h4 className="text-sm font-semibold text-zinc-400">No documents uploaded yet</h4>
-                  <p className="text-xs text-zinc-600 mt-1">Upload files above to compile knowledge for this base.</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950/20">
-                  <table className="w-full text-left border-collapse text-sm">
-                    <thead>
-                      <tr className="border-b border-zinc-800 text-xs font-semibold text-zinc-500 uppercase tracking-wider bg-zinc-950/40">
-                        <th className="py-4 px-6">Filename</th>
-                        <th className="py-4 px-6">Mime Type</th>
-                        <th className="py-4 px-6">Size</th>
-                        <th className="py-4 px-6">Status</th>
-                        <th className="py-4 px-6 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-zinc-800/80 text-zinc-300">
-                      {documents.map((doc) => (
-                        <tr key={doc.id} className="hover:bg-zinc-900/20 transition-colors">
-                          <td className="py-3.5 px-6 font-medium text-white truncate max-w-xs">
-                            <div className="flex items-center gap-2.5">
-                              <FileText className="h-4 w-4 shrink-0 text-indigo-400" />
-                              <span className="truncate">{doc.filename}</span>
-                            </div>
-                          </td>
-                          <td className="py-3.5 px-6 text-zinc-500 truncate max-w-[150px]" title={doc.mime_type}>
-                            {doc.mime_type}
-                          </td>
-                          <td className="py-3.5 px-6 text-zinc-400 font-mono text-xs">
-                            {formatSize(doc.size)}
-                          </td>
-                          <td className="py-3.5 px-6">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium leading-none ${
-                              doc.status === "Completed" 
-                                ? "bg-green-500/10 text-green-400 border border-green-500/20" 
-                                : doc.status === "Failed"
-                                ? "bg-red-500/10 text-red-400 border border-red-500/20"
-                                : "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"
-                            }`}>
-                              {doc.status === "Completed" && <CheckCircle2 className="h-3 w-3" />}
-                              {doc.status === "Failed" && <XCircle className="h-3 w-3" />}
-                              {(doc.status === "Uploading" || doc.status === "Processing") && (
-                                <RefreshCw className="h-3 w-3 animate-spin" />
+                  {/* Advanced Filters Drawer */}
+                  {showAdvancedFilters && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-5 rounded-2xl border border-zinc-800 bg-zinc-950/50 text-xs">
+                      <div>
+                        <label className="block text-zinc-500 uppercase tracking-wider mb-2 font-semibold">Mime Type / Format</label>
+                        <select 
+                          value={fileTypeFilter}
+                          onChange={(e) => setFileTypeFilter(e.target.value)}
+                          className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-white outline-none focus:border-indigo-500"
+                        >
+                          <option value="">All Formats</option>
+                          <option value="application/pdf">PDF Document</option>
+                          <option value="application/vnd.openxmlformats-officedocument.wordprocessingml.document">Word (DOCX)</option>
+                          <option value="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">Excel (XLSX)</option>
+                          <option value="text/csv">CSV Table</option>
+                          <option value="text/plain">Plain Text / MD</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-zinc-500 uppercase tracking-wider mb-2 font-semibold">Start Date</label>
+                        <div className="relative">
+                          <input 
+                            type="date" 
+                            value={startDateFilter}
+                            onChange={(e) => setStartDateFilter(e.target.value)}
+                            className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-white outline-none focus:border-indigo-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-zinc-500 uppercase tracking-wider mb-2 font-semibold">Results (Top K)</label>
+                        <input 
+                          type="number"
+                          min="1"
+                          max="20"
+                          value={topK}
+                          onChange={(e) => setTopK(parseInt(e.target.value) || 5)}
+                          className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-white outline-none focus:border-indigo-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </form>
+
+                {/* Results Workspace */}
+                {isSearching ? (
+                  <div className="py-24 text-center">
+                    <Loader2 className="h-10 w-10 text-indigo-500 animate-spin mx-auto mb-4" />
+                    <p className="text-zinc-500 text-sm">Embedding query and searching Qdrant collections...</p>
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between text-xs text-zinc-500 font-semibold uppercase tracking-wider px-1">
+                      <span>Matches ({totalHits} chunks found)</span>
+                      <span>Showing results {offset + 1} - {Math.min(offset + topK, totalHits)}</span>
+                    </div>
+
+                    <div className="space-y-4">
+                      {searchResults.map((match) => (
+                        <div key={match.chunk_id} className="p-6 rounded-2xl border border-zinc-800/80 bg-zinc-950/30 hover:border-zinc-700 transition flex flex-col gap-4">
+                          {/* Match Header */}
+                          <div className="flex items-center justify-between gap-4 text-xs">
+                            <div className="flex items-center gap-2 text-zinc-400">
+                              <FileText className="h-4 w-4 text-indigo-400 shrink-0" />
+                              <span className="font-semibold text-white truncate max-w-[200px]" title={match.file_name}>
+                                {match.file_name}
+                              </span>
+                              <span className="text-zinc-600">•</span>
+                              <span>Page {match.page_number}</span>
+                              {match.section_title && (
+                                <>
+                                  <span className="text-zinc-600">•</span>
+                                  <span className="truncate max-w-[150px]">{match.section_title}</span>
+                                </>
                               )}
-                              {doc.status}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-6 text-right">
-                            <button 
-                              onClick={() => handleDeleteDoc(doc.id)}
-                              className="p-1.5 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition"
-                              title="Delete File"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </td>
-                        </tr>
+                            </div>
+                            
+                            {/* Score Badges */}
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/15 font-mono">
+                                Vector: {Math.round(match.vector_score * 100)}%
+                              </span>
+                              <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-500 border border-zinc-800/50 font-mono">
+                                Keyword: 0%
+                              </span>
+                              <span className="px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 font-bold font-mono">
+                                Final: {Math.round(match.final_score * 100)}%
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Matching text body */}
+                          <p className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap">
+                            {highlightText(match.text, queryText)}
+                          </p>
+                        </div>
                       ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+                    </div>
+
+                    {/* Pagination Controls */}
+                    {pageCount > 1 && (
+                      <div className="flex items-center justify-between border-t border-zinc-800/80 pt-6 mt-6">
+                        <button
+                          disabled={offset === 0}
+                          onClick={() => setOffset(Math.max(0, offset - topK))}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-zinc-800 bg-zinc-950 text-xs font-semibold text-zinc-400 hover:text-white transition disabled:opacity-40"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          Previous Page
+                        </button>
+                        <span className="text-xs text-zinc-500">
+                          Page <strong className="text-white">{currentPage}</strong> of {pageCount}
+                        </span>
+                        <button
+                          disabled={offset + topK >= totalHits}
+                          onClick={() => setOffset(offset + topK)}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-zinc-800 bg-zinc-950 text-xs font-semibold text-zinc-400 hover:text-white transition disabled:opacity-40"
+                        >
+                          Next Page
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : queryText.trim() ? (
+                  <div className="py-24 text-center border border-zinc-800/80 bg-zinc-950/20 rounded-2xl">
+                    <HelpCircle className="h-12 w-12 text-zinc-700 mx-auto mb-4" />
+                    <h4 className="text-sm font-semibold text-zinc-400">No matching segments found</h4>
+                    <p className="text-xs text-zinc-600 mt-1">Try refining your keyword query or reducing similarity constraints.</p>
+                  </div>
+                ) : (
+                  <div className="py-24 text-center border border-zinc-800/80 bg-zinc-950/20 rounded-2xl">
+                    <Search className="h-12 w-12 text-zinc-700 mx-auto mb-4" />
+                    <h4 className="text-sm font-semibold text-zinc-400">Search Simulator Ready</h4>
+                    <p className="text-xs text-zinc-600 mt-1">Enter a query above to retrieve and test semantic vector context matching.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-sm mx-auto">

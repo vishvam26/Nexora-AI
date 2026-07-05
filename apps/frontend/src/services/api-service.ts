@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useChatStore } from "../stores/chat-store";
-import { User, Workspace, Folder, Conversation, Message, KnowledgeBase, KnowledgeDocument } from "../types/chat";
+import { User, Workspace, Folder, Conversation, Message, KnowledgeBase, KnowledgeDocument, SemanticChunk } from "../types/chat";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://liking-follow-groggy.ngrok-free.dev";
 
@@ -266,6 +266,31 @@ export const apiService = {
     await this.fetchDocuments(kbId);
     return response.data;
   },
+
+  async retrieveSemanticChunks(
+    workspaceId: number,
+    kbId: number,
+    query: string,
+    topK: number = 5,
+    offset: number = 0,
+    fileType: string | null = null,
+    startDate: string | null = null,
+    endDate: string | null = null,
+  ): Promise<RetrievalResponse> {
+    const response = await apiClient.post<RetrievalResponse>(
+      `/knowledge/retrieve?workspace_id=${workspaceId}`,
+      {
+        query,
+        knowledge_base_id: kbId,
+        top_k: topK,
+        offset: offset,
+        file_type: fileType || null,
+        start_date: startDate || null,
+        end_date: endDate || null,
+      }
+    );
+    return response.data;
+  },
 };
 
 // Response models from backend APIs
@@ -276,6 +301,12 @@ interface KnowledgeBaseListResponse {
 
 interface KnowledgeDocumentListResponse {
   documents: KnowledgeDocument[];
+  total: number;
+}
+
+export interface RetrievalResponse {
+  query: string;
+  results: SemanticChunk[];
   total: number;
 }
 
