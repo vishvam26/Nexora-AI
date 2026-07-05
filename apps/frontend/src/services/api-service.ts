@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useChatStore } from "../stores/chat-store";
-import { User, Workspace, Folder, Conversation, Message } from "../types/chat";
+import { User, Workspace, Folder, Conversation, Message, KnowledgeBase, KnowledgeDocument } from "../types/chat";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://liking-follow-groggy.ngrok-free.dev";
 
@@ -202,7 +202,82 @@ export const apiService = {
       await this.fetchMessages(conversationId);
     }
   },
+
+  // Knowledge Bases & RAG Document Upload
+  async fetchKnowledgeBases(workspaceId: number): Promise<KnowledgeBase[]> {
+    const response = await apiClient.get<KnowledgeBaseListResponse>(`/knowledge/bases?workspace_id=${workspaceId}`);
+    const bases = response.data.knowledge_bases || [];
+    useChatStore.getState().setKnowledgeBases(bases);
+    return bases;
+  },
+
+  async createKnowledgeBase(workspaceId: number, title: string, description: string): Promise<KnowledgeBase> {
+    // Backend takes workspace_id query param and KnowledgeBaseCreate JSON schema
+    const response = await apiClient.post<KnowledgeBase>(`/knowledge/bases?workspace_id=${workspaceId}`, {
+      title,
+      description,
+      icon: "📚",
+      color: "#10B981",
+      visibility: "private"
+    });
+    // Refresh the list of knowledge bases
+    await this.fetchKnowledgeBases(workspaceId);
+    return response.data;
+  },
+
+  async deleteKnowledgeBase(workspaceId: number, kbId: number): Promise<void> {
+    await apiClient.delete(`/knowledge/bases/${kbId}`);
+    await this.fetchKnowledgeBases(workspaceId);
+  },
+
+  async fetchDocuments(kbId: number): Promise<KnowledgeDocument[]> {
+    const response = await apiClient.get<KnowledgeDocumentListResponse>(`/knowledge/documents?kb_id=${kbId}`);
+    const docs = response.data.documents || [];
+    useChatStore.getState().setDocuments(docs);
+    return docs;
+  },
+
+  async deleteDocument(kbId: number, docId: number): Promise<void> {
+    await apiClient.delete(`/knowledge/documents/${docId}`);
+    await this.fetchDocuments(kbId);
+  },
+
+  async uploadDocument(
+    kbId: number,
+    file: File,
+    onProgress: (progress: number) => void
+  ): Promise<KnowledgeDocument> {
+    const formData = new FormData();
+    formData.append("kb_id", kbId.toString());
+    formData.append("file", file);
+
+    const response = await apiClient.post<KnowledgeDocument>("/knowledge/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      onUploadProgress: (progressEvent) => {
+        const total = progressEvent.total || file.size;
+        const current = progressEvent.loaded;
+        const percent = Math.round((current * 100) / total);
+        onProgress(percent);
+      },
+    });
+    // Refresh documents list
+    await this.fetchDocuments(kbId);
+    return response.data;
+  },
 };
+
+// Response models from backend APIs
+interface KnowledgeBaseListResponse {
+  knowledge_bases: KnowledgeBase[];
+  total: number;
+}
+
+interface KnowledgeDocumentListResponse {
+  documents: KnowledgeDocument[];
+  total: number;
+}
 
 const logger = {
   error: (msg: string, err: any) => {

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { User, Workspace, Folder, Conversation, Message } from "../types/chat";
+import { User, Workspace, Folder, Conversation, Message, KnowledgeBase, KnowledgeDocument } from "../types/chat";
 
 interface ChatState {
   // Authentication
@@ -18,6 +18,12 @@ interface ChatState {
   isStreaming: boolean;
   theme: "light" | "dark";
   sidebarOpen: boolean;
+  activeView: "chat" | "knowledge";
+  
+  // Knowledge Bases
+  knowledgeBases: KnowledgeBase[];
+  activeKnowledgeBase: KnowledgeBase | null;
+  documents: KnowledgeDocument[];
   
   // Actions
   setUser: (user: User | null) => void;
@@ -35,6 +41,10 @@ interface ChatState {
   setTheme: (theme: "light" | "dark") => void;
   toggleTheme: () => void;
   toggleSidebar: () => void;
+  setActiveView: (view: "chat" | "knowledge") => void;
+  setKnowledgeBases: (bases: KnowledgeBase[]) => void;
+  setActiveKnowledgeBase: (base: KnowledgeBase | null) => void;
+  setDocuments: (docs: KnowledgeDocument[]) => void;
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -50,6 +60,10 @@ export const useChatStore = create<ChatState>((set) => ({
   isStreaming: false,
   theme: "dark",
   sidebarOpen: true,
+  activeView: "chat",
+  knowledgeBases: [],
+  activeKnowledgeBase: null,
+  documents: [],
 
   // Setters and action handlers
   setUser: (user) => set({ user }),
@@ -74,7 +88,11 @@ export const useChatStore = create<ChatState>((set) => ({
       conversations: [],
       activeConversation: null,
       messages: [],
-      isStreaming: false
+      isStreaming: false,
+      activeView: "chat",
+      knowledgeBases: [],
+      activeKnowledgeBase: null,
+      documents: []
     });
   },
 
@@ -139,4 +157,12 @@ export const useChatStore = create<ChatState>((set) => ({
   }),
 
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+
+  setActiveView: (activeView) => set({ activeView }),
+  
+  setKnowledgeBases: (knowledgeBases) => set({ knowledgeBases }),
+  
+  setActiveKnowledgeBase: (activeKnowledgeBase) => set({ activeKnowledgeBase }),
+  
+  setDocuments: (documents) => set({ documents }),
 }));

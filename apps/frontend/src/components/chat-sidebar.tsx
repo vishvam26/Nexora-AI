@@ -6,7 +6,7 @@ import { apiService } from "../services/api-service";
 import { 
   Plus, MessageSquare, Folder, FolderOpen, Search, Pin, 
   Archive, Trash2, LogOut, Sun, Moon, Settings, Cpu,
-  ChevronDown, ChevronRight, User, MoreVertical
+  ChevronDown, ChevronRight, User, MoreVertical, Database
 } from "lucide-react";
 
 export default function ChatSidebar() {
@@ -23,7 +23,9 @@ export default function ChatSidebar() {
     setActiveConversation,
     setMessages,
     toggleTheme,
-    logout
+    logout,
+    activeView,
+    setActiveView
   } = useChatStore();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -318,6 +320,14 @@ export default function ChatSidebar() {
             <span>Create Folder</span>
           </button>
         )}
+
+        <button
+          onClick={() => setActiveView(activeView === "chat" ? "knowledge" : "chat")}
+          className="flex w-full items-center gap-2 text-xs font-medium text-zinc-500 hover:text-foreground transition-colors"
+        >
+          <Database className="h-4 w-4" />
+          <span>{activeView === "chat" ? "Manage Knowledge Base" : "Back to Chat"}</span>
+        </button>
 
         <div className="flex items-center justify-between">
           <button

@@ -6,11 +6,12 @@ import { useChatStore } from "../../stores/chat-store";
 import { apiService } from "../../services/api-service";
 import ChatSidebar from "../../components/chat-sidebar";
 import ChatArea from "../../components/chat-area";
+import KnowledgeArea from "../../components/knowledge-area";
 import { Loader2 } from "lucide-react";
 
 export default function ChatPage() {
   const router = useRouter();
-  const { token, activeWorkspace, logout, setToken } = useChatStore();
+  const { token, activeWorkspace, logout, setToken, activeView } = useChatStore();
   const [mounted, setMounted] = useState(false);
   const [initLoading, setInitLoading] = useState(true);
 
@@ -98,8 +99,8 @@ export default function ChatPage() {
       {/* 1. Left Sidebar - Navigation & History */}
       <ChatSidebar />
 
-      {/* 2. Main Chat Workspace Panel */}
-      <ChatArea />
+      {/* 2. Main Workspace Panel */}
+      {activeView === "chat" ? <ChatArea /> : <KnowledgeArea />}
     </div>
   );
 }
