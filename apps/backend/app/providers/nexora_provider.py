@@ -139,15 +139,23 @@ class NexoraProvider(AIProviderInterface):
                 # Load Base Model
                 logger.info(f"Downloading/Loading base causal LM model: '{base_model_id}'")
                 try:
-                    # Try loading with the resolved dtype (e.g. bfloat16 for CPU memory savings)
+                    # Determine quantization parameters to prevent OOM
+                    kwargs = {
+                        "torch_dtype": torch_dtype,
+                        "device_map": device_map,
+                        "low_cpu_mem_usage": True,
+                        "trust_remote_code": True,
+                        "token": settings.HF_TOKEN or None
+                    }
+                    if torch.cuda.is_available() and device_map != "cpu":
+                        kwargs["load_in_4bit"] = True
+                        logger.info("Using 4-bit quantization to prevent memory OOM")
+                    
                     base_model = AutoModelForCausalLM.from_pretrained(
                         base_model_id,
-                        torch_dtype=torch_dtype,
-                        device_map=device_map,
-                        low_cpu_mem_usage=True,
-                        trust_remote_code=True,
-                        token=settings.HF_TOKEN or None
+                        **kwargs
                     )
+
                 except Exception as first_err:
                     logger.warning(
                         f"Failed initial load of base model: {first_err}. Retrying with float32 and AutoModel..."
