@@ -242,20 +242,24 @@ class NexoraProvider(AIProviderInterface):
         logger.info(f"Nexora generation request started (turns={len(messages)})")
         start_time = time.monotonic()
 
+        # Grab class-level singleton references once
+        _model = self.__class__._model
+        _tokenizer = self.__class__._tokenizer
+
         try:
             # 1. Format using Qwen Chat Template
-            formatted_prompt = self._tokenizer.apply_chat_template(
+            formatted_prompt = _tokenizer.apply_chat_template(
                 messages,
                 tokenize=False,
                 add_generation_prompt=True
             )
 
             # 2. Tokenize inputs and move to model device
-            inputs = self._tokenizer(formatted_prompt, return_tensors="pt")
-            input_ids = inputs["input_ids"].to(self._model.device)
+            inputs = _tokenizer(formatted_prompt, return_tensors="pt")
+            input_ids = inputs["input_ids"].to(_model.device)
             attention_mask = inputs.get("attention_mask", None)
             if attention_mask is not None:
-                attention_mask = attention_mask.to(self._model.device)
+                attention_mask = attention_mask.to(_model.device)
 
             input_length = input_ids.shape[1]
 
@@ -265,11 +269,11 @@ class NexoraProvider(AIProviderInterface):
                 "temperature": settings.NEXORA_TEMPERATURE,
                 "top_p": settings.NEXORA_TOP_P,
                 "do_sample": settings.NEXORA_TEMPERATURE > 0.0,
-                "pad_token_id": self._tokenizer.pad_token_id or self._tokenizer.eos_token_id
+                "pad_token_id": _tokenizer.pad_token_id or _tokenizer.eos_token_id
             }
 
             with torch.no_grad():
-                output_ids = self._model.generate(
+                output_ids = _model.generate(
                     input_ids=input_ids,
                     attention_mask=attention_mask,
                     **generation_config
@@ -277,7 +281,7 @@ class NexoraProvider(AIProviderInterface):
 
             # Extract generated tokens
             generated_ids = output_ids[0][input_length:]
-            response_text = self._tokenizer.decode(generated_ids, skip_special_tokens=True)
+            response_text = _tokenizer.decode(generated_ids, skip_special_tokens=True)
 
             latency = time.monotonic() - start_time
             tokens_generated = len(generated_ids)
@@ -314,7 +318,7 @@ class NexoraProvider(AIProviderInterface):
         from threading import Thread
 
         # 0. Handle model loading asynchronously to prevent read timeouts on HTTP requests
-        if not self._loaded or self._model is None or self._tokenizer is None:
+        if not self.__class__._loaded or self.__class__._model is None or self.__class__._tokenizer is None:
             yield "🔄 Nexora AI: Initializing and loading local model into RAM (approx. 9GB). This can take 1-2 minutes on first run...\n"
             
             # Start preloading in a background thread
@@ -322,11 +326,11 @@ class NexoraProvider(AIProviderInterface):
             loading_thread.start()
             
             # Wait for it to load, yielding dot heartbeats to keep connection alive
-            while loading_thread.is_alive() and not self._loaded:
+            while loading_thread.is_alive() and not self.__class__._loaded:
                 time.sleep(2)
                 yield "."
                 
-            if not self._loaded:
+            if not self.__class__._loaded:
                 yield "\n❌ Failed to load local model. Please check backend logs."
                 return
             
@@ -335,24 +339,28 @@ class NexoraProvider(AIProviderInterface):
         logger.info(f"Nexora streaming generation started (turns={len(messages)})")
         start_time = time.monotonic()
 
+        # Grab class-level singleton references once
+        _model = self.__class__._model
+        _tokenizer = self.__class__._tokenizer
+
         try:
             # 1. Format using Qwen Chat Template
-            formatted_prompt = self._tokenizer.apply_chat_template(
+            formatted_prompt = _tokenizer.apply_chat_template(
                 messages,
                 tokenize=False,
                 add_generation_prompt=True
             )
 
             # 2. Tokenize inputs and move to model device
-            inputs = self._tokenizer(formatted_prompt, return_tensors="pt")
-            input_ids = inputs["input_ids"].to(self._model.device)
+            inputs = _tokenizer(formatted_prompt, return_tensors="pt")
+            input_ids = inputs["input_ids"].to(_model.device)
             attention_mask = inputs.get("attention_mask", None)
             if attention_mask is not None:
-                attention_mask = attention_mask.to(self._model.device)
+                attention_mask = attention_mask.to(_model.device)
 
             # 3. Create streamer
             streamer = TextIteratorStreamer(
-                self._tokenizer,
+                _tokenizer,
                 skip_prompt=True,
                 clean_up_tokenization_spaces=True
             )
@@ -365,7 +373,7 @@ class NexoraProvider(AIProviderInterface):
                 "temperature": settings.NEXORA_TEMPERATURE,
                 "top_p": settings.NEXORA_TOP_P,
                 "do_sample": settings.NEXORA_TEMPERATURE > 0.0,
-                "pad_token_id": self._tokenizer.pad_token_id or self._tokenizer.eos_token_id
+                "pad_token_id": _tokenizer.pad_token_id or _tokenizer.eos_token_id
             }
 
             # Container to propagate errors from background thread
@@ -374,7 +382,7 @@ class NexoraProvider(AIProviderInterface):
             def generate_target():
                 try:
                     with torch.no_grad():
-                        self._model.generate(**generation_config)
+                        _model.generate(**generation_config)
                 except Exception as thread_exc:
                     error_container.append(thread_exc)
 

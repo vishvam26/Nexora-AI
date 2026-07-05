@@ -48,8 +48,8 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # Configure CORS Middleware to allow cross-origin requests from Next.js frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -83,10 +83,13 @@ def startup_event():
     print("[System] Startup environment validations successfully checked.")
 
     if settings.AI_PROVIDER.lower().strip() == "nexora":
-        print(">>> NEXORA AI PROVIDER IS ACTIVE (Lazy preloading enabled) <<<")
-        # Preloading is disabled on startup to prevent RAM exhaustion crashes and allow instant server start.
-        # The model will load lazily on the first chat request.
-        pass
+        print(">>> NEXORA AI PROVIDER IS ACTIVE — Eagerly preloading model on startup <<<")
+        try:
+            from app.providers.nexora_provider import NexoraProvider
+            NexoraProvider.preload_model()
+            print(">>> Nexora model preloaded successfully <<<")
+        except Exception as e:
+            print(f"[WARNING] Nexora model preload failed on startup: {e}. Will retry on first chat request.")
 
 
 

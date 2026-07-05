@@ -28,6 +28,7 @@ class AIService:
     def generate_stream_response(messages: List[dict]) -> Generator[str, None, None]:
         """
         Instantiates the configured provider and yields token completions dynamically.
+        Uses `yield from` to properly chain the generator so SSE tokens flow to the HTTP response.
         """
         if settings.AI_PROVIDER.lower().strip() == "mock":
             # Stream token response
@@ -37,7 +38,7 @@ class AIService:
             return
 
         provider = ProviderFactory.get_provider()
-        return provider.generate_stream_response(messages)
+        yield from provider.generate_stream_response(messages)
 
 
 
