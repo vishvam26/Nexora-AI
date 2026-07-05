@@ -31,11 +31,12 @@ class NexoraProvider(AIProviderInterface):
 
     def __init__(self):
         # Trigger preloading if not already loaded, but do not block instantiation
-        if not self._loaded:
+        if not self.__class__._loaded:
             try:
                 self.preload_model()
             except Exception as e:
                 logger.error(f"Lazy model preloading failed: {e}")
+
 
     @classmethod
     def preload_model(cls) -> None:
@@ -231,7 +232,7 @@ class NexoraProvider(AIProviderInterface):
 
     def _ensure_loaded(self) -> None:
         """Helper to ensure the model is loaded before handling request."""
-        if not self._loaded or self._model is None or self._tokenizer is None:
+        if not self.__class__._loaded or self.__class__._model is None or self.__class__._tokenizer is None:
             self.preload_model()
 
     def generate_response(self, messages: List[dict]) -> str:
