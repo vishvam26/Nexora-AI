@@ -1,9 +1,6 @@
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
-
-SECRET_KEY = "CHANGE_THIS_LATER_IN_ENV"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+from app.config import settings
 
 
 def create_access_token(data: dict):
@@ -11,15 +8,15 @@ def create_access_token(data: dict):
     to_encode = data.copy()
 
     expire = datetime.utcnow() + timedelta(
-        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
     )
 
     to_encode.update({"exp": expire})
 
     return jwt.encode(
         to_encode,
-        SECRET_KEY,
-        algorithm=ALGORITHM,
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM,
     )
 
 def verify_access_token(token: str):
@@ -27,11 +24,11 @@ def verify_access_token(token: str):
     try:
         payload = jwt.decode(
             token,
-            SECRET_KEY,
-            algorithms=[ALGORITHM],
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
         )
 
         return payload
 
     except JWTError:
-        return None
+        return None

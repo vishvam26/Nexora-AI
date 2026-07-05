@@ -1,9 +1,13 @@
-from datetime import datetime
-
 from sqlalchemy import Boolean, DateTime, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from datetime import datetime
+from typing import List, TYPE_CHECKING
 
 from app.db.database import Base
+
+if TYPE_CHECKING:
+    from app.models.conversation import Conversation
+    from app.models.workspace import Workspace
 
 
 class User(Base):
@@ -14,29 +18,25 @@ class User(Base):
     full_name: Mapped[str] = mapped_column(String(100), nullable=False)
 
     email: Mapped[str] = mapped_column(
-        String(255),
-        unique=True,
-        index=True,
-        nullable=False
+        String(255), unique=True, index=True, nullable=False
     )
 
-    password_hash: Mapped[str] = mapped_column(
-        String(255),
-        nullable=False
-    )
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    is_active: Mapped[bool] = mapped_column(
-        Boolean,
-        default=True
-    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime,
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
+
+    conversations: Mapped[List["Conversation"]] = relationship(
+        "Conversation", back_populates="user", cascade="all, delete-orphan"
+    )
+
+    workspaces: Mapped[List["Workspace"]] = relationship(
+        "Workspace", back_populates="owner", cascade="all, delete-orphan"
+    )
+
+

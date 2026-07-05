@@ -18,3 +18,18 @@ class UserRepository:
         db.refresh(user)
 
         return user
+
+    @staticmethod
+    def update(db: Session, user: User, **kwargs):
+        for key, value in kwargs.items():
+            setattr(user, key, value)
+        db.commit()
+        db.refresh(user)
+        return user
+
+    @staticmethod
+    def change_password(db: Session, user: User, new_password_hash: str):
+        user.password_hash = new_password_hash
+        db.commit()
+        db.refresh(user)
+        return user

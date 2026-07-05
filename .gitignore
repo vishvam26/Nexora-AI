@@ -1,3 +1,7 @@
+# --- Cache and DB ---
+.cache/
+*.db
+
 # --- Environment Variables ---
 .env
 .env.local
