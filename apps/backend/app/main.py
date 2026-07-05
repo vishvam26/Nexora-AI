@@ -1,7 +1,15 @@
 print(">>> MAIN.PY LOADED <<<")
 import logging
 # Configure physical file logging to capture all backend warnings, errors, and exceptions outside watched folder
-file_handler = logging.FileHandler("C:/Users/vishv/.gemini/antigravity-ide/brain/ba311efa-90f6-4f38-a17e-4d8a2be32c35/backend.log", encoding="utf-8")
+import os
+log_path = "backend.log"
+if os.name == "nt":
+    local_path = "C:/Users/vishv/.gemini/antigravity-ide/brain/ba311efa-90f6-4f38-a17e-4d8a2be32c35/backend.log"
+    # Ensure directory exists before using it
+    if os.path.exists(os.path.dirname(local_path)):
+        log_path = local_path
+
+file_handler = logging.FileHandler(log_path, encoding="utf-8")
 file_handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 file_handler.setFormatter(formatter)
