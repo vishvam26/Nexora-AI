@@ -24,6 +24,14 @@ class ChatRequest(BaseModel):
         None,
         description="Optional Knowledge Base ID to narrow RAG retrieval scope"
     )
+    knowledge_base_ids: Optional[list] = Field(
+        None,
+        description="Optional list of Knowledge Base IDs for multi-KB retrieval"
+    )
+    grounded: bool = Field(
+        True,
+        description="Toggle grounding / RAG mode on or off"
+    )
 
 
 class ChatResponse(BaseModel):

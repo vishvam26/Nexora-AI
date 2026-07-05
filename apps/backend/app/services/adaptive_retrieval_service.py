@@ -1,6 +1,6 @@
 import time
 import logging
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Union
 
 from sqlalchemy.orm import Session
 
@@ -34,7 +34,7 @@ class AdaptiveRetrievalService:
         db: Session,
         user_query: str,
         workspace_id: int,
-        knowledge_base_id: Optional[int] = None,
+        knowledge_base_id: Optional[Union[int, List[int]]] = None,
         top_k: int = 10,
         similarity_threshold: float = 0.1,
         max_context_tokens: int = 4000,

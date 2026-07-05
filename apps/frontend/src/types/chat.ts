@@ -36,6 +36,13 @@ export interface Message {
   conversation_id: number;
   role: "user" | "assistant" | "system";
   content: string;
+  sources?: {
+    filename: string;
+    page: number;
+    section: string;
+    score: number;
+    confidence: number;
+  }[];
   created_at: string;
   updated_at?: string;
   is_deleted?: boolean;

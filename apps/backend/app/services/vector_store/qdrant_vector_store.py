@@ -139,12 +139,20 @@ class QdrantVectorStore(VectorStoreInterface):
                             )
                         )
                     else:
-                        conditions.append(
-                            models.FieldCondition(
-                                key=k,
-                                match=models.MatchValue(value=v)
+                        if isinstance(v, list):
+                            conditions.append(
+                                models.FieldCondition(
+                                    key=k,
+                                    match=models.MatchAny(any=v)
+                                )
                             )
-                        )
+                        else:
+                            conditions.append(
+                                models.FieldCondition(
+                                    key=k,
+                                    match=models.MatchValue(value=v)
+                                )
+                            )
                 if conditions:
                     query_filter = models.Filter(must=conditions)
 

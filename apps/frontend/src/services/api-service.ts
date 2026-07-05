@@ -125,7 +125,10 @@ export const apiService = {
     conversationId: number,
     messageText: string,
     workspaceId: number,
+    knowledgeBaseId: number | null,
+    grounded: boolean,
     onToken: (token: string) => void,
+    onSources: (sources: any[]) => void,
     onError: (err: string) => void
   ): Promise<void> {
     const store = useChatStore.getState();
@@ -149,6 +152,8 @@ export const apiService = {
           conversation_id: conversationId,
           message: messageText,
           workspace_id: workspaceId,
+          knowledge_base_id: knowledgeBaseId,
+          grounded: grounded
         }),
       });
 
@@ -183,6 +188,9 @@ export const apiService = {
               if (data.error) {
                 onError(data.error);
                 return;
+              }
+              if (data.sources) {
+                onSources(data.sources);
               }
               if (data.content) {
                 onToken(data.content);

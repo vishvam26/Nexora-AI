@@ -1,8 +1,8 @@
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from sqlalchemy.orm import Session
 
-from app.services.vector_store.memory_vector_store import MemoryVectorStore
+from app.services.vector_store.qdrant_vector_store import QdrantVectorStore
 from app.services.embedding.embedding_service import EmbeddingService
 from app.services.keyword_service import KeywordService
 from app.repositories.document_chunk_repository import DocumentChunkRepository
@@ -10,7 +10,7 @@ from app.repositories.document_chunk_repository import DocumentChunkRepository
 logger = logging.getLogger("app.services.hybrid_search_service")
 
 _embedder = EmbeddingService()
-_vector_store = MemoryVectorStore()
+_vector_store = QdrantVectorStore()
 
 
 class HybridSearchService:
@@ -25,7 +25,7 @@ class HybridSearchService:
         db: Session,
         query: str,
         workspace_id: int,
-        knowledge_base_id: Optional[int] = None,
+        knowledge_base_id: Optional[Union[int, List[int]]] = None,
         vector_weight: float = 0.70,
         keyword_weight: float = 0.30,
         top_k: int = 10,
@@ -34,7 +34,13 @@ class HybridSearchService:
         """
         Runs both searches, normalizes their scores, merges items, and returns top K.
         """
-        kb_filter = [knowledge_base_id] if knowledge_base_id else None
+        if knowledge_base_id:
+            if isinstance(knowledge_base_id, list):
+                kb_filter = knowledge_base_id
+            else:
+                kb_filter = [knowledge_base_id]
+        else:
+            kb_filter = None
 
         # 1. Lexical Keyword Search
         keyword_results = KeywordService.search(

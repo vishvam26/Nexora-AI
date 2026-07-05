@@ -5,6 +5,9 @@ from app.models.message import Message
 from app.services.context_builder import ContextBuilder
 
 
+from app.services.prompt.prompt_builder import PromptBuilder
+
+
 class PromptService:
     """
     Service layer responsible for loading external prompts and assembling the complete system prompts
@@ -54,12 +57,29 @@ class PromptService:
         current_user_message: str = "",
         retrieved_knowledge: str = "",
         graph_knowledge: str = "",
+        grounded: bool = False,
     ) -> List[dict]:
         """
         Constructs the final prompt payload using ContextBuilder.
         """
         system_content = cls.get_system_prompt()
         dev_content = cls.get_developer_prompt()
+
+        if grounded:
+            has_context = bool(retrieved_knowledge and retrieved_knowledge.strip())
+            
+            if has_context:
+                # Sanitize and enclose context with injection protection
+                sanitized_knowledge = PromptBuilder.sanitize_chunk(retrieved_knowledge)
+                enclosed_knowledge = PromptBuilder.enclose_context(sanitized_knowledge)
+                
+                # Build system grounding prompt
+                system_content = PromptBuilder.build_system_prompt(system_content, has_context=True)
+                retrieved_knowledge = enclosed_knowledge
+            else:
+                # Direct strict anti-hallucination fallback prompt
+                system_content = PromptBuilder.build_system_prompt(system_content, has_context=False)
+                retrieved_knowledge = "No relevant information found in the selected Knowledge Base."
 
         # Format history as a list of dicts with role and content keys
         history_dicts = [{"role": msg.role, "content": msg.content} for msg in history]

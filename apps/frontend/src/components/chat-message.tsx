@@ -201,8 +201,36 @@ export default function ChatMessage({ message }: ChatMessageProps) {
             <div className="space-y-1">
               {renderParsedContent(message.content)}
             </div>
-          )}
-        </div>
+
+            {/* RAG Citations & Grounding Confidence display */}
+            {!isUser && message.sources && message.sources.length > 0 && (
+              <div className="mt-4 pt-3.5 border-t border-zinc-800/80 space-y-2">
+                <p className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 flex items-center gap-1.5">
+                  <span>📚 Retrieved References</span>
+                  <span className="text-zinc-700">•</span>
+                  <span className="text-emerald-500/85">Grounded Context</span>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {message.sources.map((src, sIdx) => (
+                    <div 
+                      key={sIdx}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-zinc-800 bg-zinc-950/40 text-[11px] text-zinc-400 hover:text-zinc-200 transition"
+                      title={`${src.filename} | Section: ${src.section || "General"}`}
+                    >
+                      <span className="font-bold text-indigo-400">[{sIdx + 1}]</span>
+                      <span className="truncate max-w-[120px] font-medium">{src.filename}</span>
+                      <span className="text-zinc-700">•</span>
+                      <span>Page {src.page}</span>
+                      <span className="text-zinc-700">•</span>
+                      <span className="text-emerald-500 font-mono font-semibold">
+                        {src.confidence}% Match
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
         {/* Action icons bar for AI answers */}
         {!isUser && message.content && (

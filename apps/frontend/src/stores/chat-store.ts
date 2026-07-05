@@ -37,6 +37,7 @@ interface ChatState {
   setMessages: (messages: Message[]) => void;
   addMessage: (message: Message) => void;
   updateLastMessageContent: (content: string) => void;
+  updateLastMessageSources: (sources: any[]) => void;
   setIsStreaming: (streaming: boolean) => void;
   setTheme: (theme: "light" | "dark") => void;
   toggleTheme: () => void;
@@ -45,6 +46,10 @@ interface ChatState {
   setKnowledgeBases: (bases: KnowledgeBase[]) => void;
   setActiveKnowledgeBase: (base: KnowledgeBase | null) => void;
   setDocuments: (docs: KnowledgeDocument[]) => void;
+  selectedChatKb: KnowledgeBase | null;
+  groundingEnabled: boolean;
+  setSelectedChatKb: (kb: KnowledgeBase | null) => void;
+  setGroundingEnabled: (enabled: boolean) => void;
 }
 
 export const useChatStore = create<ChatState>((set) => ({
@@ -64,6 +69,8 @@ export const useChatStore = create<ChatState>((set) => ({
   knowledgeBases: [],
   activeKnowledgeBase: null,
   documents: [],
+  selectedChatKb: null,
+  groundingEnabled: true,
 
   // Setters and action handlers
   setUser: (user) => set({ user }),
@@ -129,6 +136,18 @@ export const useChatStore = create<ChatState>((set) => ({
     return { messages: newMessages };
   }),
 
+  updateLastMessageSources: (sources) => set((state) => {
+    const newMessages = [...state.messages];
+    if (newMessages.length > 0) {
+      const lastIndex = newMessages.length - 1;
+      newMessages[lastIndex] = {
+        ...newMessages[lastIndex],
+        sources: sources
+      };
+    }
+    return { messages: newMessages };
+  }),
+
   setIsStreaming: (isStreaming) => set({ isStreaming }),
 
   setTheme: (theme) => {
@@ -165,4 +184,8 @@ export const useChatStore = create<ChatState>((set) => ({
   setActiveKnowledgeBase: (activeKnowledgeBase) => set({ activeKnowledgeBase }),
   
   setDocuments: (documents) => set({ documents }),
+  
+  setSelectedChatKb: (selectedChatKb) => set({ selectedChatKb }),
+  
+  setGroundingEnabled: (groundingEnabled) => set({ groundingEnabled }),
 }));

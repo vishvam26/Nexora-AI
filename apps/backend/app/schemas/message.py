@@ -30,6 +30,7 @@ class MessageResponse(BaseModel):
     conversation_id: int
     role: str
     content: str
+    sources: Optional[List[dict]] = None
     is_deleted: bool
     created_at: datetime
     updated_at: datetime
