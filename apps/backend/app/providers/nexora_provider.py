@@ -119,14 +119,16 @@ class NexoraProvider(AIProviderInterface):
                     device_map = "cpu"
 
                 # Select optimal dtype based on device capabilities
-                if torch.cuda.is_available() and device_map != "cpu":
-                    torch_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
-                    logger.info(f"CUDA is available. Using dtype={torch_dtype} and device_map={device_map}")
+                if torch.cuda.is_available():
+                    torch_dtype = torch.float16  # float16 is best for 4-bit quantized layers on T4 GPU
+                    device_map = "auto"          # must be auto for bitsandbytes quantization
+                    logger.info(f"CUDA is available. Enabled 4-bit config with dtype={torch_dtype} and device_map={device_map}")
                 else:
-                    # CPU mode: Use bfloat16 to save 50% RAM memory (approx 9GB instead of 18GB) and prevent OOM crash
+                    # CPU mode fallback
                     torch_dtype = torch.bfloat16
-                    device_map = None  # None avoids accelerate CPU/disk offloading overhead & segfaults on Windows
+                    device_map = None
                     logger.info(f"Using CPU mode with dtype={torch_dtype}")
+
 
                 # Load Tokenizer
                 logger.info(f"Downloading/Loading tokenizer for model: '{model_id}'")
