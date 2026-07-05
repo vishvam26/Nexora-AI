@@ -368,10 +368,11 @@ class NexoraProvider(AIProviderInterface):
             if attention_mask is not None:
                 attention_mask = attention_mask.to(_model.device)
 
-            # 3. Create streamer
+            # 3. Create streamer — skip_special_tokens removes EOS/BOS/PAD tokens from output
             streamer = TextIteratorStreamer(
                 _tokenizer,
                 skip_prompt=True,
+                skip_special_tokens=True,
                 clean_up_tokenization_spaces=True
             )
 
@@ -440,14 +441,19 @@ class NexoraProvider(AIProviderInterface):
                         thinking_buffer = ""
                         continue
 
-                    # Normal token — yield it
+                    # Normal token — strip EOS/special tokens and yield
                     out = thinking_buffer
                     thinking_buffer = ""
                     if out:
-                        if ttft is None:
-                            ttft = time.monotonic() - start_time
-                        token_count += 1
-                        yield out
+                        # Strip Qwen/HF special tokens that leak through decode
+                        for special_tok in ["<|m_end|>", "<endoftext>", "<|endoftext|>", "<|im_end|>", "<|im_start|>", "</s>", "<s>"]:
+                            out = out.replace(special_tok, "")
+                        out = out.strip("\x00")  # Remove null bytes
+                        if out:
+                            if ttft is None:
+                                ttft = time.monotonic() - start_time
+                            token_count += 1
+                            yield out
 
             generation_thread.join()
 
