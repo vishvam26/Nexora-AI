@@ -91,16 +91,21 @@ class NexoraProvider(AIProviderInterface):
                 
                 # Resolve base model
                 is_peft = False
-                try:
-                    peft_config = PeftConfig.from_pretrained(model_id, token=settings.HF_TOKEN or None)
-                    base_model_id = peft_config.base_model_name_or_path
-                    is_peft = True
-                    logger.info(f"Resolved base model from adapter config: '{base_model_id}'")
-                except Exception as config_err:
-                    base_model_id = settings.NEXORA_BASE_MODEL_ID
-                    logger.warning(
-                        f"Could not load PeftConfig or resolve base model. Falling back to NEXORA_BASE_MODEL_ID='{base_model_id}'. Details: {config_err}"
-                    )
+                if "merged" in model_id.lower():
+                    base_model_id = model_id
+                    logger.info(f"Model ID contains 'merged'. Loading directly as a unified base model: '{base_model_id}'")
+                else:
+                    try:
+                        peft_config = PeftConfig.from_pretrained(model_id, token=settings.HF_TOKEN or None)
+                        base_model_id = peft_config.base_model_name_or_path
+                        is_peft = True
+                        logger.info(f"Resolved base model from adapter config: '{base_model_id}'")
+                    except Exception as config_err:
+                        base_model_id = settings.NEXORA_BASE_MODEL_ID
+                        logger.warning(
+                            f"Could not load PeftConfig or resolve base model. Falling back to NEXORA_BASE_MODEL_ID='{base_model_id}'. Details: {config_err}"
+                        )
+
 
                 # Export HF_TOKEN to environment to ensure all huggingface_hub operations are authenticated
                 if getattr(settings, "HF_TOKEN", None):
