@@ -21,15 +21,15 @@ router = APIRouter(
 )
 @limiter.limit("30/minute")
 def chat(
-    request_obj: Request,
-    request: ChatRequest,
+    request: Request,
+    payload: ChatRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Send a prompt to the AI, persist user and assistant messages, and return the completion.
     """
-    return ChatService.handle_chat(db, current_user.id, request)
+    return ChatService.handle_chat(db, current_user.id, payload)
 
 
 @router.post(
@@ -38,8 +38,8 @@ def chat(
 )
 @limiter.limit("30/minute")
 def chat_stream(
-    request_obj: Request,
-    request: ChatRequest,
+    request: Request,
+    payload: ChatRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -47,7 +47,8 @@ def chat_stream(
     Send a prompt to the AI, persist user message immediately, stream the AI response
     token-by-token, and save the full assistant response to the database once completed.
     """
-    generator = ChatService.handle_chat_stream(db, current_user.id, request)
+    generator = ChatService.handle_chat_stream(db, current_user.id, payload)
     return StreamingResponse(generator, media_type="text/event-stream")
+
 
 
