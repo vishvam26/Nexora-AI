@@ -224,8 +224,8 @@ class ChatService:
             grounded=request.grounded,
         )
 
-        # 5. Define streaming generator yielding sources first
-        def stream_generator():
+        # 5. Yield dynamic token streams directly to the StreamingResponse
+        def direct_generator():
             accumulated_content = ""
             try:
                 # Yield citations meta chunk at stream start
@@ -255,4 +255,5 @@ class ChatService:
                 logger.error(f"Error in stream generator pipeline: {e}", exc_info=True)
                 yield f"data: {json.dumps({'error': str(e)})}\n\n"
 
-        return stream_generator()
+        return direct_generator()
+
