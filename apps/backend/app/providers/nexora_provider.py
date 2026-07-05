@@ -345,11 +345,21 @@ class NexoraProvider(AIProviderInterface):
 
         try:
             # 1. Format using Qwen Chat Template
-            formatted_prompt = _tokenizer.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True
-            )
+            # enable_thinking=False disables Qwen3's internal CoT/reasoning output
+            try:
+                formatted_prompt = _tokenizer.apply_chat_template(
+                    messages,
+                    tokenize=False,
+                    add_generation_prompt=True,
+                    enable_thinking=False
+                )
+            except TypeError:
+                # Older tokenizer versions don't support enable_thinking param
+                formatted_prompt = _tokenizer.apply_chat_template(
+                    messages,
+                    tokenize=False,
+                    add_generation_prompt=True
+                )
 
             # 2. Tokenize inputs and move to model device
             inputs = _tokenizer(formatted_prompt, return_tensors="pt")
@@ -392,6 +402,9 @@ class NexoraProvider(AIProviderInterface):
 
             token_count = 0
             ttft = None
+            # State machine to strip <think>...</think> blocks from Qwen3 output
+            in_thinking_block = False
+            thinking_buffer = ""
 
             # 5. Yield generated tokens as they arrive
             for text_chunk in streamer:
@@ -400,10 +413,41 @@ class NexoraProvider(AIProviderInterface):
                     raise error_container[0]
 
                 if text_chunk:
-                    if ttft is None:
-                        ttft = time.monotonic() - start_time
-                    token_count += 1
-                    yield text_chunk
+                    # Filter out Qwen3 thinking/CoT blocks
+                    thinking_buffer += text_chunk
+
+                    # Check for <think> open tag
+                    if not in_thinking_block and "<think>" in thinking_buffer:
+                        before, _, after = thinking_buffer.partition("<think>")
+                        if before:
+                            if ttft is None:
+                                ttft = time.monotonic() - start_time
+                            token_count += 1
+                            yield before
+                        in_thinking_block = True
+                        thinking_buffer = after
+                        continue
+
+                    # Check for </think> close tag
+                    if in_thinking_block and "</think>" in thinking_buffer:
+                        _, _, after = thinking_buffer.partition("</think>")
+                        in_thinking_block = False
+                        thinking_buffer = after
+                        continue
+
+                    # If inside thinking block, discard
+                    if in_thinking_block:
+                        thinking_buffer = ""
+                        continue
+
+                    # Normal token — yield it
+                    out = thinking_buffer
+                    thinking_buffer = ""
+                    if out:
+                        if ttft is None:
+                            ttft = time.monotonic() - start_time
+                        token_count += 1
+                        yield out
 
             generation_thread.join()
 

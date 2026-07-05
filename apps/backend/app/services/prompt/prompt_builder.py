@@ -66,18 +66,10 @@ class PromptBuilder:
             prompts.append(
                 "\n\n[GROUNDING POLICY]\n"
                 "You are provided with verified documents in the [Retrieved Context] block.\n"
-                "1. Answer the user's query using ONLY the provided document raw data.\n"
-                "2. Do not use any outside knowledge to answer.\n"
-                "3. Cite your sources by appending [1], [2], etc. corresponding to the files provided.\n"
-                "4. If the user's query asks about information not present in the retrieved context, "
-                "you MUST respond exactly: 'No relevant information found in the selected Knowledge Base.' "
-                "Do NOT attempt to hallucinate, guess, or extrapolate answers."
+                "1. Prefer answering using the provided document context.\n"
+                "2. Cite your sources by appending [1], [2], etc. where applicable.\n"
+                "3. If the query is not covered by the retrieved context, answer from your general knowledge and note it."
             )
-        else:
-            prompts.append(
-                "\n\n[GROUNDING POLICY]\n"
-                "No documents were retrieved. You must respond exactly: "
-                "'No relevant information found in the selected Knowledge Base.'"
-            )
+        # When no context: no grounding policy injected — let model answer freely
 
         return "\n".join(prompts)

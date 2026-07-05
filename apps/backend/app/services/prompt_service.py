@@ -77,9 +77,9 @@ class PromptService:
                 system_content = PromptBuilder.build_system_prompt(system_content, has_context=True)
                 retrieved_knowledge = enclosed_knowledge
             else:
-                # Direct strict anti-hallucination fallback prompt
-                system_content = PromptBuilder.build_system_prompt(system_content, has_context=False)
-                retrieved_knowledge = "No relevant information found in the selected Knowledge Base."
+                # No documents retrieved — do NOT override with rigid grounding policy.
+                # Let the model answer from its own knowledge normally.
+                retrieved_knowledge = ""
 
         # Format history as a list of dicts with role and content keys
         history_dicts = [{"role": msg.role, "content": msg.content} for msg in history]
