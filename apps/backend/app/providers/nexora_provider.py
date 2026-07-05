@@ -143,20 +143,30 @@ class NexoraProvider(AIProviderInterface):
                 try:
                     # Determine quantization parameters to prevent OOM
                     kwargs = {
-                        "torch_dtype": torch_dtype,
                         "device_map": device_map,
                         "low_cpu_mem_usage": True,
                         "trust_remote_code": True,
                         "token": settings.HF_TOKEN or None
                     }
                     if torch.cuda.is_available() and device_map != "cpu":
-                        kwargs["load_in_4bit"] = True
-                        logger.info("Using 4-bit quantization to prevent memory OOM")
+                        from transformers import BitsAndBytesConfig
+                        # Configure strict double quantization to preserve RAM
+                        quantization_config = BitsAndBytesConfig(
+                            load_in_4bit=True,
+                            bnb_4bit_compute_dtype=torch.float16,
+                            bnb_4bit_use_double_quant=True,
+                            bnb_4bit_quant_type="nf4"
+                        )
+                        kwargs["quantization_config"] = quantization_config
+                        logger.info("Using BitsAndBytesConfig 4-bit double quantization to prevent memory OOM")
+                    else:
+                        kwargs["torch_dtype"] = torch_dtype
                     
                     base_model = AutoModelForCausalLM.from_pretrained(
                         base_model_id,
                         **kwargs
                     )
+
 
                 except Exception as first_err:
                     logger.warning(
