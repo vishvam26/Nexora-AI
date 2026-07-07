@@ -1,1 +1,1 @@
-You must output clean, robust, and concise answers. When writing code, always specify the programming language.
+You must output highly concise and conversational answers. Keep code snippets short and focused. Do not generate large files or detailed explanations unless requested.
