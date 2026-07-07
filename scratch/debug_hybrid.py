@@ -34,11 +34,12 @@ db = SessionLocal()
 _vector_store = QdrantVectorStore()
 _embedder = EmbeddingService()
 
-query = "Whose result is this?"
+# TEST QUERY 1: 'Whose resume is this?' on KB 1 (resume)
+query = "Whose resume is this?"
 workspace_id = 1
-kb_id = 3
+kb_id = 1
 
-print("=== RETRIEVAL INTERMEDIATE TRACE ===")
+print(f"=== RETRIEVAL TRACE FOR KB_ID={kb_id} (resume) ===")
 
 # 1. Classification
 classification = QueryClassifier.classify(query)
@@ -49,6 +50,7 @@ print(f"1. Classification: Category='{category}' | Strategy='{strategy}'")
 # 2. Hybrid Search
 expanded_terms = IntentService.expand_query(query)
 search_query = " ".join(expanded_terms)
+print(f"2. Expanded Search Query: '{search_query}'")
 raw_hits = HybridSearchService.search(
     db=db,
     query=search_query,
@@ -59,9 +61,11 @@ raw_hits = HybridSearchService.search(
     top_k=20,
     threshold=0.1
 )
-print(f"2. Raw Hits from Hybrid Search: {len(raw_hits)}")
+print(f"3. Raw Hits from Hybrid Search: {len(raw_hits)}")
+for idx, hit in enumerate(raw_hits):
+    print(f"   Hit {idx+1}: Chunk ID {hit['chunk_id']} | Score: {hit['score']:.4f} | Text: {hit['text'][:100]}...")
 
-# 3. Near-Duplicate Chunk Filtering
+# 4. Near-Duplicate Chunk Filtering
 unique_hits = []
 duplicate_threshold = 0.90
 from app.utils.similarity import compute_jaccard_similarity
@@ -74,41 +78,44 @@ for hit in raw_hits:
             break
     if not is_duplicate:
         unique_hits.append(hit)
-print(f"3. Unique Hits (after Jaccard deduplication): {len(unique_hits)}")
+print(f"4. Unique Hits (after Jaccard deduplication): {len(unique_hits)}")
 
-# 4. Fetch document metadata
-doc_ids = {hit["document_id"] for hit in unique_hits}
-doc_metadata = KnowledgeSearchRepository.get_bulk_document_metadata(db, list(doc_ids))
-print(f"4. Document IDs: {doc_ids} | Metadata fetched for: {list(doc_metadata.keys())}")
+# 5. Fetch document metadata
+if unique_hits:
+    doc_ids = {hit["document_id"] for hit in unique_hits}
+    doc_metadata = KnowledgeSearchRepository.get_bulk_document_metadata(db, list(doc_ids))
+    print(f"5. Document IDs: {doc_ids} | Metadata: {list(doc_metadata.keys())}")
 
-# 5. Reranking
-ranked_hits = RankingService.rerank(
-    chunks=unique_hits,
-    doc_metadata=doc_metadata,
-    max_context_tokens=4000 * 2,
-    enable_reranking=settings.ENABLE_RERANKING
-)
-print(f"5. Ranked Chunks count: {len(ranked_hits)}")
-for idx, h in enumerate(ranked_hits):
-    print(f"   Rank {idx+1}: Chunk ID {h.get('chunk_id')} | Score: {h.get('score')} | Composite Score: {h.get('composite_score')}")
+    # 6. Reranking
+    ranked_hits = RankingService.rerank(
+        chunks=unique_hits,
+        doc_metadata=doc_metadata,
+        max_context_tokens=4000 * 2,
+        enable_reranking=settings.ENABLE_RERANKING
+    )
+    print(f"6. Ranked Chunks count: {len(ranked_hits)}")
+    for idx, h in enumerate(ranked_hits):
+        print(f"   Rank {idx+1}: Chunk ID {h.get('chunk_id')} | Score: {h.get('score')} | Composite Score: {h.get('composite_score')}")
 
-# 6. Source Diversity Filter (Max 2 chunks from same doc)
-diverse_hits = []
-doc_count = {}
-for hit in ranked_hits:
-    doc_id = hit["document_id"]
-    count = doc_count.get(doc_id, 0)
-    if count < 2:
-        diverse_hits.append(hit)
-        doc_count[doc_id] = count + 1
-print(f"6. Diverse Hits count: {len(diverse_hits)}")
+    # 7. Source Diversity Filter (Max 2 chunks from same doc)
+    diverse_hits = []
+    doc_count = {}
+    for hit in ranked_hits:
+        doc_id = hit["document_id"]
+        count = doc_count.get(doc_id, 0)
+        if count < 2:
+            diverse_hits.append(hit)
+            doc_count[doc_id] = count + 1
+    print(f"7. Diverse Hits count: {len(diverse_hits)}")
 
-# 7. Context Compression
-compressed_hits = CompressionService.compress_chunks(diverse_hits, max_tokens=4000)
-print(f"7. Compressed Hits count: {len(compressed_hits)}")
+    # 8. Context Compression
+    compressed_hits = CompressionService.compress_chunks(diverse_hits, max_tokens=4000)
+    print(f"8. Compressed Hits count: {len(compressed_hits)}")
 
-# 8. Token Budget Trimming
-final_hits = RankingService._apply_token_budget(compressed_hits, 4000)
-print(f"8. Final Hits count: {len(final_hits)}")
+    # 9. Token Budget Trimming
+    final_hits = RankingService._apply_token_budget(compressed_hits, 4000)
+    print(f"9. Final Hits count: {len(final_hits)}")
+else:
+    print("No hits to rank.")
 
 db.close()
