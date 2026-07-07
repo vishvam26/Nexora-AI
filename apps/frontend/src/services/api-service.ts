@@ -33,6 +33,7 @@ apiClient.interceptors.response.use(
 );
 
 export const apiService = {
+  apiClient,
   // Authentication
   async register(full_name: string, email: string, password: string): Promise<void> {
     await apiClient.post("/auth/register", { full_name, email, password });
