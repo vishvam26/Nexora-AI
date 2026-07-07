@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import Dict, Any, List
@@ -14,6 +15,11 @@ router = APIRouter(
     prefix="/analytics",
     tags=["Analytics"]
 )
+
+
+def _get_absolute_path(storage_path: str) -> str:
+    """Resolves relative storage path to absolute disk path inside uploads/knowledge"""
+    return os.path.abspath(os.path.join("uploads/knowledge", storage_path))
 
 
 @router.get(
@@ -33,7 +39,8 @@ def get_dataset_profile(
             detail="Document not found"
         )
     # Check access permission if needed
-    profile = AnalyticsEngine.get_profile(doc_id, doc.storage_path)
+    abs_path = _get_absolute_path(doc.storage_path)
+    profile = AnalyticsEngine.get_profile(doc_id, abs_path)
     if "error" in profile:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -59,12 +66,13 @@ def get_chart_aggregates(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Document not found"
         )
+    abs_path = _get_absolute_path(doc.storage_path)
     data = AnalyticsEngine.get_aggregated_chart(
-        file_path=doc.storage_path,
+        file_path=abs_path,
         x_col=payload.x_column,
         y_col=payload.y_column,
         aggregation=payload.aggregation
-    )
+      )
     return data
 
 
@@ -85,6 +93,8 @@ def get_ai_insights(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Document not found"
         )
-    profile = AnalyticsEngine.get_profile(doc_id, doc.storage_path)
+    abs_path = _get_absolute_path(doc.storage_path)
+    profile = AnalyticsEngine.get_profile(doc_id, abs_path)
     insights = AIInsightEngine.generate_insights(profile, focus_query=payload.query)
     return {"insights": insights}
+
