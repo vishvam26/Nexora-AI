@@ -1,22 +1,33 @@
 import os
 import sys
-import sqlite3
+
+# Load env variables from apps/backend/.env explicitly if running from root
+backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "backend"))
+env_path = os.path.join(backend_dir, ".env")
+if os.path.exists(env_path):
+    print(f"Loading env from: {env_path}")
+    from dotenv import load_dotenv
+    load_dotenv(env_path)
 
 # Add app to path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "backend")))
+sys.path.append(backend_dir)
+
+# IMPORTANT: Register all models to avoid SQLAlchemy mapper lookup failures
+import app.db.base
 
 from sqlalchemy.orm import Session
 from app.db.session import SessionLocal
 from app.services.adaptive_retrieval_service import AdaptiveRetrievalService
-from app.services.prompt_service import PromptService
 from app.config import settings
 
 db = SessionLocal()
 
 print("=== RETRIEVAL DIAGNOSTICS FOR QUERY ===")
+print("settings.DATABASE_URL:", settings.DATABASE_URL)
+
 query = "Whose result is this?"
 workspace_id = 1
-kb_id = 2  # The 'result' knowledge base ID
+kb_id = 3  # The 'result' knowledge base ID
 
 print(f"Query: '{query}'")
 print(f"Workspace: {workspace_id}, Knowledge Base: {kb_id}")
@@ -48,21 +59,6 @@ try:
     # 2. Print formatted context
     print("\n--- FORMATTED CONTEXT ---")
     print(rag_context.formatted_context)
-    
-    # 3. Build Prompt
-    from app.models.message import Message
-    prompt_messages = PromptService.build_prompt(
-        history=[],
-        summary=None,
-        current_user_message=query,
-        retrieved_knowledge=rag_context.formatted_context,
-        graph_knowledge=rag_context.graph_context or "",
-        grounded=True,
-    )
-    
-    print("\n--- CONSTRUCTED PROMPT FOR LLM ---")
-    import json
-    print(json.dumps(prompt_messages, indent=2))
     
 except Exception as e:
     print(f"Retrieval diagnostics failed: {e}")
