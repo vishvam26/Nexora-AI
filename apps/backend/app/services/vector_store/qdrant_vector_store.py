@@ -73,8 +73,22 @@ class QdrantVectorStore(VectorStoreInterface):
                         )
                     }
                 )
+
+            # Ensure payload indexes exist for filtering fields (workspace_id, knowledge_base_id)
+            # This is required by Qdrant Cloud cluster settings when index requirements are enforced.
+            for field in ["workspace_id", "knowledge_base_id"]:
+                try:
+                    self.client.create_payload_index(
+                        collection_name=self.collection_name,
+                        field_name=field,
+                        field_schema=models.PayloadSchemaType.INTEGER
+                    )
+                    logger.info(f"Ensured payload index for field '{field}'")
+                except Exception as index_err:
+                    logger.debug(f"Payload index creation bypassed/failed for field '{field}': {index_err}")
         except Exception as e:
             logger.error(f"Failed to ensure Qdrant collection: {e}")
+
 
     def add(self, chunk_id: int, embedding: List[float], metadata: Dict[str, Any]) -> None:
         if not self.client:
