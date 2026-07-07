@@ -48,14 +48,24 @@ query_vector = model.encode(query).tolist()
 
 try:
     from qdrant_client import models
-    results = client.search(
-        collection_name=settings.QDRANT_COLLECTION,
-        query_vector=("dense", query_vector),
-        limit=5,
-        with_payload=True
-    )
+    if hasattr(client, "query_points"):
+        res_obj = client.query_points(
+            collection_name=settings.QDRANT_COLLECTION,
+            query=query_vector,
+            using="dense",
+            limit=5
+        )
+        results = res_obj.points
+    else:
+        results = client.search(
+            collection_name=settings.QDRANT_COLLECTION,
+            query_vector=("dense", query_vector),
+            limit=5,
+            with_payload=True
+        )
     print(f"\nSearch results for '{query}':")
     for res in results:
         print(f"Score: {res.score} | Payload: {res.payload}")
 except Exception as e:
     print(f"Search failed: {e}")
+

@@ -156,15 +156,27 @@ class QdrantVectorStore(VectorStoreInterface):
                 if conditions:
                     query_filter = models.Filter(must=conditions)
 
-            # Query the dense named vector space
-            search_results = self.client.search(
-                collection_name=self.collection_name,
-                query_vector=("dense", query_embedding),
-                query_filter=query_filter,
-                limit=top_k,
-                offset=offset,
-                score_threshold=threshold if threshold > 0.0 else None
-            )
+            # Query the dense named vector space using query_points (newer versions) or search (older versions)
+            if hasattr(self.client, "query_points"):
+                search_response = self.client.query_points(
+                    collection_name=self.collection_name,
+                    query=query_embedding,
+                    using="dense",
+                    query_filter=query_filter,
+                    limit=top_k,
+                    offset=offset,
+                    score_threshold=threshold if threshold > 0.0 else None
+                )
+                search_results = search_response.points
+            else:
+                search_results = self.client.search(
+                    collection_name=self.collection_name,
+                    query_vector=("dense", query_embedding),
+                    query_filter=query_filter,
+                    limit=top_k,
+                    offset=offset,
+                    score_threshold=threshold if threshold > 0.0 else None
+                )
 
             # Map results to match original memory vector interface
             return [
@@ -178,6 +190,7 @@ class QdrantVectorStore(VectorStoreInterface):
         except Exception as e:
             logger.error(f"Qdrant search failed: {e}")
             return []
+
 
     def delete(self, chunk_id: int) -> None:
         if not self.client:
