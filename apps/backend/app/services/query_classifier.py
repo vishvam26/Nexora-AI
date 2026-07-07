@@ -20,8 +20,10 @@ class QueryClassifier:
         if not q:
             return {"category": "Greeting", "confidence": 1.0}
 
-        # Greetings
-        if any(w in q for w in ["hi", "hello", "hey", "good morning", "good afternoon"]):
+        # Greetings - check as whole words for short greetings to avoid matching substrings like "this" (which contains "hi")
+        words = q.split()
+        greeting_words = {"hi", "hello", "hey"}
+        if any(w in greeting_words for w in words) or any(phrase in q for phrase in ["good morning", "good afternoon"]):
             return {"category": "Greeting", "confidence": 0.95}
 
         # Debugging
