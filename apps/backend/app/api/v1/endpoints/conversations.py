@@ -9,7 +9,8 @@ from app.schemas.conversation import (
     ConversationResponse,
     ConversationListResponse,
     ConversationMove,
-    ConversationStatsResponse
+    ConversationStatsResponse,
+    ConversationUpdate
 )
 from app.schemas.conversation_version import ConversationVersionListResponse
 from app.services.conversation_service import ConversationService
@@ -253,4 +254,21 @@ def restore_conversation_version(
     Reverts conversation message content to a previous edit version.
     """
     return ConversationService.restore_version(db, current_user.id, id, version_id)
+
+
+@router.patch(
+    "/{id}",
+    response_model=ConversationResponse
+)
+def update_conversation(
+    id: int,
+    schema: ConversationUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Updates details of an existing conversation (e.g. renaming).
+    """
+    return ConversationService.update_conversation(db, current_user.id, id, schema)
+
 

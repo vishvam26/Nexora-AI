@@ -163,3 +163,14 @@ class SharedConversationResponse(BaseModel):
         "from_attributes": True
     }
 
+
+class ConversationUpdate(BaseModel):
+    """
+    Schema for updating an existing Conversation.
+    """
+    title: Optional[str] = Field(None, min_length=1, max_length=255, description="The new title of the conversation")
+    folder_id: Optional[int] = Field(None, description="Move conversation to a folder")
+    is_pinned: Optional[bool] = Field(None, description="Pin/unpin conversation")
+    is_archived: Optional[bool] = Field(None, description="Archive/restore conversation")
+
+

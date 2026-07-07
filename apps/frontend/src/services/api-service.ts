@@ -112,6 +112,13 @@ export const apiService = {
     await this.fetchConversations(workspaceId);
   },
 
+  async updateConversation(id: number, title: string, workspaceId: number): Promise<Conversation> {
+    const response = await apiClient.patch<Conversation>(`/conversations/${id}`, { title });
+    await this.fetchConversations(workspaceId);
+    return response.data;
+  },
+
+
   // Messages
   async fetchMessages(conversationId: number): Promise<Message[]> {
     const response = await apiClient.get<{ messages: Message[] }>(`/messages/${conversationId}`);

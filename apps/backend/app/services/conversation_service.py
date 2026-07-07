@@ -651,3 +651,28 @@ class ConversationService:
         ActivityService.log_activity(db, conversation.workspace_id, user_id, "Conversation Version Restored", "Conversation", conversation_id, {"version_id": version_id})
         return conversation
 
+    @staticmethod
+    def update_conversation(db: Session, user_id: int, conversation_id: int, schema: Any) -> Conversation:
+        """
+        Updates fields of an existing conversation.
+        """
+        conversation = db.query(Conversation).filter(Conversation.id == conversation_id, Conversation.is_deleted == False).first()
+        if not conversation:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
+        PermissionService.check_permission(db, user_id, conversation.workspace_id, "edit_conversation")
+        
+        update_data = schema.dict(exclude_unset=True)
+        updated = ConversationRepository.update(db, conversation, **update_data)
+        
+        ActivityService.log_activity(
+            db,
+            conversation.workspace_id,
+            user_id,
+            "Conversation Updated",
+            "Conversation",
+            conversation_id,
+            update_data
+        )
+        return updated
+
+
