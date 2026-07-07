@@ -164,15 +164,12 @@ class AdaptiveRetrievalService:
             latency_ms = (time.monotonic() - start_time) * 1000
             dropped = len(raw_hits) - len(final_hits)
 
+            doc_ids_list = list(doc_ids) if 'doc_ids' in locals() and doc_ids else []
             log_entry = RetrievalLog(
-                workspace_id=workspace_id,
                 query=user_query,
-                intent=category,
-                latency_ms=round(latency_ms, 2),
-                confidence_score=confidence_score,
-                chunks_retrieved=len(raw_hits),
-                chunks_accepted=len(final_hits),
-                chunks_rejected=dropped
+                latency_ms=int(latency_ms),
+                top_k=top_k,
+                returned_document_ids=doc_ids_list
             )
             db.add(log_entry)
             db.commit()
