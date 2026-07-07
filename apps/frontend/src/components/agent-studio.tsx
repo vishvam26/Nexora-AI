@@ -10,8 +10,9 @@ import {
   Play, StopCircle, Database
 } from "lucide-react";
 import AgentMetrics from "./agent-metrics";
+import { API_BASE_URL } from "../services/api-service";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const API_BASE = API_BASE_URL;
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -338,7 +339,7 @@ export default function AgentStudio() {
                 <option value="">— No knowledge base —</option>
                 {knowledgeBases.map((kb) => (
                   <option key={kb.id} value={kb.workspace_id}>
-                    {kb.name}
+                    {kb.title}
                   </option>
                 ))}
                 {activeWorkspace && (

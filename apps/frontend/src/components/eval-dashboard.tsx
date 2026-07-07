@@ -9,7 +9,9 @@ import {
   TrendingUp, Award, Download, Clock, Zap, HelpCircle
 } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+import { API_BASE_URL } from "../services/api-service";
+
+const API_BASE = API_BASE_URL;
 
 interface DashboardKPIs {
   avg_faithfulness: number;

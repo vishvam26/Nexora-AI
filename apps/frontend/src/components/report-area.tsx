@@ -9,7 +9,9 @@ import {
   Shield, ToggleLeft, ToggleRight, Star, Info
 } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+import { API_BASE_URL } from "../services/api-service";
+
+const API_BASE = API_BASE_URL;
 
 type ReportType = "executive_summary" | "ml_model_card" | "statistical_breakdown" | "full_analytics";
 type ExportFormat = "pdf" | "excel" | "pptx" | "png" | "markdown";

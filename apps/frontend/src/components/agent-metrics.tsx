@@ -6,7 +6,9 @@ import {
   DollarSign, Cpu, Loader2, ArrowLeft, RefreshCw, BarChart2
 } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+import { API_BASE_URL } from "../services/api-service";
+
+const API_BASE = API_BASE_URL;
 
 interface AgentPerformance {
   name: string;
