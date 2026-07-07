@@ -59,14 +59,14 @@ class ChatService:
         sources_list = []
 
         if request.grounded and request.workspace_id:
+            kb_ids = request.knowledge_base_ids or (
+                [request.knowledge_base_id] if request.knowledge_base_id else None
+            )
+            print(f"\n>>> [SYNC CHAT] QUERY: '{request.message}' | Grounded: {request.grounded} | Workspace: {request.workspace_id} | KBs: {kb_ids} <<<")
             try:
                 from app.config import settings
                 from app.services.adaptive_retrieval_service import AdaptiveRetrievalService
                 
-                kb_ids = request.knowledge_base_ids or (
-                    [request.knowledge_base_id] if request.knowledge_base_id else None
-                )
-
                 rag_context = AdaptiveRetrievalService.retrieve_context(
                     db=db,
                     user_query=request.message,
@@ -78,6 +78,7 @@ class ChatService:
                     enable_reranking=settings.ENABLE_RERANKING,
                 )
 
+                print(f">>> [SYNC CHAT] RAG retrieved {len(rag_context.chunks_used)} chunks. Has knowledge: {rag_context.has_knowledge} <<<")
                 if rag_context.has_knowledge:
                     retrieved_knowledge = rag_context.formatted_context
                     graph_knowledge = rag_context.graph_context or ""
@@ -97,6 +98,9 @@ class ChatService:
                         f"latency={rag_context.metrics.latency_ms:.1f}ms"
                     )
             except Exception as e:
+                print(f">>> [SYNC CHAT] RAG ERROR: {e} <<<")
+                import traceback
+                traceback.print_exc()
                 logger.error(f"RAG retrieval failed — continuing without knowledge: {e}")
 
         # 4. Build prompt using PromptService + PromptBuilder
@@ -170,13 +174,13 @@ class ChatService:
         sources_list = []
 
         if request.grounded and request.workspace_id:
+            kb_ids = request.knowledge_base_ids or (
+                [request.knowledge_base_id] if request.knowledge_base_id else None
+            )
+            print(f"\n>>> [STREAM CHAT] QUERY: '{request.message}' | Grounded: {request.grounded} | Workspace: {request.workspace_id} | KBs: {kb_ids} <<<")
             try:
                 from app.config import settings
                 from app.services.adaptive_retrieval_service import AdaptiveRetrievalService
-
-                kb_ids = request.knowledge_base_ids or (
-                    [request.knowledge_base_id] if request.knowledge_base_id else None
-                )
 
                 rag_context = AdaptiveRetrievalService.retrieve_context(
                     db=db,
@@ -189,6 +193,7 @@ class ChatService:
                     enable_reranking=settings.ENABLE_RERANKING,
                 )
 
+                print(f">>> [STREAM CHAT] RAG retrieved {len(rag_context.chunks_used)} chunks. Has knowledge: {rag_context.has_knowledge} <<<")
                 if rag_context.has_knowledge:
                     retrieved_knowledge = rag_context.formatted_context
                     graph_knowledge = rag_context.graph_context or ""
@@ -208,6 +213,9 @@ class ChatService:
                         f"latency={rag_context.metrics.latency_ms:.1f}ms"
                     )
             except Exception as e:
+                print(f">>> [STREAM CHAT] RAG ERROR: {e} <<<")
+                import traceback
+                traceback.print_exc()
                 logger.error(f"RAG retrieval failed in stream — continuing: {e}")
 
         # 4. Build prompt
