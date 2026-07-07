@@ -8,6 +8,10 @@ if os.name == "nt":
     # Ensure directory exists before using it
     if os.path.exists(os.path.dirname(local_path)):
         log_path = local_path
+else:
+    # Write outside apps/backend on Linux to prevent uvicorn reload infinite loop
+    log_path = "../backend.log"
+
 
 file_handler = logging.FileHandler(log_path, encoding="utf-8")
 file_handler.setLevel(logging.DEBUG)
