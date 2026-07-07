@@ -40,6 +40,8 @@ workspace_id = 1
 kb_id = 1
 
 print(f"=== RETRIEVAL TRACE FOR KB_ID={kb_id} (resume) ===")
+print("settings.DATABASE_URL:", settings.DATABASE_URL)
+
 
 # 1. Classification
 classification = QueryClassifier.classify(query)
