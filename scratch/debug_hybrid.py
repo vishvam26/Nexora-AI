@@ -22,6 +22,14 @@ from app.services.hybrid_search_service import HybridSearchService
 from app.services.adaptive_retrieval_service import AdaptiveRetrievalService
 from app.config import settings
 
+# For trace:
+from app.services.query_classifier import QueryClassifier
+from app.services.context_strategy import ContextStrategyEngine
+from app.services.intent_service import IntentService
+from app.repositories.knowledge_search_repository import KnowledgeSearchRepository
+from app.services.ranking_service import RankingService
+from app.services.compression_service import CompressionService
+
 db = SessionLocal()
 _vector_store = QdrantVectorStore()
 _embedder = EmbeddingService()
@@ -30,66 +38,77 @@ query = "Whose result is this?"
 workspace_id = 1
 kb_id = 3
 
-print("=== STEP-BY-STEP RETRIEVAL DEBUG ===")
-print("Database URL:", settings.DATABASE_URL)
+print("=== RETRIEVAL INTERMEDIATE TRACE ===")
 
-# Step 1: Vector Search matches
-print("\n--- Step 1: Raw Vector Store Search ---")
-query_embedding = _embedder.generate_query_embedding(query)
-filters = {"workspace_id": workspace_id, "knowledge_base_id": [kb_id]}
-vector_matches = _vector_store.search(
-    query_embedding=query_embedding,
+# 1. Classification
+classification = QueryClassifier.classify(query)
+category = classification["category"]
+strategy = ContextStrategyEngine.determine_strategy(category)
+print(f"1. Classification: Category='{category}' | Strategy='{strategy}'")
+
+# 2. Hybrid Search
+expanded_terms = IntentService.expand_query(query)
+search_query = " ".join(expanded_terms)
+raw_hits = HybridSearchService.search(
+    db=db,
+    query=search_query,
+    workspace_id=workspace_id,
+    knowledge_base_id=[kb_id],
+    vector_weight=0.7,
+    keyword_weight=0.3,
     top_k=20,
-    threshold=0.1,
-    filters=filters
+    threshold=0.1
 )
-print(f"vector_matches count: {len(vector_matches)}")
-for m in vector_matches:
-    print(f"Match ID: {m['chunk_id']} | Score: {m['score']:.4f}")
+print(f"2. Raw Hits from Hybrid Search: {len(raw_hits)}")
 
-# Step 2: Fetch Chunks from DB
-print("\n--- Step 2: Fetch Chunks from DB ---")
-vector_results = []
-for m in vector_matches:
-    chunk_id = m["chunk_id"]
-    chunk = DocumentChunkRepository.get_by_id(db, chunk_id)
-    if chunk:
-        print(f"Found Chunk ID: {chunk.id} in DB ✅ | Doc ID: {chunk.document_id} | Text: {chunk.text[:50]}...")
-        vector_results.append(chunk)
-    else:
-        print(f"Chunk ID: {chunk_id} NOT found in DB ❌")
+# 3. Near-Duplicate Chunk Filtering
+unique_hits = []
+duplicate_threshold = 0.90
+from app.utils.similarity import compute_jaccard_similarity
+for hit in raw_hits:
+    is_duplicate = False
+    for existing in unique_hits:
+        sim = compute_jaccard_similarity(hit["text"], existing["text"])
+        if sim >= duplicate_threshold:
+            is_duplicate = True
+            break
+    if not is_duplicate:
+        unique_hits.append(hit)
+print(f"3. Unique Hits (after Jaccard deduplication): {len(unique_hits)}")
 
-# Step 3: Hybrid Search results
-print("\n--- Step 3: HybridSearchService.search ---")
-try:
-    hybrid_results = HybridSearchService.search(
-        db=db,
-        query=query,
-        workspace_id=workspace_id,
-        knowledge_base_id=[kb_id],
-        vector_weight=0.7,
-        keyword_weight=0.3,
-        top_k=10,
-        threshold=0.1
-    )
-    print(f"hybrid_results count: {len(hybrid_results)}")
-    for r in hybrid_results:
-        print(f"Chunk ID: {r['chunk_id']} | Merged Score: {r['score']:.4f} | Text: {r['text'][:50]}...")
-except Exception as e:
-    print(f"Hybrid search failed: {e}")
+# 4. Fetch document metadata
+doc_ids = {hit["document_id"] for hit in unique_hits}
+doc_metadata = KnowledgeSearchRepository.get_bulk_document_metadata(db, list(doc_ids))
+print(f"4. Document IDs: {doc_ids} | Metadata fetched for: {list(doc_metadata.keys())}")
 
-# Step 4: Adaptive Retrieval Context
-print("\n--- Step 4: AdaptiveRetrievalService.retrieve_context ---")
-try:
-    rag_context = AdaptiveRetrievalService.retrieve_context(
-        db=db,
-        user_query=query,
-        workspace_id=workspace_id,
-        knowledge_base_id=[kb_id]
-    )
-    print(f"rag_context.has_knowledge: {rag_context.has_knowledge}")
-    print(f"rag_context.chunks_used count: {len(rag_context.chunks_used)}")
-except Exception as e:
-    print(f"Adaptive context failed: {e}")
+# 5. Reranking
+ranked_hits = RankingService.rerank(
+    chunks=unique_hits,
+    doc_metadata=doc_metadata,
+    max_context_tokens=4000 * 2,
+    enable_reranking=settings.ENABLE_RERANKING
+)
+print(f"5. Ranked Chunks count: {len(ranked_hits)}")
+for idx, h in enumerate(ranked_hits):
+    print(f"   Rank {idx+1}: Chunk ID {h.get('chunk_id')} | Score: {h.get('score')} | Composite Score: {h.get('composite_score')}")
+
+# 6. Source Diversity Filter (Max 2 chunks from same doc)
+diverse_hits = []
+doc_count = {}
+for hit in ranked_hits:
+    doc_id = hit["document_id"]
+    count = doc_count.get(doc_id, 0)
+    if count < 2:
+        diverse_hits.append(hit)
+        doc_count[doc_id] = count + 1
+print(f"6. Diverse Hits count: {len(diverse_hits)}")
+
+# 7. Context Compression
+compressed_hits = CompressionService.compress_chunks(diverse_hits, max_tokens=4000)
+print(f"7. Compressed Hits count: {len(compressed_hits)}")
+
+# 8. Token Budget Trimming
+final_hits = RankingService._apply_token_budget(compressed_hits, 4000)
+print(f"8. Final Hits count: {len(final_hits)}")
 
 db.close()
