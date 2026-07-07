@@ -1,6 +1,14 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
 
+# Auto-resolve relative SQLite paths to absolute to prevent directory-mismatch issues on Colab/runtimes
+db_url = os.environ.get("DATABASE_URL", "")
+if db_url == "sqlite:///./nexora_ai.db" or db_url == "sqlite:///nexora_ai.db":
+    config_dir = os.path.dirname(os.path.abspath(__file__))
+    backend_root = os.path.dirname(config_dir) # apps/backend/app/ -> apps/backend
+    db_file = os.path.join(backend_root, "nexora_ai.db").replace("\\", "/")
+    os.environ["DATABASE_URL"] = f"sqlite:///{db_file}"
+    print(f"[Nexora Config] Auto-resolved relative SQLite DATABASE_URL to absolute: {os.environ['DATABASE_URL']}")
 
 class Settings(BaseSettings):
     APP_NAME: str = "Nexora AI"
