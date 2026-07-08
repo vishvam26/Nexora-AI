@@ -164,10 +164,6 @@ except Exception as e:
 # Setup completed successfully! Ready to run uvicorn server.
 print("✅ Consolidated setup completed successfully!", flush=True)
 
-# 7. Start Uvicorn Server using Python API (prints logs live to Colab)
-print("🚀 Starting FastAPI backend server...", flush=True)
-os.chdir(BACKEND_DIR)
-import uvicorn
-uvicorn.run("app.main:app", host="127.0.0.1", port=8000, log_level="info")
+
 
 
