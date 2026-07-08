@@ -31,7 +31,7 @@ try:
     
     # 1. Check collection status
     status = client.get_collection(collection_name)
-    print(f"\n✅ Collection status:\n  • Points count: {status.points_count}\n  • Status: {status.status}\n  • Vectors count: {status.vectors_count}")
+    print(f"\n✅ Collection status:\n  • Points count: {status.points_count}\n  • Status: {status.status}")
     
     # 2. Retrieve points (up to 20)
     print("\n🔍 Inspecting points in Qdrant:")
