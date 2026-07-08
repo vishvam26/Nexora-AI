@@ -19,6 +19,13 @@ def get_colab_secret(key):
     except Exception:
         return None
 
+# Clean up any active/stale background ngrok tunnel processes
+print("🧹 Cleaning up running ngrok processes...", flush=True)
+try:
+    subprocess.run(["pkill", "-f", "ngrok"], capture_output=True)
+except Exception:
+    pass
+
 # Clean up stale Hugging Face lock files to prevent caching hangs
 print("🧹 Cleaning up stale Hugging Face cache locks...", flush=True)
 hf_cache = os.path.expanduser("~/.cache/huggingface")
