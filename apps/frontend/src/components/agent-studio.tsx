@@ -111,6 +111,7 @@ export default function AgentStudio() {
 
   const headers = useCallback(() => ({
     Authorization: `Bearer ${token}`,
+    "ngrok-skip-browser-warning": "69420",
   }), [token]);
 
   // Load workspace into selector on mount

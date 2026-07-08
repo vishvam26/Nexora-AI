@@ -155,6 +155,7 @@ export const apiService = {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "69420",
         },
         body: JSON.stringify({
           conversation_id: conversationId,
