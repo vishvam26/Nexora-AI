@@ -93,7 +93,7 @@ try:
             points.append(
                 models.PointStruct(
                     id=int(chunk_id),
-                    vector=emb,
+                    vector={"dense": emb},
                     payload=payload
                 )
             )
