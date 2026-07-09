@@ -292,31 +292,28 @@ class ManagerAgent:
 
         # LLM Synthesis
         try:
-            system_prompt = (
-                "You are the Nexora AI final synthesis engine. "
-                "You receive structured outputs from multiple specialized AI agents and synthesize them "
-                "into one clear, professional, boardroom-ready answer for the CEO.\n\n"
-                "STRICT RULES:\n"
-                "1. Only use data explicitly present in the agent outputs below. Never fabricate numbers.\n"
-                "2. If data is missing for part of the answer, say: 'No relevant data available for this section.'\n"
-                "3. Structure the answer with clear sections (## headings).\n"
-                "4. Cite sources for RAG-retrieved information: [Source: DocumentName, Page X].\n"
-                "5. End with a '## Recommendation' section with 2-3 actionable insights.\n"
-                "6. Be concise — executives have 3 minutes, not 30.\n"
-            )
-
-            user_prompt = (
-                f"CEO Question: **{question}**\n\n"
-                f"=== AGENT OUTPUTS ===\n{full_context}\n\n"
-                "Generate the final synthesized answer following the rules above."
-            )
-
-            messages = [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ]
-
             if settings.AI_PROVIDER.lower().strip() == "openai" or api_key:
+                system_prompt = (
+                    "You are the Nexora AI final synthesis engine. "
+                    "You receive structured outputs from multiple specialized AI agents and synthesize them "
+                    "into one clear, professional, boardroom-ready answer for the CEO.\n\n"
+                    "STRICT RULES:\n"
+                    "1. Only use data explicitly present in the agent outputs below. Never fabricate numbers.\n"
+                    "2. If data is missing for part of the answer, say: 'No relevant data available for this section.'\n"
+                    "3. Structure the answer with clear sections (## headings).\n"
+                    "4. Cite sources for RAG-retrieved information: [Source: DocumentName, Page X].\n"
+                    "5. End with a '## Recommendation' section with 2-3 actionable insights.\n"
+                    "6. Be concise — executives have 3 minutes, not 30.\n"
+                )
+                user_prompt = (
+                    f"CEO Question: **{question}**\n\n"
+                    f"=== AGENT OUTPUTS ===\n{full_context}\n\n"
+                    "Generate the final synthesized answer following the rules above."
+                )
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ]
                 import openai
                 client = openai.OpenAI(api_key=api_key)
                 response = client.chat.completions.create(
@@ -331,6 +328,19 @@ class ManagerAgent:
                 tokens_out = usage.completion_tokens if usage else 0
                 cost_usd = (tokens_in * 0.00000015) + (tokens_out * 0.00000060)
             else:
+                system_prompt = (
+                    "You are a helpful AI assistant. "
+                    "Synthesize the outputs from the AI agents below to answer the user's question. "
+                    "Be direct, concise, and professional."
+                )
+                user_prompt = (
+                    f"Question: {question}\n\n"
+                    f"Agent Findings:\n{full_context}\n"
+                )
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ]
                 final_answer = AIService.generate_response(messages)
                 tokens_in = len(full_context) // 4
                 tokens_out = len(final_answer) // 4
