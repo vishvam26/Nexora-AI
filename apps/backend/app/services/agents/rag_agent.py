@@ -71,7 +71,7 @@ class RAGAgent(BaseAgent):
             if results:
                 chunks = []
                 for r in results[:context.top_k]:
-                    payload = r.get("payload", {})
+                    payload = r.get("metadata", {})
                     chunk_text = payload.get("text", "")
                     score = r.get("score", 0.0)
                     doc_name = payload.get("file_name", "Unknown Document")
