@@ -60,10 +60,11 @@ class RAGAgent(BaseAgent):
             tool_calls.append("EmbeddingService.embed_text")
 
             # Search Qdrant
+            filters = {"workspace_id": context.workspace_id}
             results = vector_store.search(
                 query_embedding=query_embedding,
-                workspace_id=context.workspace_id,
                 top_k=context.top_k,
+                filters=filters,
             )
             tool_calls.append("QdrantVectorStore.search")
 

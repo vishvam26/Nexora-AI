@@ -278,8 +278,11 @@ class ManagerAgent:
         total = len(agent_results)
         confidence = round(successful / total, 2) if total > 0 else 0.0
 
-        # If no API key — return structured fallback
-        if not api_key:
+        from app.config import settings
+        from app.services.ai_service import AIService
+
+        # If no API key and provider is openai — return structured fallback
+        if not api_key and settings.AI_PROVIDER.lower().strip() == "openai":
             fallback_answer = self._fallback_synthesis(agent_results)
             return {
                 "final_answer": fallback_answer,
@@ -289,9 +292,6 @@ class ManagerAgent:
 
         # LLM Synthesis
         try:
-            import openai
-            client = openai.OpenAI(api_key=api_key)
-
             system_prompt = (
                 "You are the Nexora AI final synthesis engine. "
                 "You receive structured outputs from multiple specialized AI agents and synthesize them "
@@ -311,23 +311,30 @@ class ManagerAgent:
                 "Generate the final synthesized answer following the rules above."
             )
 
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
-                max_tokens=2048,
-                temperature=0.2,
-            )
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ]
 
-            final_answer = response.choices[0].message.content or ""
-            
-            # Calculate synthesis cost (GPT-4o-mini: $0.15/1M input, $0.60/1M output tokens)
-            usage = getattr(response, "usage", None)
-            tokens_in = usage.prompt_tokens if usage else 0
-            tokens_out = usage.completion_tokens if usage else 0
-            cost_usd = (tokens_in * 0.00000015) + (tokens_out * 0.00000060)
+            if settings.AI_PROVIDER.lower().strip() == "openai" or api_key:
+                import openai
+                client = openai.OpenAI(api_key=api_key)
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=messages,
+                    max_tokens=2048,
+                    temperature=0.2,
+                )
+                final_answer = response.choices[0].message.content or ""
+                usage = getattr(response, "usage", None)
+                tokens_in = usage.prompt_tokens if usage else 0
+                tokens_out = usage.completion_tokens if usage else 0
+                cost_usd = (tokens_in * 0.00000015) + (tokens_out * 0.00000060)
+            else:
+                final_answer = AIService.generate_response(messages)
+                tokens_in = len(full_context) // 4
+                tokens_out = len(final_answer) // 4
+                cost_usd = 0.0
 
             return {
                 "final_answer": final_answer,
@@ -337,7 +344,6 @@ class ManagerAgent:
                 "tokens_out": tokens_out,
                 "cost_usd": round(cost_usd, 6),
             }
-
 
         except Exception as e:
             logger.error(f"[ManagerAgent] Synthesis LLM failed: {e}")
