@@ -55,6 +55,15 @@ class GeminiProvider(AIProviderInterface):
             
             res = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=30)
             if res.status_code != 200:
+                if res.status_code == 404:
+                    try:
+                        list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={self.api_key}"
+                        list_res = requests.get(list_url, timeout=10)
+                        models_data = list_res.json()
+                        available_models = [m.get("name").replace("models/", "") for m in models_data.get("models", [])]
+                        raise Exception(f"HTTP 404. Model '{self.model}' not found. Available models for this key: {available_models}")
+                    except Exception as list_err:
+                        raise Exception(f"HTTP 404. Model '{self.model}' not found. Failed to list models: {list_err}. Raw response: {res.text}")
                 raise Exception(f"HTTP {res.status_code}: {res.text}")
                 
             data = res.json()
