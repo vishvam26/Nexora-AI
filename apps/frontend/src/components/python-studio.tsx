@@ -296,8 +296,19 @@ export default function PythonStudio() {
         </div>
       </div>
 
+      {/* Resize Divider handle */}
+      <div
+        onMouseDown={startResizing}
+        className={`w-1 hover:w-1.5 cursor-col-resize bg-zinc-800 hover:bg-indigo-500 transition-all shrink-0 h-full ${
+          isResizing ? "bg-indigo-600 w-1.5" : ""
+        }`}
+      />
+
       {/* ── Right Panel: Outputs Console & Generated Charts ─────────── */}
-      <div className="flex w-96 shrink-0 flex-col overflow-hidden bg-zinc-950/20">
+      <div
+        style={{ width: `${rightPanelWidth}px` }}
+        className="flex shrink-0 flex-col overflow-hidden bg-zinc-950/20 border-l border-zinc-800"
+      >
         <div className="border-b border-zinc-800 px-5 py-4">
           <h2 className="text-xs font-bold text-white uppercase tracking-wider">Console & Visualizations</h2>
           <p className="text-[10px] text-zinc-500">Subprocess log outputs</p>
@@ -318,7 +329,7 @@ export default function PythonStudio() {
                 <div className="border-b border-zinc-800 bg-zinc-900 px-4 py-2">
                   <span className="text-[9px] font-semibold text-zinc-400 uppercase tracking-wider">Console output (STDOUT)</span>
                 </div>
-                <div className="p-4 font-mono text-[10px] text-zinc-300 leading-relaxed min-h-[80px] h-32 resize-y overflow-y-auto whitespace-pre-wrap rounded-b-xl">
+                <div className="p-4 font-mono text-xs text-zinc-300 leading-relaxed min-h-[80px] h-32 resize-y overflow-y-auto whitespace-pre-wrap rounded-b-xl">
                   {result.stdout || <span className="text-zinc-700">Script completed with no STDOUT messages.</span>}
                 </div>
               </div>
@@ -332,7 +343,7 @@ export default function PythonStudio() {
                   </div>
                   <div className="p-4 flex items-center justify-center bg-white/5">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={chartBlobUrl} alt="Generated Matplotlib Chart" className="max-h-64 object-contain rounded" />
+                    <img src={chartBlobUrl} alt="Generated Matplotlib Chart" className="max-h-96 w-full max-w-full object-contain rounded" />
                   </div>
                 </div>
               ) : (
