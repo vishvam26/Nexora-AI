@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     OPENROUTER_MODEL: str = "meta-llama/llama-3-8b-instruct:free"
 
     GOOGLE_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-1.5-flash"
+    GEMINI_MODEL: str = "gemini-2.0-flash"
 
     OLLAMA_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "llama3"
