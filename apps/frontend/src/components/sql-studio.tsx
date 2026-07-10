@@ -44,6 +44,7 @@ export default function SQLStudio() {
 
   const headers = useCallback(() => ({
     "Content-Type": "application/json",
+    "ngrok-skip-browser-warning": "69420",
     Authorization: `Bearer ${token}`
   }), [token]);
 
