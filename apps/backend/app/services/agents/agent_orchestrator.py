@@ -85,6 +85,7 @@ class AgentOrchestrator:
         self,
         question: str,
         workspace_id: Optional[int] = None,
+        knowledge_base_id: Optional[int] = None,
         doc_id: Optional[int] = None,
         file_path: Optional[str] = None,
         top_k: int = 5,
@@ -117,6 +118,7 @@ class AgentOrchestrator:
         context = AgentContext(
             question=question,
             workspace_id=workspace_id,
+            knowledge_base_id=knowledge_base_id,
             doc_id=doc_id,
             file_path=file_path,
             top_k=top_k,
@@ -185,6 +187,7 @@ class AgentOrchestrator:
         self,
         question: str,
         workspace_id: Optional[int] = None,
+        knowledge_base_id: Optional[int] = None,
         doc_id: Optional[int] = None,
         file_path: Optional[str] = None,
         top_k: int = 5,
@@ -214,6 +217,7 @@ class AgentOrchestrator:
         context = AgentContext(
             question=question,
             workspace_id=workspace_id,
+            knowledge_base_id=knowledge_base_id,
             doc_id=doc_id,
             file_path=file_path,
             top_k=top_k,

@@ -61,6 +61,9 @@ class RAGAgent(BaseAgent):
 
             # Search Qdrant
             filters = {"workspace_id": context.workspace_id}
+            if getattr(context, "knowledge_base_id", None):
+                filters["knowledge_base_id"] = context.knowledge_base_id
+
             results = vector_store.search(
                 query_embedding=query_embedding,
                 top_k=context.top_k,

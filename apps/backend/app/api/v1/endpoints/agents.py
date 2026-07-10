@@ -79,6 +79,7 @@ def ask_agents(
         session = orchestrator.ask(
             question=payload.question,
             workspace_id=payload.workspace_id,
+            knowledge_base_id=payload.knowledge_base_id,
             doc_id=payload.doc_id,
             file_path=file_path,
             top_k=payload.top_k,
@@ -102,6 +103,7 @@ def ask_agents(
 def ask_agents_stream(
     question: str = Query(..., description="CEO's decision question"),
     workspace_id: Optional[int] = Query(None, description="Workspace ID for RAG"),
+    knowledge_base_id: Optional[int] = Query(None, description="Knowledge Base ID for RAG scoping"),
     doc_id: Optional[int] = Query(None, description="Document ID for Analytics/ML"),
     top_k: int = Query(5, ge=1, le=20),
     generate_report: bool = Query(False),
@@ -136,6 +138,7 @@ def ask_agents_stream(
             yield from orchestrator.ask_stream(
                 question=question,
                 workspace_id=workspace_id,
+                knowledge_base_id=knowledge_base_id,
                 doc_id=doc_id,
                 file_path=file_path,
                 top_k=top_k,

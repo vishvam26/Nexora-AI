@@ -80,6 +80,7 @@ export default function AgentStudio() {
   const [question, setQuestion] = useState("");
   const [docId, setDocId] = useState<number | null>(null);
   const [workspaceId, setWorkspaceId] = useState<number | null>(activeWorkspace?.id ?? null);
+  const [knowledgeBaseId, setKnowledgeBaseId] = useState<number | null>(null);
   const [topK, setTopK] = useState(5);
   const [generateReport, setGenerateReport] = useState(false);
   const [reportFormat, setReportFormat] = useState("pdf");
@@ -155,6 +156,7 @@ export default function AgentStudio() {
       report_type: "full_analytics",
     });
     if (workspaceId) params.set("workspace_id", String(workspaceId));
+    if (knowledgeBaseId) params.set("knowledge_base_id", String(knowledgeBaseId));
     if (docId) params.set("doc_id", String(docId));
 
     const url = `${API_BASE}/agents/stream?${params.toString()}`;
@@ -333,18 +335,33 @@ export default function AgentStudio() {
             </label>
             <div className="relative">
               <select
-                value={workspaceId ?? ""}
-                onChange={(e) => setWorkspaceId(Number(e.target.value) || null)}
+                value={knowledgeBaseId ? `kb:${knowledgeBaseId}` : (workspaceId ? `ws:${workspaceId}` : "")}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val.startsWith("kb:")) {
+                    const kbId = Number(val.replace("kb:", ""));
+                    setKnowledgeBaseId(kbId);
+                    const kb = knowledgeBases.find(k => k.id === kbId);
+                    if (kb) setWorkspaceId(kb.workspace_id);
+                  } else if (val.startsWith("ws:")) {
+                    const wsId = Number(val.replace("ws:", ""));
+                    setKnowledgeBaseId(null);
+                    setWorkspaceId(wsId);
+                  } else {
+                    setKnowledgeBaseId(null);
+                    setWorkspaceId(activeWorkspace?.id ?? null);
+                  }
+                }}
                 className="w-full appearance-none rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none"
               >
                 <option value="">— No knowledge base —</option>
                 {knowledgeBases.map((kb) => (
-                  <option key={kb.id} value={kb.workspace_id}>
+                  <option key={kb.id} value={`kb:${kb.id}`}>
                     {kb.title}
                   </option>
                 ))}
                 {activeWorkspace && (
-                  <option value={activeWorkspace.id}>{activeWorkspace.name}</option>
+                  <option value={`ws:${activeWorkspace.id}`}>{activeWorkspace.name}</option>
                 )}
               </select>
               <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-3 w-3 text-zinc-500" />

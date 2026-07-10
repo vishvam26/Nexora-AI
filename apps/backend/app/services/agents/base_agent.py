@@ -31,6 +31,7 @@ class AgentContext:
     """
     question: str                           # Original CEO question
     workspace_id: Optional[int] = None      # For RAG scoping
+    knowledge_base_id: Optional[int] = None # For specific KB scoping
     doc_id: Optional[int] = None            # For Analytics/ML scoping
     file_path: Optional[str] = None         # For Analytics/ML file access
     top_k: int = 5                          # RAG retrieval depth

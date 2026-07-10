@@ -16,6 +16,10 @@ class AgentAskRequest(BaseModel):
         default=None,
         description="Workspace ID for RAG knowledge base scoping",
     )
+    knowledge_base_id: Optional[int] = Field(
+        default=None,
+        description="Knowledge Base ID for specific RAG search scoping",
+    )
     doc_id: Optional[int] = Field(
         default=None,
         description="Document ID for Analytics and ML agent scoping",
