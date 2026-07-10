@@ -258,11 +258,11 @@ export default function PythonStudio() {
           {result ? (
             <div className="flex flex-col gap-5">
               {/* STDOUT console logs */}
-              <div className="rounded-xl border border-zinc-800 bg-[#0d0d0e] overflow-hidden">
+              <div className="rounded-xl border border-zinc-800 bg-[#0d0d0e]">
                 <div className="border-b border-zinc-800 bg-zinc-900 px-4 py-2">
                   <span className="text-[9px] font-semibold text-zinc-400 uppercase tracking-wider">Console output (STDOUT)</span>
                 </div>
-                <div className="p-4 font-mono text-[10px] text-zinc-300 leading-relaxed max-h-40 overflow-y-auto whitespace-pre-wrap">
+                <div className="p-4 font-mono text-[10px] text-zinc-300 leading-relaxed min-h-[80px] h-32 resize-y overflow-y-auto whitespace-pre-wrap rounded-b-xl">
                   {result.stdout || <span className="text-zinc-700">Script completed with no STDOUT messages.</span>}
                 </div>
               </div>

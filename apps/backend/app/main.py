@@ -24,6 +24,7 @@ if not any(isinstance(h, logging.FileHandler) for h in root_logger.handlers):
     root_logger.setLevel(logging.INFO)
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
 from app.config import settings
@@ -44,6 +45,11 @@ app = FastAPI(
     version=settings.APP_VERSION,
     description="The core API service powering the Nexora AI platform.",
 )
+
+# Mount static files for matplotlib plots and reports downloads
+storage_reports_dir = os.path.join("storage", "reports")
+os.makedirs(storage_reports_dir, exist_ok=True)
+app.mount("/reports", StaticFiles(directory=storage_reports_dir), name="reports")
 
 # Register slowapi state and rate limit handler
 app.state.limiter = limiter
