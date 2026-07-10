@@ -26,6 +26,37 @@ export default function PythonStudio() {
   const [localDocs, setLocalDocs] = useState<KnowledgeDocument[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
 
+  // Panel sizing state
+  const [rightPanelWidth, setRightPanelWidth] = useState(450);
+  const [isResizing, setIsResizing] = useState(false);
+
+  const startResizing = useCallback((mouseDownEvent: React.MouseEvent) => {
+    mouseDownEvent.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  const stopResizing = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  const resize = useCallback((mouseMoveEvent: MouseEvent) => {
+    if (isResizing) {
+      const newWidth = window.innerWidth - mouseMoveEvent.clientX;
+      if (newWidth > 280 && newWidth < 900) {
+        setRightPanelWidth(newWidth);
+      }
+    }
+  }, [isResizing]);
+
+  useEffect(() => {
+    window.addEventListener("mousemove", resize);
+    window.addEventListener("mouseup", stopResizing);
+    return () => {
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
+    };
+  }, [resize, stopResizing]);
+
   // Document context
   const [selectedDocId, setSelectedDocId] = useState<number | null>(null);
 
@@ -157,7 +188,32 @@ export default function PythonStudio() {
 
   // Construct absolute image download source (points to backend root static storage)
   const BACKEND_ROOT = API_BASE.replace("/api/v1", "");
-  const chartUrl = result?.chart_path ? `${BACKEND_ROOT}${result.chart_path}` : null;
+  const [chartBlobUrl, setChartBlobUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (result?.chart_path) {
+      const fetchChart = async () => {
+        try {
+          const res = await fetch(`${BACKEND_ROOT}${result.chart_path}`, {
+            headers: headers()
+          });
+          if (res.ok) {
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            setChartBlobUrl(blobUrl);
+          } else {
+            setChartBlobUrl(null);
+          }
+        } catch (err) {
+          console.error("Failed to fetch chart image:", err);
+          setChartBlobUrl(null);
+        }
+      };
+      fetchChart();
+    } else {
+      setChartBlobUrl(null);
+    }
+  }, [result, headers, BACKEND_ROOT]);
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-[#09090b] text-[#f4f4f5]">
@@ -268,7 +324,7 @@ export default function PythonStudio() {
               </div>
 
               {/* Chart Plot Visualizer */}
-              {chartUrl ? (
+              {chartBlobUrl ? (
                 <div className="rounded-xl border border-indigo-500/15 bg-indigo-500/5 overflow-hidden">
                   <div className="border-b border-indigo-500/10 bg-indigo-500/10 px-4 py-2 flex items-center gap-1.5">
                     <ImageIcon className="h-3.5 w-3.5 text-indigo-400" />
@@ -276,7 +332,7 @@ export default function PythonStudio() {
                   </div>
                   <div className="p-4 flex items-center justify-center bg-white/5">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={chartUrl} alt="Generated Matplotlib Chart" className="max-h-64 object-contain rounded" />
+                    <img src={chartBlobUrl} alt="Generated Matplotlib Chart" className="max-h-64 object-contain rounded" />
                   </div>
                 </div>
               ) : (
