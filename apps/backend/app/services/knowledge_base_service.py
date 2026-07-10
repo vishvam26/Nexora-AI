@@ -139,6 +139,7 @@ class KnowledgeBaseService:
                         "workspace_id": kb.workspace_id,
                         "knowledge_base_id": kb_id,
                         "document_id": doc.id,
+                        "text": chunk.text,
                         "page_number": chunk.page or 1,
                         "section_title": chunk.section or "",
                         "token_count": chunk.token_count,

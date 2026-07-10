@@ -81,6 +81,7 @@ try:
                 "workspace_id": int(workspace_id),
                 "knowledge_base_id": int(kb_id),
                 "document_id": int(doc_id),
+                "text": str(text),
                 "page_number": int(page) if page else 1,
                 "section_title": str(section) if section else "",
                 "token_count": int(token_count),
