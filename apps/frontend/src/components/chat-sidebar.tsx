@@ -48,7 +48,8 @@ export default function ChatSidebar() {
   const [hoveredNav, setHoveredNav]               = useState<string | null>(null);
 
   const filteredConversations = conversations.filter(c =>
-    c.title.toLowerCase().includes(searchQuery.toLowerCase())
+    c.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
+    !c.title.toLowerCase().startsWith("system ")
   );
 
   const conversationsByFolder: Record<number | "root", typeof conversations> = { root: [] };

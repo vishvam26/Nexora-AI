@@ -95,9 +95,9 @@ export default function SQLStudio() {
 
   const getOrCreateConversationId = async () => {
     const state = useChatStore.getState();
-    const existing = state.conversations;
-    if (existing && existing.length > 0) {
-      return existing[0].id;
+    const existingSystem = state.conversations.find(c => c.title.toLowerCase().startsWith("system "));
+    if (existingSystem) {
+      return existingSystem.id;
     }
     const wsId = state.activeWorkspace?.id || state.workspaces[0]?.id;
     if (!wsId) {
