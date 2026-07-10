@@ -9,6 +9,7 @@ Exposes standard API hooks:
 import os
 import torch
 from fastapi import APIRouter, Depends, status
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 
@@ -40,7 +41,7 @@ def get_system_health(db: Session = Depends(get_db)):
 
     # 1. Database Connection check
     try:
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         health_status["database"] = "healthy"
     except Exception:
         health_status["status"] = "degraded"
