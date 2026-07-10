@@ -32,6 +32,10 @@ class ChatRequest(BaseModel):
         True,
         description="Toggle grounding / RAG mode on or off"
     )
+    provider: Optional[str] = Field(
+        None,
+        description="Optional override for selected AI provider (e.g. gemini, nexora)"
+    )
 
 
 class ChatResponse(BaseModel):

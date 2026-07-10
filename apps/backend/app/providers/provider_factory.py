@@ -25,8 +25,8 @@ class ProviderFactory:
     }
 
     @classmethod
-    def get_provider(cls) -> AIProviderInterface:
-        provider_name = settings.AI_PROVIDER.lower().strip()
+    def get_provider(cls, provider_override: str = None) -> AIProviderInterface:
+        provider_name = (provider_override or settings.AI_PROVIDER).lower().strip()
 
         if provider_name not in cls._registry:
             raise HTTPException(

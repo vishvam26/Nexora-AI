@@ -121,7 +121,8 @@ export default function SQLStudio() {
         body: JSON.stringify({
           conversation_id: convoId,
           message: prompt,
-          grounded: false
+          grounded: false,
+          provider: "gemini"
         })
       });
       const data = await res.json();

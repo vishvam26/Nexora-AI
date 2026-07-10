@@ -10,7 +10,7 @@ class AIService:
     """
 
     @staticmethod
-    def generate_response(messages: List[dict]) -> str:
+    def generate_response(messages: List[dict], provider_override: str = None) -> str:
         """
         Instantiates the configured provider and generates a completion response.
         """
@@ -21,11 +21,11 @@ class AIService:
                 return '{"score": 0.85, "faithfulness": 0.90, "answer_relevance": 0.85, "confidence_score": 0.88, "root_cause": "None", "domain_tag": "Finance"}'
             return "Based on the retrieved business metrics, the company performance registers a positive trend with a growth of 12% quarter-on-quarter. The profit margins are sustained at 24%."
 
-        provider = ProviderFactory.get_provider()
+        provider = ProviderFactory.get_provider(provider_override)
         return provider.generate_response(messages)
 
     @staticmethod
-    def generate_stream_response(messages: List[dict]) -> Generator[str, None, None]:
+    def generate_stream_response(messages: List[dict], provider_override: str = None) -> Generator[str, None, None]:
         """
         Instantiates the configured provider and yields token completions dynamically.
         Uses `yield from` to properly chain the generator so SSE tokens flow to the HTTP response.
@@ -37,7 +37,7 @@ class AIService:
                 yield t
             return
 
-        provider = ProviderFactory.get_provider()
+        provider = ProviderFactory.get_provider(provider_override)
         yield from provider.generate_stream_response(messages)
 
 

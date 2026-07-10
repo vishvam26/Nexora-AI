@@ -6,7 +6,7 @@ import { KnowledgeDocument } from "../types/chat";
 import {
   Mail, Send, Loader2, AlertCircle, CheckCircle2,
   Paperclip, Sparkles, FileText, ArrowRight, RefreshCw,
-  Info
+  Info, ChevronDown
 } from "lucide-react";
 
 import { apiService, API_BASE_URL } from "../services/api-service";
@@ -150,21 +150,27 @@ export default function EmailStudio() {
   const handleAIDrafter = async () => {
     if (!naturalLanguage.trim()) return;
     setDrafting(true);
+    setErrorMsg("");
+    setSuccessMsg("");
     try {
       const prompt = `Draft a professional business email based on: "${naturalLanguage}". Reply ONLY with a valid JSON object matching keys: {"subject": "string", "body": "HTML string description"}. Do not return any markdown wrappers, just raw JSON.`;
       
       const convoId = await getOrCreateConversationId();
-      const res = await fetch(`${API_BASE}/chat`, {
+       const res = await fetch(`${API_BASE}/chat`, {
         method: "POST",
         headers: headers(),
         body: JSON.stringify({
           conversation_id: convoId,
           message: prompt,
-          grounded: false
+          grounded: false,
+          provider: "gemini"
         })
       });
       const data = await res.json();
-      if (res.ok && data.assistant_message?.content) {
+      if (!res.ok) {
+        throw new Error(data.detail || "AI Copilot failed to draft email.");
+      }
+      if (data.assistant_message?.content) {
         let content = data.assistant_message.content;
         if (content.includes("</think>")) {
           const parts = content.split("</think>");
@@ -174,9 +180,11 @@ export default function EmailStudio() {
         const parsed = JSON.parse(cleanJSON);
         if (parsed.subject) setSubject(parsed.subject);
         if (parsed.body) setBody(parsed.body);
+        setErrorMsg("");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("AI Drafter failed:", err);
+      setErrorMsg(err.message || "AI Copilot failed to draft email.");
     }
     setDrafting(false);
   };

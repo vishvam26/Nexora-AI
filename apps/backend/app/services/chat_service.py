@@ -118,7 +118,7 @@ class ChatService:
         )
 
         # 5. Generate AI reply
-        ai_reply = AIService.generate_response(prompt_messages)
+        ai_reply = AIService.generate_response(prompt_messages, provider_override=request.provider)
 
         # 6. Save assistant reply to database
         assistant_message_obj = Message(
@@ -240,7 +240,7 @@ class ChatService:
                 if request.grounded and sources_list:
                     yield f"data: {json.dumps({'sources': sources_list})}\n\n"
 
-                for token in AIService.generate_stream_response(prompt_messages):
+                for token in AIService.generate_stream_response(prompt_messages, provider_override=request.provider):
                     accumulated_content += token
                     yield f"data: {json.dumps({'content': token})}\n\n"
 
