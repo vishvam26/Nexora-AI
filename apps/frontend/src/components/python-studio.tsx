@@ -105,7 +105,12 @@ export default function PythonStudio() {
       });
       const data = await res.json();
       if (res.ok && data.assistant_message?.content) {
-        const cleanCode = data.assistant_message.content.replace(/```python|```/g, "").trim();
+        let content = data.assistant_message.content;
+        if (content.includes("</think>")) {
+          const parts = content.split("</think>");
+          content = parts[parts.length - 1];
+        }
+        const cleanCode = content.replace(/```python|```/g, "").trim();
         setCode(cleanCode);
       }
     } catch (err) {

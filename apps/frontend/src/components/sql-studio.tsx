@@ -126,7 +126,12 @@ export default function SQLStudio() {
       });
       const data = await res.json();
       if (res.ok && data.assistant_message?.content) {
-        const cleanSQL = data.assistant_message.content.replace(/```sql|```/g, "").trim();
+        let content = data.assistant_message.content;
+        if (content.includes("</think>")) {
+          const parts = content.split("</think>");
+          content = parts[parts.length - 1];
+        }
+        const cleanSQL = content.replace(/```sql|```/g, "").trim();
         setQuery(cleanSQL);
       }
     } catch (err) {

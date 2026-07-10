@@ -134,7 +134,12 @@ export default function EmailStudio() {
       });
       const data = await res.json();
       if (res.ok && data.assistant_message?.content) {
-        const cleanJSON = data.assistant_message.content.replace(/```json|```/g, "").trim();
+        let content = data.assistant_message.content;
+        if (content.includes("</think>")) {
+          const parts = content.split("</think>");
+          content = parts[parts.length - 1];
+        }
+        const cleanJSON = content.replace(/```json|```/g, "").trim();
         const parsed = JSON.parse(cleanJSON);
         if (parsed.subject) setSubject(parsed.subject);
         if (parsed.body) setBody(parsed.body);
