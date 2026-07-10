@@ -61,8 +61,13 @@ class PythonAgent(BaseAgent):
         chart_filename = f"{chart_id}.png"
         chart_filepath = os.path.join(PLOT_DIR, chart_filename)
 
-        # Format DF_PATH using forward slashes for Windows safety
-        formatted_df_path = context.file_path.replace("\\", "/")
+        # Resolve relative storage paths to absolute paths under "uploads/knowledge"
+        file_path = context.file_path
+        if not os.path.isabs(file_path):
+            file_path = os.path.abspath(os.path.join("uploads", "knowledge", file_path))
+
+        # Format DF_PATH using forward slashes for safety
+        formatted_df_path = file_path.replace("\\", "/")
 
         # Prepare code wrapper to auto-load dataset and override savefig target
         wrapper_code = f"""
