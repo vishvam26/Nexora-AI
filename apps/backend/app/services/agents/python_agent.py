@@ -73,6 +73,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 DF_PATH = "{formatted_df_path}"
+df = pd.read_csv(DF_PATH)
 
 # Override plt.show to redirect plot outputs to a static image
 def show_override():
