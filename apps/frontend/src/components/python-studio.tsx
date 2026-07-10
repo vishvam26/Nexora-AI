@@ -135,7 +135,10 @@ export default function PythonStudio() {
         })
       });
       const data = await res.json();
-      if (res.ok && data.assistant_message?.content) {
+      if (!res.ok) {
+        throw new Error(data.detail || "AI Copilot failed to generate python script.");
+      }
+      if (data.assistant_message?.content) {
         let content = data.assistant_message.content;
         if (content.includes("</think>")) {
           const parts = content.split("</think>");
@@ -143,9 +146,11 @@ export default function PythonStudio() {
         }
         const cleanCode = content.replace(/```python|```/g, "").trim();
         setCode(cleanCode);
+        setErrorMsg("");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("AI Copilot failed:", err);
+      setErrorMsg(err.message || "AI Copilot failed to generate code.");
     }
     setGeneratingCode(false);
   };
@@ -201,7 +206,7 @@ export default function PythonStudio() {
 
         {/* Editor Box */}
         <div className="flex-1 p-5 flex flex-col gap-4 overflow-hidden">
-          <div className="flex-1 relative rounded-xl border border-zinc-700 bg-zinc-900 overflow-hidden flex flex-col">
+          <div className="flex-1 relative rounded-xl border border-zinc-700 bg-zinc-900 flex flex-col">
             <div className="border-b border-zinc-800 bg-zinc-950 px-4 py-2 flex items-center gap-1.5">
               <Terminal className="h-3.5 w-3.5 text-indigo-400" />
               <span className="font-mono text-[10px] text-zinc-500">main.py (Read-Only Dataset Mode)</span>
@@ -209,7 +214,7 @@ export default function PythonStudio() {
             <textarea
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              className="flex-1 w-full bg-[#0d0d0e] p-4 font-mono text-xs text-indigo-200 placeholder:text-zinc-700 focus:outline-none resize-none overflow-y-auto"
+              className="flex-1 w-full bg-[#0d0d0e] p-4 font-mono text-xs text-indigo-200 placeholder:text-zinc-700 focus:outline-none resize-y overflow-y-auto min-h-[150px] rounded-b-xl"
             />
           </div>
 

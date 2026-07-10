@@ -125,7 +125,10 @@ export default function SQLStudio() {
         })
       });
       const data = await res.json();
-      if (res.ok && data.assistant_message?.content) {
+      if (!res.ok) {
+        throw new Error(data.detail || "AI Copilot failed to generate SQL query.");
+      }
+      if (data.assistant_message?.content) {
         let content = data.assistant_message.content;
         if (content.includes("</think>")) {
           const parts = content.split("</think>");
@@ -133,9 +136,11 @@ export default function SQLStudio() {
         }
         const cleanSQL = content.replace(/```sql|```/g, "").trim();
         setQuery(cleanSQL);
+        setErrorMsg("");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("AI Copilot failed:", err);
+      setErrorMsg(err.message || "AI Copilot failed to generate query.");
     }
     setGeneratingQuery(false);
   };
@@ -220,7 +225,7 @@ export default function SQLStudio() {
             </button>
           </div>
 
-          <div className="relative rounded-xl border border-zinc-700 bg-zinc-900 overflow-hidden">
+          <div className="relative rounded-xl border border-zinc-700 bg-zinc-900">
             <div className="border-b border-zinc-800 bg-zinc-950 px-4 py-2 flex items-center gap-1.5">
               <Code className="h-3.5 w-3.5 text-indigo-400" />
               <span className="font-mono text-[10px] text-zinc-500">Query Editor (PostgreSQL mode)</span>
@@ -228,7 +233,7 @@ export default function SQLStudio() {
             <textarea
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full bg-[#0d0d0e] p-4 font-mono text-xs text-indigo-200 placeholder:text-zinc-700 focus:outline-none min-h-[100px] resize-y"
+              className="w-full bg-[#0d0d0e] p-4 font-mono text-xs text-indigo-200 placeholder:text-zinc-700 focus:outline-none min-h-[100px] resize-y rounded-b-xl"
             />
           </div>
 
