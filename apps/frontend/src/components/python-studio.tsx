@@ -8,7 +8,7 @@ import {
   ChevronDown, HelpCircle, RefreshCw
 } from "lucide-react";
 
-import { API_BASE_URL } from "../services/api-service";
+import { apiService, API_BASE_URL } from "../services/api-service";
 
 const API_BASE = API_BASE_URL;
 
@@ -72,26 +72,44 @@ export default function PythonStudio() {
     }
   };
 
+  const getOrCreateConversationId = async () => {
+    const state = useChatStore.getState();
+    const existing = state.conversations;
+    if (existing && existing.length > 0) {
+      return existing[0].id;
+    }
+    const wsId = state.activeWorkspace?.id || state.workspaces[0]?.id;
+    if (!wsId) {
+      throw new Error("No active workspace found to start chat.");
+    }
+    const convo = await apiService.createConversation("System Copilot Chat", wsId);
+    return convo.id;
+  };
+
   const handleAICopilot = async () => {
     if (!naturalLanguage.trim()) return;
     setGeneratingCode(true);
     try {
       const prompt = `Convert this natural language data request to a clean Pandas/Matplotlib script. The load path is automatically set as global DF_PATH variable. Load dataframe as: df = pd.read_csv(DF_PATH). Task: "${naturalLanguage}". Reply ONLY with the python script code block. No markdown backticks.`;
       
-      const res = await fetch(`${API_BASE}/chat/message`, {
+      const convoId = await getOrCreateConversationId();
+      const res = await fetch(`${API_BASE}/chat`, {
         method: "POST",
         headers: headers(),
         body: JSON.stringify({
-          conversation_id: 1, // Broad system fallback conversation
-          content: prompt
+          conversation_id: convoId,
+          message: prompt,
+          grounded: false
         })
       });
       const data = await res.json();
-      if (res.ok && data.content) {
-        const cleanCode = data.content.replace(/```python|```/g, "").trim();
+      if (res.ok && data.assistant_message?.content) {
+        const cleanCode = data.assistant_message.content.replace(/```python|```/g, "").trim();
         setCode(cleanCode);
       }
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error("AI Copilot failed:", err);
+    }
     setGeneratingCode(false);
   };
 

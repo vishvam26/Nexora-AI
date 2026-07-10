@@ -8,7 +8,7 @@ import {
   Info
 } from "lucide-react";
 
-import { API_BASE_URL } from "../services/api-service";
+import { apiService, API_BASE_URL } from "../services/api-service";
 
 const API_BASE = API_BASE_URL;
 
@@ -101,28 +101,46 @@ export default function EmailStudio() {
     }
   };
 
+  const getOrCreateConversationId = async () => {
+    const state = useChatStore.getState();
+    const existing = state.conversations;
+    if (existing && existing.length > 0) {
+      return existing[0].id;
+    }
+    const wsId = state.activeWorkspace?.id || state.workspaces[0]?.id;
+    if (!wsId) {
+      throw new Error("No active workspace found to start chat.");
+    }
+    const convo = await apiService.createConversation("System Copilot Chat", wsId);
+    return convo.id;
+  };
+
   const handleAIDrafter = async () => {
     if (!naturalLanguage.trim()) return;
     setDrafting(true);
     try {
       const prompt = `Draft a professional business email based on: "${naturalLanguage}". Reply ONLY with a valid JSON object matching keys: {"subject": "string", "body": "HTML string description"}. Do not return any markdown wrappers, just raw JSON.`;
       
-      const res = await fetch(`${API_BASE}/chat/message`, {
+      const convoId = await getOrCreateConversationId();
+      const res = await fetch(`${API_BASE}/chat`, {
         method: "POST",
         headers: headers(),
         body: JSON.stringify({
-          conversation_id: 1, // Broad system fallback conversation
-          content: prompt
+          conversation_id: convoId,
+          message: prompt,
+          grounded: false
         })
       });
       const data = await res.json();
-      if (res.ok && data.content) {
-        const cleanJSON = data.content.replace(/```json|```/g, "").trim();
+      if (res.ok && data.assistant_message?.content) {
+        const cleanJSON = data.assistant_message.content.replace(/```json|```/g, "").trim();
         const parsed = JSON.parse(cleanJSON);
         if (parsed.subject) setSubject(parsed.subject);
         if (parsed.body) setBody(parsed.body);
       }
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error("AI Drafter failed:", err);
+    }
     setDrafting(false);
   };
 

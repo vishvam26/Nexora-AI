@@ -8,7 +8,7 @@ import {
   Code, Terminal, Sparkles, Send
 } from "lucide-react";
 
-import { API_BASE_URL } from "../services/api-service";
+import { apiService, API_BASE_URL } from "../services/api-service";
 
 const API_BASE = API_BASE_URL;
 
@@ -92,29 +92,45 @@ export default function SQLStudio() {
     }
   };
 
+  const getOrCreateConversationId = async () => {
+    const state = useChatStore.getState();
+    const existing = state.conversations;
+    if (existing && existing.length > 0) {
+      return existing[0].id;
+    }
+    const wsId = state.activeWorkspace?.id || state.workspaces[0]?.id;
+    if (!wsId) {
+      throw new Error("No active workspace found to start chat.");
+    }
+    const convo = await apiService.createConversation("System Copilot Chat", wsId);
+    return convo.id;
+  };
+
   const handleAICopilot = async () => {
     if (!naturalLanguage.trim()) return;
     setGeneratingQuery(true);
     try {
-      // Prompt LLM context info from database tables list
       const tablesList = Object.keys(schema).join(", ");
       const prompt = `Convert this natural language to a clean PostgreSQL SELECT query. DB tables: [${tablesList}]. Query: "${naturalLanguage}". Reply ONLY with the SQL block. No comments, no markdown backticks.`;
       
-      // Hit direct chat endpoint to translate query
-      const res = await fetch(`${API_BASE}/chat/message`, {
+      const convoId = await getOrCreateConversationId();
+      const res = await fetch(`${API_BASE}/chat`, {
         method: "POST",
         headers: headers(),
         body: JSON.stringify({
-          conversation_id: 1, // Broad system fallback conversation
-          content: prompt
+          conversation_id: convoId,
+          message: prompt,
+          grounded: false
         })
       });
       const data = await res.json();
-      if (res.ok && data.content) {
-        const cleanSQL = data.content.replace(/```sql|```/g, "").trim();
+      if (res.ok && data.assistant_message?.content) {
+        const cleanSQL = data.assistant_message.content.replace(/```sql|```/g, "").trim();
         setQuery(cleanSQL);
       }
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error("AI Copilot failed:", err);
+    }
     setGeneratingQuery(false);
   };
 
