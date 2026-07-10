@@ -105,9 +105,9 @@ if len(plt.get_fignums()) > 0:
 
             output["stdout"] = stdout_out
             output["stderr"] = stderr_out
-            output["return_code"] = result.return_code
+            output["return_code"] = result.returncode
 
-            if result.return_code == 0:
+            if result.returncode == 0:
                 summaries.append("Python script executed successfully inside sandbox.")
                 if stdout_out:
                     summaries.append(f"Console Output: {stdout_out[:200]}...")
@@ -119,7 +119,7 @@ if len(plt.get_fignums()) > 0:
                     output["chart_id"] = chart_id
                     summaries.append(f"Visualization plot exported as {chart_filename}.")
             else:
-                summaries.append(f"Python script execution failed with code {result.return_code}.")
+                summaries.append(f"Python script execution failed with code {result.returncode}.")
                 return AgentResult.error_result(self.name, task, f"Script stderr: {stderr_out}")
 
         except subprocess.TimeoutExpired:
