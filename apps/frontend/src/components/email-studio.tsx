@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useChatStore } from "../stores/chat-store";
+import { KnowledgeDocument } from "../types/chat";
 import {
   Mail, Send, Loader2, AlertCircle, CheckCircle2,
   Paperclip, Sparkles, FileText, ArrowRight, RefreshCw,
@@ -20,7 +21,9 @@ interface GeneratedReport {
 }
 
 export default function EmailStudio() {
-  const { token, documents } = useChatStore();
+  const { token, activeWorkspace } = useChatStore();
+  const [localDocs, setLocalDocs] = useState<KnowledgeDocument[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
 
   // SMTP form states
   const [toEmail, setToEmail] = useState("cfo@company.com");
@@ -47,10 +50,38 @@ export default function EmailStudio() {
     Authorization: `Bearer ${token}`
   }), [token]);
 
+  const loadWorkspaceDocs = useCallback(async () => {
+    if (!activeWorkspace?.id) return;
+    setLoadingDocs(true);
+    try {
+      const bases = await apiService.fetchKnowledgeBases(activeWorkspace.id);
+      const docPromises = bases.map(async (kb) => {
+        try {
+          const res = await fetch(`${API_BASE}/knowledge/documents?kb_id=${kb.id}`, { headers: headers() });
+          if (res.ok) {
+            const data = await res.json();
+            return data.documents || [];
+          }
+        } catch { /* ignore */ }
+        return [];
+      });
+      const results = await Promise.all(docPromises);
+      const allDocs = results.flat();
+      setLocalDocs(allDocs);
+    } catch (err) {
+      console.error("Failed to load documents:", err);
+    }
+    setLoadingDocs(false);
+  }, [activeWorkspace, headers]);
+
+  useEffect(() => {
+    loadWorkspaceDocs();
+  }, [loadWorkspaceDocs]);
+
   const loadReports = useCallback(async () => {
     setLoadingReports(true);
     // Find reports for the first document in the user's workspace
-    const firstDoc = documents[0];
+    const firstDoc = localDocs[0];
     if (firstDoc) {
       try {
         const res = await fetch(`${API_BASE}/reports/list/${firstDoc.id}`, { headers: headers() });
@@ -58,7 +89,7 @@ export default function EmailStudio() {
       } catch { /* ignore */ }
     }
     setLoadingReports(false);
-  }, [documents, headers]);
+  }, [localDocs, headers]);
 
   useEffect(() => {
     loadReports();

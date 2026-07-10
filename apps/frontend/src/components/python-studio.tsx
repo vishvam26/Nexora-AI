@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useChatStore } from "../stores/chat-store";
+import { KnowledgeDocument } from "../types/chat";
 import {
   Terminal, Play, Loader2, AlertCircle, CheckCircle2,
   Code, Sparkles, Send, FileText, Image as ImageIcon,
@@ -21,7 +22,9 @@ interface SandboxResult {
 }
 
 export default function PythonStudio() {
-  const { token, documents } = useChatStore();
+  const { token, activeWorkspace } = useChatStore();
+  const [localDocs, setLocalDocs] = useState<KnowledgeDocument[]>([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
 
   // Document context
   const [selectedDocId, setSelectedDocId] = useState<number | null>(null);
@@ -43,6 +46,34 @@ export default function PythonStudio() {
     "ngrok-skip-browser-warning": "69420",
     Authorization: `Bearer ${token}`
   }), [token]);
+
+  const loadWorkspaceDocs = useCallback(async () => {
+    if (!activeWorkspace?.id) return;
+    setLoadingDocs(true);
+    try {
+      const bases = await apiService.fetchKnowledgeBases(activeWorkspace.id);
+      const docPromises = bases.map(async (kb) => {
+        try {
+          const res = await fetch(`${API_BASE}/knowledge/documents?kb_id=${kb.id}`, { headers: headers() });
+          if (res.ok) {
+            const data = await res.json();
+            return data.documents || [];
+          }
+        } catch { /* ignore */ }
+        return [];
+      });
+      const results = await Promise.all(docPromises);
+      const allDocs = results.flat();
+      setLocalDocs(allDocs);
+    } catch (err) {
+      console.error("Failed to load documents:", err);
+    }
+    setLoadingDocs(false);
+  }, [activeWorkspace, headers]);
+
+  useEffect(() => {
+    loadWorkspaceDocs();
+  }, [loadWorkspaceDocs]);
 
   const handleRunCode = async () => {
     if (!selectedDocId) {
@@ -148,9 +179,9 @@ export default function PythonStudio() {
                 className="appearance-none rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none pr-8"
               >
                 <option value="">— Select Dataset —</option>
-                {documents.map((doc) => (
+                {localDocs.map((doc) => (
                   <option key={doc.id} value={doc.id}>
-                    {doc.file_name || `Document ${doc.id}`}
+                    {doc.filename || `Document ${doc.id}`}
                   </option>
                 ))}
               </select>
