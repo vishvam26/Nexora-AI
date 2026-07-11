@@ -93,14 +93,24 @@ export default function ChatMessage({ message, previousMessage }: ChatMessagePro
         </div>
 
         {/* Bubble Body */}
-        <div className={`rounded-2xl px-4 py-3 shadow-sm transition-colors duration-150 ${
-          isUser
-            ? "bg-primary text-white"
-            : "bg-card border border-border text-foreground"
-        }`}>
-          {isUser ? (
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
-          ) : (
+        {isUser ? (
+          <div className="rounded-2xl px-4 py-3 text-white text-sm leading-relaxed whitespace-pre-wrap"
+            style={{
+              background: "linear-gradient(135deg,#4338ca,#6d28d9)",
+              border: "1px solid rgba(99,102,241,0.25)",
+              boxShadow: "0 4px 20px rgba(99,102,241,0.25)",
+            }}>
+            {message.content}
+          </div>
+        ) : (
+          <div className="rounded-2xl px-4 py-3"
+            style={{
+              background: "rgba(18,18,22,0.6)",
+              border: "1px solid rgba(255,255,255,0.07)",
+              backdropFilter: "blur(12px)",
+              color: "#e4e4e7",
+            }}>
+
             <>
               {!message.content ? (
                 <p className="animate-pulse text-zinc-500 font-medium text-sm">Thinking...</p>
@@ -183,8 +193,8 @@ export default function ChatMessage({ message, previousMessage }: ChatMessagePro
                 </div>
               )}
             </>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Action Bar */}
         {!isUser && message.content && (

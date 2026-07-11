@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useChatStore } from "../../stores/chat-store";
 import { apiService } from "../../services/api-service";
@@ -16,132 +16,174 @@ import PythonStudio from "../../components/python-studio";
 import EmailStudio from "../../components/email-studio";
 import CalendarStudio from "../../components/calendar-studio";
 import EvalDashboard from "../../components/eval-dashboard";
-import { Loader2 } from "lucide-react";
-
-
-
-
-
+import NexoraLoader from "../../components/nexora-loader";
 
 export default function ChatPage() {
   const router = useRouter();
   const { token, activeWorkspace, logout, setToken, activeView } = useChatStore();
   const [mounted, setMounted] = useState(false);
   const [initLoading, setInitLoading] = useState(true);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Initialize token from localStorage on mount
   useEffect(() => {
     const localToken = localStorage.getItem("nexora_token");
-    if (localToken) {
-      setToken(localToken);
-    }
+    if (localToken) setToken(localToken);
     setMounted(true);
   }, [setToken]);
 
   // Authentication check
   useEffect(() => {
-    if (mounted && !token) {
-      router.push("/");
-    }
+    if (mounted && !token) router.push("/");
   }, [token, mounted, router]);
 
-  // Initial core workspace data fetching
+  // Initial workspace data
   useEffect(() => {
     if (!token) return;
-
-    const initializeWorkspaceData = async () => {
+    const run = async () => {
       try {
         setInitLoading(true);
-        // Fetch current user details
         await apiService.fetchCurrentUser();
-        // Fetch all workspaces belonging to the user
         const workspaces = await apiService.fetchWorkspaces();
-        
-        // If workspaces are available, let the activeWorkspace trigger subsequent loads
-        if (workspaces.length === 0) {
-          // If no workspaces exist, create a default workspace automatically
-          await apiService.createWorkspace("My AI Workspace");
-        }
-      } catch (err) {
-        console.error("Initialization failed:", err);
-        // In case of token expiration or network failure, trigger logout
+        if (workspaces.length === 0) await apiService.createWorkspace("My AI Workspace");
+      } catch {
         logout();
         router.push("/");
       } finally {
         setInitLoading(false);
       }
     };
-
-    initializeWorkspaceData();
+    run();
   }, [token, logout, router]);
 
-  // Handle active workspace changes to fetch child folders and conversations
+  // Fetch workspace assets when active workspace changes
   useEffect(() => {
     if (!token || !activeWorkspace) return;
-
-    const fetchWorkspaceAssets = async () => {
+    const run = async () => {
       try {
         await Promise.all([
           apiService.fetchFolders(activeWorkspace.id),
-          apiService.fetchConversations(activeWorkspace.id)
+          apiService.fetchConversations(activeWorkspace.id),
         ]);
       } catch (err) {
         console.error("Error loading workspace assets:", err);
       }
     };
-
-    fetchWorkspaceAssets();
+    run();
   }, [token, activeWorkspace]);
 
-  if (!mounted || !token) {
-    return null; // Don't render layout if not authorized or not mounted yet
-  }
+  // === Ambient Particle Animation ===
+  useEffect(() => {
+    if (!mounted || !token || initLoading) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-  if (initLoading) {
-    return (
-      <div className="flex h-screen w-screen flex-col items-center justify-center bg-[#09090b] text-[#f4f4f5]">
-        <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
-        <p className="mt-4 text-sm text-zinc-400 font-medium tracking-wide">
-          Syncing workspace nodes...
-        </p>
-      </div>
-    );
-  }
+    let animId: number;
+    let W = (canvas.width = window.innerWidth);
+    let H = (canvas.height = window.innerHeight);
+
+    const onResize = () => {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    };
+    window.addEventListener("resize", onResize);
+
+    interface P { x: number; y: number; vx: number; vy: number; r: number; a: number }
+    const pts: P[] = Array.from({ length: 50 }, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.45,
+      vy: (Math.random() - 0.5) * 0.45,
+      r: Math.random() * 2 + 0.8,
+      a: Math.random() * 0.5 + 0.5,
+    }));
+
+    const tick = () => {
+      ctx.clearRect(0, 0, W, H);
+      // connections
+      for (let i = 0; i < pts.length; i++) {
+        for (let j = i + 1; j < pts.length; j++) {
+          const dx = pts[i].x - pts[j].x;
+          const dy = pts[i].y - pts[j].y;
+          const d = Math.hypot(dx, dy);
+          if (d < 160) {
+            const op = (0.28 * (1 - d / 160)).toFixed(3);
+            ctx.strokeStyle = `rgba(99,102,241,${op})`;
+            ctx.lineWidth = 0.7;
+            ctx.beginPath();
+            ctx.moveTo(pts[i].x, pts[i].y);
+            ctx.lineTo(pts[j].x, pts[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+      // dots
+      for (const p of pts) {
+        ctx.fillStyle = `rgba(34,211,238,${p.a})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = W; else if (p.x > W) p.x = 0;
+        if (p.y < 0) p.y = H; else if (p.y > H) p.y = 0;
+      }
+      animId = requestAnimationFrame(tick);
+    };
+    tick();
+    return () => { window.removeEventListener("resize", onResize); cancelAnimationFrame(animId); };
+  }, [mounted, token, initLoading]);
+
+  if (!mounted || !token) return null;
+  if (initLoading) return <NexoraLoader message="Loading your workspace..." subMessage="Syncing conversations & knowledge bases" />;
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background text-foreground">
-      {/* 1. Left Sidebar - Navigation & History */}
-      <ChatSidebar />
+    <div className="relative flex h-screen w-screen overflow-hidden bg-[#09090b] text-[#f4f4f5]">
+      {/* Futuristic grid backdrop */}
+      <div
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right,rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,0.025) 1px,transparent 1px)",
+          backgroundSize: "80px 80px",
+        }}
+      />
 
-      {/* 2. Main Workspace Panel */}
-      {activeView === "chat" ? (
-        <ChatArea />
-      ) : activeView === "knowledge" ? (
-        <KnowledgeArea />
-      ) : activeView === "analytics" ? (
-        <AnalyticsArea />
-      ) : activeView === "report" ? (
-        <ReportArea />
-      ) : activeView === "agents" ? (
-        <AgentStudio />
-      ) : activeView === "sql" ? (
-        <SQLStudio />
-      ) : activeView === "python" ? (
-        <PythonStudio />
-      ) : activeView === "email" ? (
-        <EmailStudio />
-      ) : activeView === "calendar" ? (
-        <CalendarStudio />
-      ) : activeView === "eval" ? (
-        <EvalDashboard />
-      ) : (
-        <MLArea />
-      )}
+      {/* Ambient glow blobs */}
+      <div className="absolute top-0 right-0 h-[550px] w-[550px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle,rgba(99,102,241,0.18) 0%,transparent 70%)", filter: "blur(60px)" }} />
+      <div className="absolute bottom-0 left-[25%] h-[450px] w-[450px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle,rgba(6,182,212,0.14) 0%,transparent 70%)", filter: "blur(60px)" }} />
+      <div className="absolute top-[40%] left-[10%] h-[300px] w-[300px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle,rgba(139,92,246,0.10) 0%,transparent 70%)", filter: "blur(50px)" }} />
+
+      {/* Particle canvas */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 z-0 pointer-events-none"
+        style={{ opacity: 0.85 }}
+      />
+
+      {/* Sidebar */}
+      <div className="relative z-20">
+        <ChatSidebar />
+      </div>
+
+      {/* Main panel */}
+      <div className="relative z-10 flex flex-1 flex-col min-w-0 overflow-hidden">
+        {activeView === "chat" ? <ChatArea /> :
+          activeView === "knowledge" ? <KnowledgeArea /> :
+          activeView === "analytics" ? <AnalyticsArea /> :
+          activeView === "report" ? <ReportArea /> :
+          activeView === "agents" ? <AgentStudio /> :
+          activeView === "sql" ? <SQLStudio /> :
+          activeView === "python" ? <PythonStudio /> :
+          activeView === "email" ? <EmailStudio /> :
+          activeView === "calendar" ? <CalendarStudio /> :
+          activeView === "eval" ? <EvalDashboard /> :
+          <MLArea />}
+      </div>
     </div>
-
-
-
-
-
   );
 }

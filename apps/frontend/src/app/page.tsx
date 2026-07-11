@@ -1,18 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useChatStore } from "../stores/chat-store";
 import { apiService } from "../services/api-service";
-import { LogIn, UserPlus, ShieldAlert, Cpu, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import { LogIn, UserPlus, ShieldAlert, Eye, EyeOff, Lock, Mail, User, Cpu, ChevronRight, Activity, Globe, Compass } from "lucide-react";
 
-export default function LampLoginPage() {
+// ── Boid interface for 3D bird animation ────────────────────────────
+interface Boid {
+  x: number; y: number; z: number;
+  vx: number; vy: number; vz: number;
+  wingPhase: number; wingSpeed: number;
+  size: number; color: string;
+}
+
+export default function FuturisticLoginPage() {
   const router = useRouter();
   const { token, setToken } = useChatStore();
-
-  // Lamp & Pull String States
-  const [isOn, setIsOn] = useState(false);
-  const [isPulling, setIsPulling] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const mouseRef = useRef({ x: 0, y: 0, active: false });
 
   // Authentication States
   const [mounted, setMounted] = useState(false);
@@ -26,523 +32,396 @@ export default function LampLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Initialize token from localStorage on mount
   useEffect(() => {
     const localToken = localStorage.getItem("nexora_token");
-    if (localToken) {
-      setToken(localToken);
-    }
+    if (localToken) setToken(localToken);
     setMounted(true);
   }, [setToken]);
 
-  // Redirect to chat if logged in
   useEffect(() => {
-    if (mounted && token) {
-      router.push("/chat");
-    }
+    if (mounted && token) router.push("/chat");
   }, [token, mounted, router]);
 
-  if (!mounted) {
-    return null;
-  }
+  // ── 3D Boids Canvas Background ─────────────────────────────────────
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-  // Handle String Pull Trigger
-  const handleStringPull = () => {
-    if (isPulling) return;
-    setIsPulling(true);
-    // Snap back and toggle lamp state after 150ms
-    setTimeout(() => {
-      setIsPulling(false);
-      setIsOn((prev) => !prev);
-    }, 150);
-  };
+    let animId: number;
+    let W = (canvas.width = window.innerWidth);
+    let H = (canvas.height = window.innerHeight);
+    const onResize = () => { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; };
+    window.addEventListener("resize", onResize);
+
+    const boids: Boid[] = Array.from({ length: 45 }, () => {
+      const a = Math.random() * Math.PI * 2;
+      const s = 1.0 + Math.random() * 1.6;
+      return {
+        x: (Math.random() - 0.5) * W * 0.9,
+        y: (Math.random() - 0.5) * H * 0.9,
+        z: Math.random() * 300 - 150,
+        vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+        vz: (Math.random() - 0.5) * 1.0,
+        wingPhase: Math.random() * Math.PI * 2,
+        wingSpeed: 0.12 + Math.random() * 0.08,
+        size: 3.0 + Math.random() * 1.6,
+        color: Math.random() > 0.4 ? "rgba(99,102,241,0.65)" : "rgba(34,211,238,0.55)",
+      };
+    });
+
+    const focal = 300;
+
+    const onMouseMove = (e: MouseEvent) => {
+      mouseRef.current = { x: e.clientX - W / 2, y: e.clientY - H / 2, active: true };
+    };
+    const onMouseLeave = () => { mouseRef.current.active = false; };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseleave", onMouseLeave);
+
+    const tick = () => {
+      ctx.clearRect(0, 0, W, H);
+
+      // Light interactive mouse glow
+      if (mouseRef.current.active) {
+        const mx = mouseRef.current.x + W / 2, my = mouseRef.current.y + H / 2;
+        const g = ctx.createRadialGradient(mx, my, 20, mx, my, 400);
+        g.addColorStop(0, "rgba(99,102,241,0.06)");
+        g.addColorStop(1, "rgba(9,9,11,0)");
+        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      }
+
+      boids.forEach((b) => {
+        let avgVx = 0, avgVy = 0, avgVz = 0, avgX = 0, avgY = 0, avgZ = 0;
+        let closeDx = 0, closeDy = 0, closeDz = 0, n = 0;
+
+        boids.forEach((o) => {
+          if (o === b) return;
+          const dx = o.x - b.x, dy = o.y - b.y, dz = o.z - b.z;
+          const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          if (d < 150) {
+            avgVx += o.vx; avgVy += o.vy; avgVz += o.vz;
+            avgX += o.x; avgY += o.y; avgZ += o.z; n++;
+            if (d < 35) { closeDx -= dx * (2.0 / (d + 0.1)); closeDy -= dy * (2.0 / (d + 0.1)); closeDz -= dz * (2.0 / (d + 0.1)); }
+          }
+        });
+
+        if (n > 0) {
+          b.vx += ((avgVx / n) - b.vx) * 0.025 + ((avgX / n) - b.x) * 0.0006;
+          b.vy += ((avgVy / n) - b.vy) * 0.025 + ((avgY / n) - b.y) * 0.0006;
+          b.vz += ((avgVz / n) - b.vz) * 0.025 + ((avgZ / n) - b.z) * 0.0006;
+        }
+
+        b.vx += closeDx * 0.12; b.vy += closeDy * 0.12; b.vz += closeDz * 0.12;
+
+        if (mouseRef.current.active) {
+          const mdx = mouseRef.current.x - b.x, mdy = mouseRef.current.y - b.y;
+          const md = Math.sqrt(mdx * mdx + mdy * mdy);
+          if (md < 350) { b.vx += mdx * 0.0008; b.vy += mdy * 0.0008; }
+        }
+
+        const spd = Math.sqrt(b.vx * b.vx + b.vy * b.vy + b.vz * b.vz);
+        const maxS = 2.8;
+        if (spd > maxS) { b.vx = (b.vx / spd) * maxS; b.vy = (b.vy / spd) * maxS; b.vz = (b.vz / spd) * maxS; }
+
+        b.x += b.vx; b.y += b.vy; b.z += b.vz; b.wingPhase += b.wingSpeed;
+
+        const bx = W / 2 + 120, by = H / 2 + 120;
+        if (b.x > bx) b.x = -bx; else if (b.x < -bx) b.x = bx;
+        if (b.y > by) b.y = -by; else if (b.y < -by) b.y = by;
+        if (b.z > 200) b.z = -150; else if (b.z < -150) b.z = 200;
+
+        const scale = focal / (focal + b.z);
+        const px = W / 2 + b.x * scale, py = H / 2 + b.y * scale;
+        const s2d = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+        const dx = b.vx / (s2d + 0.01), dy = b.vy / (s2d + 0.01);
+        const nx = -dy, ny = dx;
+        const sz = b.size * scale;
+        const ws = sz * (1.3 + Math.sin(b.wingPhase) * 0.7);
+
+        ctx.beginPath();
+        ctx.moveTo(px + dx * sz * 2.2, py + dy * sz * 2.2);
+        ctx.lineTo(px - dx * sz * 0.4 + nx * ws, py - dy * sz * 0.4 + ny * ws);
+        ctx.lineTo(px - dx * sz * 0.5, py - dy * sz * 0.5);
+        ctx.lineTo(px - dx * sz * 0.4 - nx * ws, py - dy * sz * 0.4 - ny * ws);
+        ctx.closePath();
+
+        const op = Math.max(0.12, Math.min(0.85, (b.z + 150) / 350));
+        ctx.fillStyle = b.color.replace("0.65", op.toFixed(2)).replace("0.55", op.toFixed(2));
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px - dx * sz * 1.5, py - dy * sz * 1.5);
+        ctx.strokeStyle = `rgba(99,102,241,${(op * 0.22).toFixed(2)})`;
+        ctx.lineWidth = 0.9 * scale;
+        ctx.stroke();
+      });
+
+      animId = requestAnimationFrame(tick);
+    };
+    tick();
+
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseleave", onMouseLeave);
+      cancelAnimationFrame(animId);
+    };
+  }, []);
+
+  if (!mounted) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    // If lamp is off, guide the user to turn it on
-    if (!isOn) {
-      setError("Please pull the lamp string to turn on the workspace first!");
-      return;
-    }
-
-    if (!email || !password || (isRegister && (!fullName || !confirmPassword))) {
-      setError("Please fill in all fields.");
-      return;
-    }
-
-    if (isRegister && password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
+    if (!email || !password || (isRegister && (!fullName || !confirmPassword))) { setError("Please fill in all fields."); return; }
+    if (isRegister && password !== confirmPassword) { setError("Passwords do not match."); return; }
     setLoading(true);
-
     try {
-      if (isRegister) {
-        // Sign Up Flow
-        await apiService.register(fullName, email, password);
-        // Automatically trigger log in after successful sign up
-        await apiService.login(email, password);
-      } else {
-        // Sign In Flow
-        await apiService.login(email, password);
-      }
-
-      // Fetch user profile info
+      if (isRegister) { await apiService.register(fullName, email, password); await apiService.login(email, password); }
+      else { await apiService.login(email, password); }
       await apiService.fetchCurrentUser();
       router.push("/chat");
     } catch (err: any) {
-      console.error(err);
-      setError(
-        err.response?.data?.detail ||
-          "Authentication failed. Please verify your credentials."
-      );
-    } finally {
-      setLoading(false);
-    }
+      setError(err.response?.data?.detail || "Authentication failed. Please verify your credentials.");
+    } finally { setLoading(false); }
   };
 
   return (
-    <div
-      className={`relative flex min-h-screen w-full flex-col md:flex-row items-center justify-center px-4 py-12 transition-all duration-1000 select-none overflow-hidden ${
-        isOn
-          ? "bg-[#0b0a0e] bg-[radial-gradient(circle_at_25%_40%,rgba(245,158,11,0.06)_0%,rgba(11,10,14,1)_70%)]"
-          : "bg-[#030303]"
-      }`}
-    >
-      {/* Decorative Grid Behind everything (only shines slightly when light is on) */}
-      <div
-        className={`absolute inset-0 z-0 bg-[linear-gradient(to_right,#1f1f23_1px,transparent_1px),linear-gradient(to_bottom,#1f1f23_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] transition-opacity duration-1000 ${
-          isOn ? "opacity-20" : "opacity-5"
-        }`}
-      ></div>
+    <div className="relative flex min-h-screen w-full flex-col lg:flex-row items-center justify-center bg-[#09090b] text-[#f4f4f5] select-none overflow-hidden font-outfit">
 
-      {/* Main Container splits Lamp and Card */}
-      <div className="z-10 flex w-full max-w-[1150px] flex-col md:flex-row items-center justify-between gap-12 md:gap-8 px-4 md:px-12 mt-8">
+      {/* ── 3D Boids Canvas Background ─────────────────────────────── */}
+      <canvas ref={canvasRef} className="absolute inset-0 z-0 pointer-events-none" />
+
+      {/* Background ambient glowing spheres */}
+      <div className="absolute top-1/4 left-1/4 h-[700px] w-[700px] rounded-full bg-indigo-600/8 blur-[140px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 h-[500px] w-[500px] rounded-full bg-cyan-600/5 blur-[120px] pointer-events-none" />
+
+      {/* Futuristic Grid Overlay */}
+      <div className="absolute inset-0 z-0 bg-[linear-gradient(to_right,#1f1f23_1px,transparent_1px),linear-gradient(to_bottom,#1f1f23_1px,transparent_1px)] bg-[size:5rem_5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-10 pointer-events-none" />
+
+      {/* ── Main Layout Split Grid ─────────────────────────────────── */}
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col lg:flex-row items-center justify-between gap-12 px-6 py-12 md:px-12">
         
-        {/* Left Container - Interactive Lamp */}
-        <div className="relative flex flex-col h-[380px] w-full max-w-[280px] md:h-[510px] md:max-w-[320px] items-center justify-center">
-          {/* Subtle instruction above the lamp */}
-          <div className="mb-2 text-center pointer-events-none select-none">
-            <p className="text-zinc-500 text-[9px] md:text-[10px] font-semibold tracking-[0.25em] uppercase pulse-animation">
-              {isOn ? "PULL STRING TO LOCK WORKSPACE" : "PULL THE STRING TO TOGGLE LOGIN"}
-            </p>
+        {/* ── Left Side: Interactive Branding / Cyber-Bird ─────────── */}
+        <div className="flex flex-1 flex-col text-center lg:text-left justify-center space-y-6">
+          
+          {/* Version Pill */}
+          <div className="mx-auto lg:mx-0 inline-flex w-fit items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-4 py-1.5 text-[10px] font-bold tracking-[0.2em] text-indigo-400 uppercase">
+            <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+            Nexora Console Access Portal
           </div>
-          <svg
-            viewBox="0 0 320 480"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-full w-full overflow-visible"
-          >
-            <defs>
-              {/* Radial bulb glow */}
-              <radialGradient id="bulb-glow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#ffffff" />
-                <stop offset="25%" stopColor="#fef08a" />
-                <stop offset="100%" stopColor="#ca8a04" stopOpacity="0" />
-              </radialGradient>
 
-              {/* Volumetric Light Beam Gradient (Soft warm yellow fading out) */}
-              <linearGradient id="beam-gradient" x1="0.5" y1="0" x2="0.8" y2="1">
-                <stop offset="0%" stopColor="#fde047" stopOpacity="0.22" />
-                <stop offset="40%" stopColor="#fef08a" stopOpacity="0.08" />
-                <stop offset="100%" stopColor="#eab308" stopOpacity="0" />
-              </linearGradient>
+          <h1 className="font-playfair text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl leading-[1.1]" style={{ fontFamily: "'Playfair Display', serif" }}>
+            Unlock <br />
+            <span className="text-glow bg-gradient-to-r from-indigo-450 via-violet-300 to-cyan-300 bg-clip-text text-transparent">
+              intelligent automation.
+            </span>
+          </h1>
 
-              {/* Dark Metallic Gradient for the base and pole */}
-              <linearGradient id="metallic" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#27272a" />
-                <stop offset="50%" stopColor="#52525b" />
-                <stop offset="100%" stopColor="#18181b" />
-              </linearGradient>
+          <p className="mt-4 max-w-md text-xs leading-relaxed text-zinc-400 mx-auto lg:mx-0">
+            Sign in to access your local QLoRA fine-tuning sandbox, grounded RAG collections, multi-agent workspaces, and real-time evaluation matrices.
+          </p>
 
-              {/* Gold Pull Chain/Knob Gradient */}
-              <linearGradient id="gold-pull" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%" stopColor="#d97706" />
-                <stop offset="50%" stopColor="#fbbf24" />
-                <stop offset="100%" stopColor="#92400e" />
-              </linearGradient>
-
-              {/* Shade Gradients (lit vs unlit) */}
-              <linearGradient id="shade-on" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#fef08a" />
-                <stop offset="100%" stopColor="#ca8a04" />
-              </linearGradient>
-              <linearGradient id="shade-off" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#1f1f23" />
-                <stop offset="100%" stopColor="#09090b" />
-              </linearGradient>
-
-              {/* Glow filter */}
-              <filter id="glow-filter" x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur stdDeviation="15" result="blur" />
-                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-              </filter>
-            </defs>
-
-            {/* Volumetric Light Beam (Overflows to wash over the login card on the right) */}
-            <g
-              className={`transition-all duration-700 ease-in-out origin-top pointer-events-none ${
-                isOn ? "opacity-100 scale-100" : "opacity-0 scale-95"
-              }`}
-            >
-              {/* Main wide light beam projecting rightwards */}
-              <polygon
-                points="90,135 230,135 1200,480 -300,480"
-                fill="url(#beam-gradient)"
-                filter="url(#glow-filter)"
-              />
-              {/* Secondary hot-spot beam for center intensity */}
-              <polygon
-                points="120,135 200,135 800,480 -100,480"
-                fill="url(#beam-gradient)"
-                opacity="0.5"
-              />
-            </g>
-
-            {/* Lamp Base */}
-            <path
-              d="M 110 440 C 110 430, 210 430, 210 440 Z"
-              fill="url(#metallic)"
-              stroke="#09090b"
-              strokeWidth="2"
-            />
-
-            {/* Lamp Stand/Pole */}
-            <line
-              x1="160"
-              y1="135"
-              x2="160"
-              y2="435"
-              stroke="url(#metallic)"
-              strokeWidth="7"
-              strokeLinecap="round"
-            />
-
-            {/* Socket base */}
-            <rect x="151" y="125" width="18" height="15" fill="#27272a" rx="1" />
-
-            {/* Light Bulb & Ambient Glow (Visible under shade) */}
-            <circle
-              cx="160"
-              cy="146"
-              r="22"
-              fill="url(#bulb-glow)"
-              className={`transition-opacity duration-500 pointer-events-none ${
-                isOn ? "opacity-100" : "opacity-0"
-              }`}
-            />
-            <circle
-              cx="160"
-              cy="146"
-              r="8"
-              fill="#ffffff"
-              className={`transition-opacity duration-300 pointer-events-none ${
-                isOn ? "opacity-100" : "opacity-0"
-              }`}
-            />
-
-            {/* Lamp Shade */}
-            <path
-              d="M 120 75 L 200 75 L 230 135 L 90 135 Z"
-              fill={isOn ? "url(#shade-on)" : "url(#shade-off)"}
-              stroke={isOn ? "#fef08a" : "#2e2e33"}
-              strokeWidth="1.5"
-              className="transition-all duration-300"
-            />
-
-            {/* Pull String & Knob */}
-            <g
-              style={{ transform: isPulling ? "translateY(16px)" : "translateY(0px)" }}
-              className="transition-transform duration-150 ease-out"
-            >
-              {/* String (Chain effect via dasharray) */}
-              <line
-                x1="185"
-                y1="135"
-                x2="185"
-                y2="235"
-                stroke="#52525b"
-                strokeWidth="1.5"
-                strokeDasharray="2 3"
-              />
-
-              {/* Connection loop */}
-              <circle cx="185" cy="138" r="2.5" fill="#18181b" />
-
-              {/* Cylindrical Gold/Amber Pull Knob */}
-              <rect
-                x="181"
-                y="235"
-                width="8"
-                height="22"
-                rx="3.5"
-                fill="url(#gold-pull)"
-                stroke="#78350f"
-                strokeWidth="1"
-              />
-              <circle cx="185" cy="253" r="2.5" fill="#f59e0b" />
-
-              {/* Click target (Spans the lower string for high responsiveness) */}
-              <rect
-                x="170"
-                y="135"
-                width="30"
-                height="145"
-                fill="transparent"
-                onClick={handleStringPull}
-                className="cursor-pointer select-none"
-              />
-            </g>
-          </svg>
-
-          {/* Little floating text indicator when lamp is off */}
-          {!isOn && (
-            <div className="absolute top-[260px] left-[200px] text-zinc-500 text-[10px] tracking-wider pointer-events-none select-none animate-bounce flex items-center gap-1">
-              <span>← Pull to turn ON</span>
+          {/* Quick Metrics row */}
+          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6 pt-4 text-zinc-500">
+            <div className="flex items-center gap-2">
+              <Activity className="h-4.5 w-4.5 text-indigo-400" />
+              <span className="text-[11px] font-semibold tracking-wider uppercase text-zinc-400">94% Accuracy</span>
             </div>
-          )}
+            <div className="flex items-center gap-2">
+              <Globe className="h-4.5 w-4.5 text-cyan-400" />
+              <span className="text-[11px] font-semibold tracking-wider uppercase text-zinc-400">100% Grounded</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Compass className="h-4.5 w-4.5 text-violet-400" />
+              <span className="text-[11px] font-semibold tracking-wider uppercase text-zinc-400">QLoRA Ready</span>
+            </div>
+          </div>
+          
+          {/* Animated Bird Vector illustration */}
+          <div className="hidden lg:block relative h-40 w-40 opacity-20 origin-center animate-pulse pointer-events-none">
+            <svg viewBox="0 0 100 100" fill="none" className="h-full w-full">
+              <path d="M 50 10 L 60 40 L 55 70 L 45 70 L 40 40 Z" fill="url(#left-bird-grad)" />
+              <path d="M 50 40 Q 20 20 10 40 Q 30 45 50 50 Z" fill="url(#left-bird-grad)" />
+              <path d="M 50 40 Q 80 20 90 40 Q 70 45 50 50 Z" fill="url(#left-bird-grad)" />
+              <defs>
+                <linearGradient id="left-bird-grad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#22d3ee" />
+                  <stop offset="100%" stopColor="#6366f1" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
         </div>
 
-        {/* Right Container - Login Form (With Glassmorphic styling matching light source) */}
-        <div
-          className={`relative w-full max-w-[430px] rounded-2xl border transition-all duration-700 ${
-            isOn
-              ? "bg-zinc-900/40 border-amber-500/20 shadow-[0_0_50px_rgba(250,204,21,0.1)] backdrop-blur-xl scale-100 opacity-100 pointer-events-auto"
-              : "bg-zinc-950/5 border-zinc-900/50 shadow-none scale-[0.97] opacity-10 blur-sm pointer-events-none"
-          }`}
-        >
-          {/* Card Glassmorphic Highlight Line */}
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent"></div>
+        {/* ── Right Side: Glassmorphic Floating Console Card ───────── */}
+        <div className="relative w-full max-w-[440px] rounded-2xl glass border-indigo-500/15 shadow-[0_0_60px_rgba(99,102,241,0.08)] backdrop-blur-2xl">
+          {/* Card header top line glow */}
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-500/25 to-transparent rounded-t-2xl" />
 
-          <div className="px-8 py-10 md:px-10">
-            {/* Header */}
-            <div className="mb-8">
-              <h2 className="text-xl font-bold tracking-tight text-white md:text-2xl">
-                {isRegister ? "Welcome to Nexora AI" : "Welcome Back"}
+          {/* Nexora badge */}
+          <div className="absolute -top-4.5 left-1/2 -translate-x-1/2">
+            <div className="flex items-center gap-2 rounded-full border border-indigo-500/20 bg-[#09090b] px-4 py-1.5 shadow-xl">
+              <div className="flex h-5 w-5 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-500">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" className="h-3 w-3">
+                  <path d="M12 2L2 22l10-6 10 6L12 2z" />
+                </svg>
+              </div>
+              <span className="text-[10px] font-bold tracking-[0.2em] text-zinc-300 uppercase">Nexora AI</span>
+            </div>
+          </div>
+
+          <div className="px-8 py-10 pt-12 md:px-10">
+            
+            {/* Form Title */}
+            <div className="mb-6">
+              <h2 className="text-xl font-bold tracking-tight text-white font-playfair md:text-2xl" style={{ fontFamily: "'Playfair Display', serif" }}>
+                {isRegister ? "Create Console Account" : "Access Console"}
               </h2>
-              <p className="mt-1.5 text-xs md:text-sm text-zinc-400">
-                {isRegister
-                  ? "Create an account to deploy intelligent agents."
-                  : "Sign in to access your workspaces."}
+              <p className="mt-1.5 text-xs text-zinc-500">
+                {isRegister ? "Register a secure developer key to start." : "Authenticate to establish connection."}
               </p>
             </div>
 
-            {/* Error Message banner */}
+            {/* Error notifications */}
             {error && (
-              <div className="mb-6 flex items-start gap-3 rounded-lg border border-red-500/20 bg-red-500/10 p-3.5 text-xs text-red-400 transition-all duration-300">
-                <ShieldAlert className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
+              <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs text-red-400 animate-fade-in-up">
+                <ShieldAlert className="h-4.5 w-4.5 shrink-0 mt-0.5" />
                 <span>{error}</span>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Full Name input (Sign Up Only) */}
               {isRegister && (
                 <div className="space-y-1.5">
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                    Full Name
-                  </label>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-500">Full Name</label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                      <User className="h-4 w-4 text-zinc-500" />
-                    </div>
-                    <input
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="John Doe"
-                      className="w-full rounded-lg border border-zinc-800 bg-zinc-950/40 py-2.5 pl-10 pr-4 text-sm text-white placeholder-zinc-600 outline-none transition focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30"
-                      disabled={loading || !isOn}
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-650" />
+                    <input 
+                      type="text" 
+                      value={fullName} 
+                      onChange={(e) => setFullName(e.target.value)} 
+                      placeholder="Vishvam Patel" 
+                      disabled={loading}
+                      className="input-glow w-full rounded-xl border border-zinc-800 bg-zinc-950/60 py-2.5 pl-10 pr-4 text-sm text-white placeholder-zinc-700 outline-none transition" 
                     />
                   </div>
                 </div>
               )}
 
-              {/* Email Address input */}
               <div className="space-y-1.5">
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                  Email address
-                </label>
+                <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-500">Email Address</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                    <Mail className="h-4 w-4 text-zinc-500" />
-                  </div>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@example.com"
-                    className="w-full rounded-lg border border-zinc-800 bg-zinc-950/40 py-2.5 pl-10 pr-4 text-sm text-white placeholder-zinc-600 outline-none transition focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30"
-                    disabled={loading || !isOn}
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-650" />
+                  <input 
+                    type="email" 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)} 
+                    placeholder="name@enterprise.ai" 
+                    disabled={loading}
+                    className="input-glow w-full rounded-xl border border-zinc-800 bg-zinc-950/60 py-2.5 pl-10 pr-4 text-sm text-white placeholder-zinc-700 outline-none transition" 
                   />
                 </div>
               </div>
 
-              {/* Password input */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                    Password
-                  </label>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-500">Password</label>
                   {!isRegister && (
-                    <a
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setError("Password reset is not configured for this enterprise node.");
-                      }}
-                      className="text-[11px] text-violet-400 hover:text-violet-300 transition focus:outline-none"
+                    <button 
+                      type="button" 
+                      onClick={() => setError("Password reset is not configured for this enterprise node.")}
+                      className="text-[10px] text-indigo-400 hover:text-indigo-300 transition"
                     >
-                      Forgot Password?
-                    </a>
+                      Forgot Key?
+                    </button>
                   )}
                 </div>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                    <Lock className="h-4 w-4 text-zinc-500" />
-                  </div>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full rounded-lg border border-zinc-800 bg-zinc-950/40 py-2.5 pl-10 pr-10 text-sm text-white placeholder-zinc-600 outline-none transition focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30"
-                    disabled={loading || !isOn}
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-655" />
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                    placeholder="••••••••" 
+                    disabled={loading}
+                    className="input-glow w-full rounded-xl border border-zinc-800 bg-zinc-950/60 py-2.5 pl-10 pr-10 text-sm text-white placeholder-zinc-700 outline-none transition" 
                   />
-                  <button
-                    type="button"
+                  <button 
+                    type="button" 
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-500 hover:text-zinc-300 focus:outline-none"
-                    disabled={!isOn}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
 
-              {/* Confirm Password input (Sign Up Only) */}
               {isRegister && (
                 <div className="space-y-1.5">
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                    Confirm Password
-                  </label>
+                  <label className="block text-[9px] font-bold uppercase tracking-wider text-zinc-500">Confirm Password</label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
-                      <Lock className="h-4 w-4 text-zinc-500" />
-                    </div>
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full rounded-lg border border-zinc-800 bg-zinc-950/40 py-2.5 pl-10 pr-10 text-sm text-white placeholder-zinc-600 outline-none transition focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/30"
-                      disabled={loading || !isOn}
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-655" />
+                    <input 
+                      type={showConfirmPassword ? "text" : "password"} 
+                      value={confirmPassword} 
+                      onChange={(e) => setConfirmPassword(e.target.value)} 
+                      placeholder="••••••••" 
+                      disabled={loading}
+                      className="input-glow w-full rounded-xl border border-zinc-800 bg-zinc-950/60 py-2.5 pl-10 pr-10 text-sm text-white placeholder-zinc-700 outline-none transition" 
                     />
-                    <button
-                      type="button"
+                    <button 
+                      type="button" 
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-zinc-500 hover:text-zinc-300 focus:outline-none"
-                      disabled={!isOn}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-400 transition"
                     >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Primary CTA Submit Button */}
-              <button
-                type="submit"
-                className="relative flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:from-violet-500 hover:to-indigo-500 focus:ring-2 focus:ring-indigo-500/50 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none mt-2"
-                disabled={loading || !isOn}
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="btn-primary relative flex w-full items-center justify-center gap-2 rounded-xl py-3 text-xs font-bold tracking-wider uppercase transition mt-2 disabled:opacity-40"
               >
                 {loading ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 ) : isRegister ? (
-                  <>
-                    <UserPlus className="h-4 w-4" />
-                    <span>SIGN UP</span>
-                  </>
+                  <><UserPlus className="h-4 w-4" /><span>Initialize Console</span></>
                 ) : (
-                  <>
-                    <LogIn className="h-4 w-4" />
-                    <span>SIGN IN</span>
-                  </>
+                  <><LogIn className="h-4 w-4" /><span>Establish Connection</span></>
                 )}
               </button>
             </form>
 
-            {/* Divider */}
-            <div className="relative my-6 flex items-center">
-              <div className="flex-grow border-t border-zinc-800"></div>
-              <span className="mx-4 shrink text-[10px] uppercase font-semibold text-zinc-600">or</span>
-              <div className="flex-grow border-t border-zinc-800"></div>
-            </div>
-
-            {/* Google Authentication */}
-            <button
-              onClick={() => {
-                if (!isOn) return;
-                setError("Google Sign-In is temporarily disabled on this enterprise network.");
-              }}
-              className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-zinc-800 bg-zinc-950/40 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-900/60 focus:outline-none focus:ring-1 focus:ring-zinc-700 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
-              disabled={loading || !isOn}
-            >
-              {/* Google G SVG */}
-              <svg className="h-4 w-4" viewBox="0 0 24 24" width="24" height="24">
-                <path
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                  fill="#EA4335"
-                />
-              </svg>
-              <span>Continue with Google</span>
-            </button>
-
-            {/* Toggle Sign In vs Register */}
-            <div className="mt-8 text-center text-xs md:text-sm text-zinc-400">
-              {isRegister ? "Already have an account?" : "New to Nexora AI?"}{" "}
-              <button
-                onClick={() => {
-                  if (!isOn) return;
-                  setError(null);
-                  setIsRegister(!isRegister);
-                }}
-                className="font-semibold text-violet-400 hover:text-violet-300 transition focus:outline-none focus:underline"
-                disabled={loading || !isOn}
+            {/* Alternative toggle options */}
+            <div className="mt-6 text-center text-xs text-zinc-500">
+              {isRegister ? "Already configured?" : "New developer key?"}{" "}
+              <button 
+                onClick={() => { setError(null); setIsRegister(!isRegister); }} 
+                disabled={loading}
+                className="font-bold text-indigo-400 hover:text-indigo-300 transition focus:outline-none"
               >
-                {isRegister ? "Sign In" : "Create one here"}
+                {isRegister ? "Access Console" : "Configure Key Here"}
               </button>
             </div>
+
           </div>
         </div>
 
       </div>
 
-      {/* Floating corner branding info */}
-      <div className="absolute bottom-4 left-4 text-[10px] text-zinc-600 select-none pointer-events-none hidden md:block">
-        &copy; 2026 Nexora-AI. Enterprise AI Environment.
+      {/* Watermarks */}
+      <div className="absolute bottom-4 left-6 text-[10px] text-zinc-700 tracking-wider hidden md:block">
+        © 2026 Nexora AI · RAG & Fine-Tuning Console Port
       </div>
-      <div className="absolute bottom-4 right-4 text-[10px] text-zinc-600 select-none pointer-events-none hidden md:block">
-        MIT License. Node v1.0.0
+      <div className="absolute bottom-4 right-6 text-[10px] text-zinc-700 tracking-widest uppercase hidden md:block">
+        SECURE NODE V1.0.0
       </div>
     </div>
   );
