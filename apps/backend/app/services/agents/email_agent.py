@@ -51,11 +51,20 @@ class EmailAgent(BaseAgent):
         msg["To"] = to_email
         msg["Subject"] = subject
 
-        body_html = f"<p>{task}</p>"
         # Extract body block if explicitly separated
+        body_text = task
         body_match = re.search(r"body:\s*(.*)", task, re.DOTALL | re.IGNORECASE)
         if body_match:
-            body_html = f"<p>{body_match.group(1).strip()}</p>"
+            body_text = body_match.group(1).strip()
+
+        # Determine if body contains HTML tags
+        has_html = bool(re.search(r"<\/?[a-z][\s\S]*>", body_text, re.IGNORECASE))
+        if has_html:
+            body_html = body_text
+        else:
+            # Replace newlines with HTML breaks and wrap in a clean sans-serif font
+            formatted_text = body_text.replace("\n", "<br/>")
+            body_html = f'<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #1f2937;">{formatted_text}</div>'
 
         # Ingest memory or RAG final answer if present in prior results
         if context.prior_results:

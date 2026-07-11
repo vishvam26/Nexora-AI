@@ -153,7 +153,7 @@ export default function EmailStudio() {
     setErrorMsg("");
     setSuccessMsg("");
     try {
-      const prompt = `Draft a professional business email based on: "${naturalLanguage}". Reply ONLY with a valid JSON object matching keys: {"subject": "string", "body": "HTML string description"}. Do not return any markdown wrappers, just raw JSON.`;
+      const prompt = `Draft a professional business email based on: "${naturalLanguage}". Reply ONLY with a valid JSON object matching keys: {"subject": "string", "body": "Plain text email body using \\n for line breaks. Do not include any HTML tags like <p> or <br>."}. Do not return any markdown wrappers, just raw JSON.`;
       
       const convoId = await getOrCreateConversationId();
        const res = await fetch(`${API_BASE}/chat`, {
@@ -342,9 +342,13 @@ export default function EmailStudio() {
               )}
             </div>
 
-            {/* Rendered HTML message block */}
-            <div className="text-xs text-zinc-300 leading-relaxed min-h-[150px] bg-[#111112] p-4 rounded-lg border border-zinc-900/60 overflow-y-auto max-h-96">
-              <div dangerouslySetInnerHTML={{ __html: body }} />
+            {/* Rendered HTML/Plaintext message block */}
+            <div className="text-xs text-zinc-300 leading-relaxed min-h-[150px] bg-[#111112] p-4 rounded-lg border border-zinc-900/60 overflow-y-auto max-h-96 whitespace-pre-wrap">
+              {/<\/?[a-z][\s\S]*>/i.test(body) ? (
+                <div dangerouslySetInnerHTML={{ __html: body }} />
+              ) : (
+                body
+              )}
             </div>
 
             {/* SMTP config alert footer */}
