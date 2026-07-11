@@ -303,10 +303,25 @@ class ReportService:
     def _call_llm(cls, system_prompt: str, user_prompt: str) -> str:
         """
         LLM call wrapper — uses OpenAI provider (same pattern as ChatService).
-        Falls back to structured summary if LLM unavailable.
-        Prompt injection guard: the user_prompt is fully assembled from structured
-        data, never from raw document text injection.
+        Falls back to local fine-tuned Qwen model (NexoraProvider) if active,
+        and falls back to structured summary if both are unavailable.
         """
+        from app.config import settings
+        if settings.AI_PROVIDER.lower().strip() == "nexora":
+            try:
+                logger.info("[ReportService] Routing report generation to local fine-tuned model via NexoraProvider...")
+                from app.providers.nexora_provider import NexoraProvider
+                provider = NexoraProvider()
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ]
+                response = provider.generate_response(messages)
+                if response:
+                    return response
+            except Exception as nexora_err:
+                logger.warning(f"[ReportService] Local Nexora model call failed: {nexora_err}")
+
         try:
             import openai
             import os
@@ -328,7 +343,7 @@ class ReportService:
         except Exception as e:
             logger.warning(f"[ReportService] LLM call failed, using fallback: {e}")
             return (
-                "# Auto-Generated Report\n\n"
+                "# Auto Generated Report\n\n"
                 "> ⚠ LLM narrative unavailable (API key not set or provider error).\n\n"
                 "The structured data below was collected successfully and exported.\n"
                 "Configure `OPENAI_API_KEY` to enable AI-generated narrative sections."
