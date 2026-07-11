@@ -25,7 +25,7 @@ from app.services.report.report_service import ReportService
 from app.schemas.report import ReportGenerateRequest
 
 router = APIRouter(
-    prefix="/reports",
+    prefix="/report-generator",
     tags=["Report Generator"],
 )
 

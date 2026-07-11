@@ -84,7 +84,7 @@ export default function EmailStudio() {
     const firstDoc = localDocs[0];
     if (firstDoc) {
       try {
-        const res = await fetch(`${API_BASE}/reports/list/${firstDoc.id}`, { headers: headers() });
+        const res = await fetch(`${API_BASE}/report-generator/list/${firstDoc.id}`, { headers: headers() });
         if (res.ok) setReports(await res.json());
       } catch { /* ignore */ }
     }

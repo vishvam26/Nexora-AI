@@ -100,7 +100,7 @@ export default function ReportArea() {
     setResult(null);
 
     try {
-      const res = await fetch(`${API_BASE}/reports/generate/${selectedDocId}`, {
+      const res = await fetch(`${API_BASE}/report-generator/generate/${selectedDocId}`, {
         method: "POST",
         headers: headers(),
         body: JSON.stringify({
@@ -129,7 +129,7 @@ export default function ReportArea() {
   const handleDownload = async () => {
     if (!result) return;
     try {
-      const res = await fetch(`${API_BASE}/reports/download/${result.report_id}`, {
+      const res = await fetch(`${API_BASE}/report-generator/download/${result.report_id}`, {
         headers: headers(),
       });
       if (!res.ok) throw new Error("Download failed");
