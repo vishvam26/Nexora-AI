@@ -82,7 +82,11 @@ export default function ReportArea() {
 
   // Headers helper
   const headers = useCallback(
-    () => ({ "Content-Type": "application/json", Authorization: `Bearer ${token}` }),
+    () => ({ 
+      "Content-Type": "application/json", 
+      "ngrok-skip-browser-warning": "69420",
+      Authorization: `Bearer ${token}` 
+    }),
     [token]
   );
 

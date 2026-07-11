@@ -51,7 +51,10 @@ export default function AgentMetrics({ token, onBack }: AgentMetricsProps) {
     setError(null);
     try {
       const res = await fetch(`${API_BASE}/agents/metrics`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "ngrok-skip-browser-warning": "69420"
+        }
       });
       if (!res.ok) throw new Error("Failed to load metrics data.");
       setMetrics(await res.json());
