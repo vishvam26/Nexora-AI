@@ -318,7 +318,7 @@ class ReportService:
                 ]
                 response = provider.generate_response(messages)
                 if response:
-                    return response
+                    return cls.clean_model_output(response)
             except Exception as nexora_err:
                 logger.warning(f"[ReportService] Local Nexora model call failed: {nexora_err}")
 
@@ -339,7 +339,7 @@ class ReportService:
                 max_tokens=4096,
                 temperature=0.3,
             )
-            return response.choices[0].message.content or "No narrative generated."
+            return cls.clean_model_output(response.choices[0].message.content or "No narrative generated.")
         except Exception as e:
             logger.warning(f"[ReportService] LLM call failed, using fallback: {e}")
             return (
@@ -380,3 +380,26 @@ class ReportService:
                 return json.load(f)
         except Exception:
             return []
+
+    @classmethod
+    def clean_model_output(cls, text: str) -> str:
+        """
+        Cleans raw LLM outputs to remove thinking processes, chain-of-thought blocks,
+        and markdown wrapper blocks.
+        """
+        if not text:
+            return ""
+        import re
+        # Strip xml thought tags if present
+        text = re.sub(r'<thought>.*?</thought>', '', text, flags=re.DOTALL | re.IGNORECASE)
+        # Strip "Thinking Process:" section
+        text = re.sub(r'^(?:Thinking Process|Thinking|Thought):\s*.*?\n\n', '', text, flags=re.DOTALL | re.IGNORECASE)
+        # Strip general "Thinking Process:" headings
+        text = re.sub(r'^(?:Thinking Process|Thinking|Thought):\s*.*?$', '', text, flags=re.MULTILINE | re.IGNORECASE)
+        # Strip triple backticks enclosing markdown syntax if the model wrapped the entire output
+        text = text.strip()
+        if text.startswith("```markdown") and text.endswith("```"):
+            text = text[11:-3].strip()
+        elif text.startswith("```") and text.endswith("```"):
+            text = text[3:-3].strip()
+        return text
