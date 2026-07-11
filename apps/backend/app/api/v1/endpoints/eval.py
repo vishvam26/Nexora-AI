@@ -415,3 +415,22 @@ def execute_replay_sandbox(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Replay compilation error: {str(e)}"
         )
+
+
+@router.get("/debug-db")
+def debug_db(db: Session = Depends(get_db)):
+    feedbacks = db.query(ChatFeedback).all()
+    res = []
+    for f in feedbacks:
+        res.append({
+            "id": f.id,
+            "message_id": f.message_id,
+            "thumbs_up": f.thumbs_up,
+            "thumbs_down": f.thumbs_down,
+            "review_status": f.review_status,
+            "created_at": str(f.created_at) if f.created_at else None,
+            "replay_query": f.replay_query,
+            "faithfulness": f.faithfulness,
+            "hallucination_score": f.hallucination_score
+        })
+    return res
