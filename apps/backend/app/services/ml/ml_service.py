@@ -49,8 +49,11 @@ class MLService:
         """
         Scans columns of CSV/spreadsheet, classifies them, and detects target recommendations.
         """
+        if not os.path.isabs(file_path):
+            file_path = os.path.abspath(os.path.join("uploads", "knowledge", file_path))
+
         if pd is None or not os.path.exists(file_path):
-            return {"error": "Scikit-learn not imported or file missing."}
+            return {"error": f"Scikit-learn not imported or file missing. Checked: {file_path}"}
 
         try:
             if file_path.endswith(".xlsx") or file_path.endswith(".xls"):
@@ -100,8 +103,11 @@ class MLService:
         Builds preprocessing pipeline, splits data, fits scikit-learn model,
         evaluates metrics, computes feature importances, and caches it as joblib model.
         """
+        if not os.path.isabs(file_path):
+            file_path = os.path.abspath(os.path.join("uploads", "knowledge", file_path))
+
         if pd is None or not os.path.exists(file_path):
-            return {"error": "Scikit-learn/Pandas dependency is missing."}
+            return {"error": f"Scikit-learn/Pandas dependency is missing or file not found. Checked: {file_path}"}
 
         try:
             # Load dataset
