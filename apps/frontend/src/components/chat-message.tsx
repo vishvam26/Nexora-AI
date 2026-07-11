@@ -6,6 +6,7 @@ import { Copy, Check, ThumbsUp, ThumbsDown, Cpu, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useChatStore } from "../stores/chat-store";
+import { API_BASE_URL } from "../services/api-service";
 
 interface ChatMessageProps {
   message: Message;
@@ -37,7 +38,6 @@ export default function ChatMessage({ message, previousMessage }: ChatMessagePro
     setLiked(isUp);
 
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
       const payload = {
         message_id: message.id,
         thumbs_up: isUp,
@@ -51,7 +51,7 @@ export default function ChatMessage({ message, previousMessage }: ChatMessagePro
         prompt_text: null
       };
 
-      const res = await fetch(`${API_BASE}/eval/feedback`, {
+      const res = await fetch(`${API_BASE_URL}/eval/feedback`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
