@@ -209,8 +209,12 @@ export default function ChatArea() {
         ) : (
           /* Render chat history bubbles */
           <div className="max-w-[760px] mx-auto space-y-6">
-            {messages.map((msg) => (
-              <ChatMessage key={msg.id} message={msg} />
+            {messages.map((msg, idx) => (
+              <ChatMessage 
+                key={msg.id} 
+                message={msg} 
+                previousMessage={idx > 0 ? messages[idx - 1] : undefined} 
+              />
             ))}
 
             {/* Error alerts */}

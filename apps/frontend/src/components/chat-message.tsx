@@ -5,20 +5,70 @@ import { Message } from "../types/chat";
 import { Copy, Check, ThumbsUp, ThumbsDown, Cpu, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useChatStore } from "../stores/chat-store";
 
 interface ChatMessageProps {
   message: Message;
+  previousMessage?: Message;
 }
 
-export default function ChatMessage({ message }: ChatMessageProps) {
+export default function ChatMessage({ message, previousMessage }: ChatMessageProps) {
   const isUser = message.role === "user";
   const [copied, setCopied] = useState(false);
   const [liked, setLiked] = useState<boolean | null>(null);
+  const token = useChatStore((state) => state.token);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleFeedback = async (isUp: boolean) => {
+    let comment: string | null = null;
+    if (!isUp) {
+      const response = window.prompt("Why did you dislike this response? (Optional comment):");
+      if (response === null) return; // User cancelled
+      comment = response;
+    } else {
+      comment = "Thumbs up";
+    }
+
+    setLiked(isUp);
+
+    try {
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+      const payload = {
+        message_id: message.id,
+        thumbs_up: isUp,
+        thumbs_down: !isUp,
+        feedback_text: comment,
+        response_time_ms: 1500,
+        original_query: previousMessage?.content || "What is Nexora AI platform?",
+        context_chunks: message.sources?.map(src => 
+          `File: ${src.filename}, Page: ${src.page}, Section: ${src.section}, Match: ${src.confidence}%`
+        ) || [],
+        prompt_text: null
+      };
+
+      const res = await fetch(`${API_BASE}/eval/feedback`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "69420",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to submit feedback to server.");
+      }
+      
+      alert(isUp ? "Feedback submitted! Thank you." : "Dislike feedback submitted! The query has been sent to the Human Review Queue.");
+    } catch (err) {
+      console.error("Feedback submit failed:", err);
+    }
   };
 
   return (
@@ -149,14 +199,14 @@ export default function ChatMessage({ message }: ChatMessageProps) {
             </button>
             <div className="flex items-center gap-1 border-l border-border pl-3">
               <button
-                onClick={() => setLiked(true)}
+                onClick={() => handleFeedback(true)}
                 className={`p-1 hover:bg-zinc-800 rounded transition ${liked === true ? "text-green-500" : ""}`}
                 title="Like response"
               >
                 <ThumbsUp className="h-3 w-3" />
               </button>
               <button
-                onClick={() => setLiked(false)}
+                onClick={() => handleFeedback(false)}
                 className={`p-1 hover:bg-zinc-800 rounded transition ${liked === false ? "text-red-500" : ""}`}
                 title="Dislike response"
               >
