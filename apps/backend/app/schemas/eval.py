@@ -62,15 +62,15 @@ class EvalMetricsSummary(BaseModel):
 
 class TuningCandidateResponse(BaseModel):
     id: int
-    query: str
-    original_response: str
-    faithfulness: float
-    hallucination_score: float
-    confidence_score: float
-    priority: str
-    review_status: str
-    root_cause: Optional[str]
-    domain_tag: Optional[str]
-    model_version: str
-    rag_pipeline_version: str
-    created_at: str
+    query: Optional[str] = "Unknown Query"
+    original_response: Optional[str] = "No Response Content"
+    faithfulness: Optional[float] = 0.0
+    hallucination_score: Optional[float] = 0.0
+    confidence_score: Optional[float] = 0.0
+    priority: Optional[str] = "LOW"
+    review_status: Optional[str] = "pending"
+    root_cause: Optional[str] = None
+    domain_tag: Optional[str] = None
+    model_version: Optional[str] = "nexora-v1"
+    rag_pipeline_version: Optional[str] = "rag-v2.1"
+    created_at: Optional[str] = ""

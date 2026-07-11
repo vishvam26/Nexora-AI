@@ -222,9 +222,9 @@ def get_review_queue(
                 hallucination_score=c.hallucination_score or 0.0,
                 confidence_score=c.confidence_score or 0.0,
                 priority=c.priority or "LOW",
-                review_status=c.review_status,
-                root_cause=c.root_cause,
-                domain_tag=c.domain_tag,
+                review_status=c.review_status or "pending",
+                root_cause=c.root_cause or "None",
+                domain_tag=c.domain_tag or "General",
                 model_version=c.model_version or "nexora-v1",
                 rag_pipeline_version=c.rag_pipeline_version or "rag-v2.1",
                 created_at=created_str
