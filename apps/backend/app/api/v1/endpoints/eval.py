@@ -200,25 +200,37 @@ def get_review_queue(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    print(">>> GET /eval/review-queue called")
     candidates = db.query(ChatFeedback).filter(ChatFeedback.review_status == "pending").all()
+    print(f">>> Found {len(candidates)} pending candidates in DB")
     res = []
     for c in candidates:
-        msg = db.query(Message).filter(Message.id == c.message_id).first()
-        res.append(TuningCandidateResponse(
-            id=c.id,
-            query=c.replay_query or "Unknown Query",
-            original_response=msg.content if msg else "No Response Content",
-            faithfulness=c.faithfulness or 0.0,
-            hallucination_score=c.hallucination_score or 0.0,
-            confidence_score=c.confidence_score or 0.0,
-            priority=c.priority or "LOW",
-            review_status=c.review_status,
-            root_cause=c.root_cause,
-            domain_tag=c.domain_tag,
-            model_version=c.model_version or "nexora-v1",
-            rag_pipeline_version=c.rag_pipeline_version or "rag-v2.1",
-            created_at=c.created_at.strftime("%Y-%m-%d %H:%M")
-        ))
+        try:
+            msg = db.query(Message).filter(Message.id == c.message_id).first()
+            created_str = ""
+            if c.created_at:
+                try:
+                    created_str = c.created_at.strftime("%Y-%m-%d %H:%M")
+                except Exception:
+                    created_str = str(c.created_at)
+
+            res.append(TuningCandidateResponse(
+                id=c.id,
+                query=c.replay_query or "Unknown Query",
+                original_response=msg.content if msg else "No Response Content",
+                faithfulness=c.faithfulness or 0.0,
+                hallucination_score=c.hallucination_score or 0.0,
+                confidence_score=c.confidence_score or 0.0,
+                priority=c.priority or "LOW",
+                review_status=c.review_status,
+                root_cause=c.root_cause,
+                domain_tag=c.domain_tag,
+                model_version=c.model_version or "nexora-v1",
+                rag_pipeline_version=c.rag_pipeline_version or "rag-v2.1",
+                created_at=created_str
+            ))
+        except Exception as item_err:
+            print(f"Error parsing candidate {c.id}: {item_err}")
     return res
 
 
