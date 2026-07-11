@@ -128,6 +128,8 @@ export default function CalendarStudio() {
   const handleAIScheduler = async () => {
     if (!naturalLanguage.trim()) return;
     setScheduling(true);
+    setErrorMsg("");
+    setSuccessMsg("");
     try {
       const prompt = `Convert this natural language scheduling request to a valid JSON block: "${naturalLanguage}". Current date is ${new Date().toISOString().slice(0, 10)}. Format output ONLY as a JSON matching keys: {"title": "string", "start_time": "YYYY-MM-DD HH:MM", "end_time": "YYYY-MM-DD HH:MM", "attendees": "comma-separated emails", "description": "string"}. Return no comments, no markdown backticks.`;
       
@@ -138,11 +140,15 @@ export default function CalendarStudio() {
         body: JSON.stringify({
           conversation_id: convoId,
           message: prompt,
-          grounded: false
+          grounded: false,
+          provider: "gemini"
         })
       });
       const data = await res.json();
-      if (res.ok && data.assistant_message?.content) {
+      if (!res.ok) {
+        throw new Error(data.detail || "AI Copilot failed to schedule slot.");
+      }
+      if (data.assistant_message?.content) {
         let content = data.assistant_message.content;
         if (content.includes("</think>")) {
           const parts = content.split("</think>");
@@ -155,9 +161,11 @@ export default function CalendarStudio() {
         if (parsed.end_time) setEndTime(parsed.end_time);
         if (parsed.attendees) setAttendees(parsed.attendees);
         if (parsed.description) setDescription(parsed.description);
+        setErrorMsg("");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("AI Scheduler failed:", err);
+      setErrorMsg(err.message || "AI Copilot failed to schedule slot.");
     }
     setScheduling(false);
   };
