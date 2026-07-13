@@ -15,7 +15,7 @@
 
 ---
 
-Welcome to **Nexora AI v1.0**. This repository contains the complete codebase for a state-of-the-art, enterprise-grade AI execution workspace. Nexora AI provides individual developers and teams with a unified workbench to collaborate, run complex multi-agent simulations, write and execute code in sandboxes, run machine learning training monitors, analyze databases, and build semantic knowledge graphs.
+Welcome to **Nexora AI v1.0**. This document serves as the master technical blueprint and developer guide for the entire workspace. Nexora AI is a comprehensive dashboard enabling teams to build semantic knowledge bases, run sandboxed data analysis scripts, query corporate databases through AI, and train custom Machine Learning models with built-in interpretability.
 
 ---
 
@@ -52,32 +52,114 @@ sequenceDiagram
 
 ---
 
-## ⚙️ Core Technical Modules (Deep Dive)
+## 🧠 Custom ML Model Lifecycle & Hugging Face Integration
 
-### 1. Intelligent Agents & Planner Engine
-Nexora AI is powered by a **Hierarchical Planner Agent** pattern. Instead of a basic chat interaction, requests are evaluated by a planner model which delegates execution steps to specific specialized tools and sub-agents:
-- **Planner Agent (`agents.py`)**: Parses the input, determines intent, structures a execution plan, and aggregates outputs.
-- **Python Agent (`python_agent.py`)**: Generates and executes sandboxed Python code for complex calculations, graphing, or data processing.
-- **Email Agent (`email_agent.py`)**: Interacts with mock/real mail gateways to draft, evaluate, and structure communications.
-- **Calendar Agent (`calendar_agent.py`)**: Interacts with schedule planners to extract, modify, and reserve events.
+Nexora AI includes a complete **Machine Learning Studio** (`ml_service.py`) and Hugging Face publisher API built directly into the backend. Instead of relying solely on general LLMs, users can train, evaluate, publish, and run inference locally or in the cloud.
 
-### 2. RAG & Semantic Knowledge Hub
-The Knowledge module (`knowledge.py`, `rag_debug.py`) manages unstructured data ingestion and search indexing:
-- **Document Chunking & Vectorization**: Uploaded files (PDFs, CSVs, TXT) are automatically chunked, embedded using state-of-the-art embedding models, and index-locked inside **Qdrant**.
-- **Knowledge Graphs (`knowledge_graph.py`)**: Connects semantic concepts extracted from documents to map relationships visually on the client.
-- **RAG Debugger**: Allows developers to view exact vector match scores, chunk text overlaps, and inspect system prompt formulations.
+```mermaid
+graph TD
+    Dataset[Tabular Dataset CSV/XLSX] --> Options[Feature & Target Scanner]
+    Options --> Prep[Column Transformer: Median Impute / OneHot / Scaler]
+    Prep --> Train[Train: RF / GB / Linear Model]
+    Train --> Metrics[Evaluate: Accuracy / R2 / MAE / MSE]
+    Train --> SHAP[Compute SHAP Explainability]
+    Train --> Save[Serialize Model as joblib Checkpoint]
+    Save --> Publish[Publish Checkpoint to Hugging Face Model Hub]
+    Save --> Registry[Register Run in Model Comparison Registry]
+    Registry --> Agent[ML Agent Reads Session Metadata & Predicts]
+```
 
-### 3. Machine Learning Studio & Benchmarks
-Nexora AI provides built-in tools to manage local and remote machine learning experiments:
-- **Dataset Projects (`dataset_projects.py`)**: Manage datasets, clean CSV lines, verify data schemas, and prepare training matrices.
-- **Training Monitors (`training_projects.py`)**: Create training runs, track training loss, validation metrics, and download model weights.
-- **Evaluations & Quality (`eval.py`, `quality.py`, `benchmark.py`)**: Automate benchmark runs to rate model outputs, test latency, and run prompt performance comparisons.
+### 1. Ingestion & Preprocessing Pipeline
+- **Auto-Detection (`get_features_and_targets`)**: When a user selects a dataset document, the system scans all columns. It recommends target variables based on column names (e.g., matching keywords like *price, churn, target*) and detects types (numeric vs. categorical).
+- **Dynamic Preprocessing**:
+  - **Numerical columns**: Imputed using `SimpleImputer` (median strategy) and scaled using `StandardScaler`.
+  - **Categorical columns**: Imputed using `SimpleImputer` (most frequent strategy) and encoded using `OneHotEncoder` (handling unknown categories gracefully).
+  - All operations are bound inside a Scikit-Learn `ColumnTransformer`.
 
-### 4. Collaboration & Workspaces
-All data is scoped inside **Workspaces** to support team operations:
-- **Workspaces (`workspaces.py`)**: Supports creating isolated development areas containing custom folders, databases, and LLM preferences.
-- **Collaborator Directory (`workspace_members.py`, `workspace_invitations.py`)**: Invite members to workspaces, manage roles, and review pending invites.
-- **Template Store (`workspace_templates.py`)**: Quick-start new environments with pre-configured databases, folders, and model presets.
+### 2. Automated Task Selection & Model Training (`train_pipeline`)
+The engine dynamically chooses the modeling task type based on target cardinality:
+- **Classification**: Triggered if the target is non-numeric or has $\le 10$ unique classes. Algorithms supported: *Random Forest Classifier, Gradient Boosting Classifier, Logistic Regression*.
+- **Regression**: Triggered for continuous numerical targets. Algorithms supported: *Random Forest Regressor, Gradient Boosting Regressor, Linear Regression*.
+
+The data is split ($80\%$ training, $20\%$ test), the model is fitted, and primary metrics are calculated:
+- **Classification metrics**: Accuracy, Precision, Recall, F1-Score.
+- **Regression metrics**: $R^2$, Mean Absolute Error (MAE), Mean Squared Error (MSE).
+
+### 3. Serialization & Model Registry
+- **joblib Checkpoints**: Once trained, the entire pipeline (preprocessor + model estimator) is serialized and cached at `storage/ml_models/model_{doc_id}.joblib` for instant live predictions.
+- **Model Registry**: Training metrics and parameters are registered at `storage/ml_registry/comparison_{doc_id}.json` to compare different algorithms side-by-side.
+
+### 4. SHAP Feature Interpretability
+After training, the platform calculates **SHAP (SHapley Additive exPlanations)** values.
+- SHAP attribution ranks features by their mean absolute contribution ($|SHAP|$) to the target prediction.
+- This allows users (and AI agents) to understand *why* the model makes specific predictions (e.g. "Tenure contributes $35\%$ to churn risk").
+
+### 5. Hugging Face Hub Integration
+- **Hugging Face Model Publisher (`/publish/huggingface`)**: Developers can upload trained model weights and adapter checkpoints directly to the Hugging Face Hub using the `HuggingFaceService`. It validates the user's `HF_TOKEN`, creates a model repository on the hub, and pushes files to `https://huggingface.co/{repo_id}`.
+- **Inference Provider (`huggingface_provider.py`)**: Connects to the Hugging Face Serverless API router (`https://router.huggingface.co/v1`) using the model defined in `NEXORA_MODEL_ID` to run large chat models in the cloud without local hardware constraints.
+- **Local Model Runner (`nexora_provider.py`)**: For local inference, it loads the fine-tuned Nexora model (`vishvam26/nexora-qwen3.5-4b-lora-v1` built on the `Qwen/Qwen2.5-1.5B-Instruct` base model) with GPU CUDA acceleration and automatic CPU fallback. It uses `huggingface_hub.constants.HF_HUB_CACHE` to load and check for adapter files.
+
+---
+
+## ⚙️ Multi-Agent Orchestration (Agent Deep Dive)
+
+The chat screen utilizes an intelligent **Multi-Agent Orchestration Loop** managed by the `AgentOrchestrator` and orchestrated by a two-pass `ManagerAgent`.
+
+```mermaid
+graph TD
+    Query[User Chat Query] --> ManagerPlan[Manager Agent: Pass 1 Planning]
+    ManagerPlan -->|Step 1| MemoryAgent[Memory Agent: Retrieve Context]
+    ManagerPlan -->|Step 2| RAGAgent[RAG Agent: Fetch Semantics]
+    ManagerPlan -->|Step 3| MLAgent[ML Agent: Fetch Model Metrics & SHAP]
+    ManagerPlan -->|Step 4| SQLAgent[SQL Agent: Execute Database Queries]
+    ManagerPlan -->|Step 5| PythonAgent[Python Agent: Sandboxed Code Run]
+    ManagerPlan -->|Step 6| ReportAgent[Report Agent: Generate Boardroom PDF]
+    MemoryAgent & RAGAgent & MLAgent & SQLAgent & PythonAgent & ReportAgent --> Synthesizer[Manager Agent: Pass 2 Synthesis]
+    Synthesizer --> FinalAnswer[Final Structured Coherent Answer]
+```
+
+### Detailed Agent Operational Specs:
+
+#### 1. Manager Agent (`manager_agent.py`)
+- **Pass 1: Planning**: Evaluates the user request against the capabilities of all registered agents using LLM tool calling. It builds an ordered list of execution steps (dependency-aware).
+- **Pass 2: Synthesis**: Collects text summaries and data structures returned by the workers. It compiles a unified, cited, and boardroom-ready final response while guaranteeing anti-hallucination policies (no raw numbers can be fabricated outside the inputs).
+
+#### 2. ML Agent (`ml_agent.py`)
+- Wrapping the `MLService`, it queries the model registry and SHAP cache for the dataset linked to the conversation.
+- If requested to run a prediction, it collects the inputs, invokes the joblib pipeline, and explains the feature importances to the user.
+
+#### 3. RAG Agent (`rag_agent.py`) & Hugging Face Embedding
+- Connects to the **Qdrant Vector Database**.
+- Automatically indexes uploaded files into semantic fragments using the **`sentence-transformers/all-MiniLM-L6-v2`** model fetched from Hugging Face Hub, converting text blocks into 384-dimensional vector spaces.
+- Retrieves semantic text overlaps based on cosine similarity, ensuring that custom files, policy guidelines, and documents are incorporated in the generation process.
+
+#### 4. SQL Agent (`sql_agent.py`)
+- Connects to relational databases.
+- Inspects table schemas, generates optimized queries, executes them, and returns formatted result tables.
+
+#### 5. Python Agent (`python_agent.py`)
+- Generates Python code to perform statistical tests or generate complex graphs.
+- Executes scripts securely inside a sandboxed sub-process, saving outputs in the local scratch directory.
+
+#### 6. Email Agent (`email_agent.py`)
+- **MIME Generation**: Composes complex multipart MIME messages (`MIMEMultipart`) containing text or HTML sections.
+- **Regex Extraction**: Parses the planner agent's instructions (e.g. `to: client@co.com`, `subject: report`) using regular expressions.
+- **Dynamic Attachments**: Automatically looks up prior agent results (such as PDF files generated by `report_agent`) and appends them to the email envelope using `MIMEApplication`.
+- **SMTP Gateway Routing**: Dispatches messages using SMTP server authentication (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`) with a robust mock log fallback for local developers.
+
+#### 7. Calendar Agent (`calendar_agent.py`)
+- **Event Scheduling**: Checks for meeting slots and records events inside the `calendar_events` table using SQLAlchemy.
+- **Conflict Checker**: Queries the relational database to verify that overlapping sessions do not exist in the requested timeline.
+- **iCalendar Compliant Exports**: Generates standard, RFC-5545 compliant `.ics` calendars saved in the user's workspace reports directory, enabling seamless import into Outlook, Google Calendar, or Apple Calendar.
+
+#### 8. Memory Agent (`memory_agent.py`)
+- Queries past conversation context and user configuration profiles to maintain consistency across messages.
+
+#### 9. Analytics Agent (`analytics_agent.py`)
+- Computes statistical summaries of raw datasets (column mean, missing value frequencies, variance, class distributions).
+
+#### 10. Report Agent (`report_agent.py`)
+- Gathers data and generates comprehensive, high-quality, boardroom-ready PDF or HTML reports.
 
 ---
 
@@ -133,6 +215,15 @@ erDiagram
         string name
         int workspace_id FK
         string status
+        datetime created_at
+    }
+    CALENDAR_EVENTS {
+        int id PK
+        string title
+        string description
+        datetime start_time
+        datetime end_time
+        string attendees
         datetime created_at
     }
 
@@ -196,7 +287,7 @@ source venv/bin/activate
 # On Windows:
 venv\Scripts\activate
 
-# Install production and development dependencies
+# Install dependencies
 pip install -r requirements.txt
 
 # Run database setup & migrations (creates local dev SQLite database)
@@ -218,7 +309,7 @@ npm install
 # Run Next.js hot-reloaded development server
 npm run dev
 ```
-Open `http://localhost:3000` in your web browser.
+Open `http://localhost:3000` to view the local application dashboard.
 
 ---
 
