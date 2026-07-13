@@ -331,7 +331,7 @@ For production-simulated environments, we use Docker Compose to run the entire s
    ```bash
    make up
    ```
-   This orchestrates:
+   This orchestrating:
    - **Nginx Proxy**: Enforces routing (`/api` routes to FastAPI, other routes to Next.js).
    - **FastAPI backend (App)**: Web server.
    - **Next.js frontend (App)**: Static SSR server.
