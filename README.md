@@ -52,52 +52,41 @@ sequenceDiagram
 
 ---
 
-## 🧠 Custom ML Model Lifecycle & Hugging Face Integration
+## 🧠 Core Backend Engines (Deep Dive)
 
-Nexora AI includes a complete **Machine Learning Studio** (`ml_service.py`) and Hugging Face publisher API built directly into the backend. Instead of relying solely on general LLMs, users can train, evaluate, publish, and run inference locally or in the cloud.
+### 1. Tabular ML Studio Engine (`ml_service.py`)
+Built on top of Scikit-Learn, this module provides an automated tabular machine learning workspace:
+- **Feature & Target Scanning (`get_features_and_targets`)**: Scans tabular datasets (CSV/XLSX), recommends target columns matching concepts (e.g. `price`, `revenue`, `churn`, `target`), and profiles numerical vs. categorical columns.
+- **ColumnTransformer Preprocessing**: 
+  - *Numerical columns*: Handled by a pipeline containing median-strategy `SimpleImputer` and `StandardScaler`.
+  - *Categorical columns*: Handled by a pipeline containing most-frequent `SimpleImputer` and `OneHotEncoder` (ignoring unknown classes).
+- **Task & Model Selection**: Cardinality heuristics determine the task type:
+  - *Classification* (non-numeric target or cardinality $\le 10$): Random Forest Classifier, Gradient Boosting Classifier, or Logistic Regression.
+  - *Regression* (continuous numeric target): Random Forest Regressor, Gradient Boosting Regressor, or Linear Regression.
+- **SHAP Interpretability (`get_shap_explanation`)**: Explains model decisions using **SHAP (SHapley Additive exPlanations)** values, returning feature rankings by mean absolute SHAP attributions.
+- **Model Registry (`get_model_comparison`)**: Registers runs under `storage/ml_registry/comparison_{doc_id}.json` to track and rank multiple algorithms side-by-side.
 
-```mermaid
-graph TD
-    Dataset[Tabular Dataset CSV/XLSX] --> Options[Feature & Target Scanner]
-    Options --> Prep[Column Transformer: Median Impute / OneHot / Scaler]
-    Prep --> Train[Train: RF / GB / Linear Model]
-    Train --> Metrics[Evaluate: Accuracy / R2 / MAE / MSE]
-    Train --> SHAP[Compute SHAP Explainability]
-    Train --> Save[Serialize Model as joblib Checkpoint]
-    Save --> Publish[Publish Checkpoint to Hugging Face Model Hub]
-    Save --> Registry[Register Run in Model Comparison Registry]
-    Registry --> Agent[ML Agent Reads Session Metadata & Predicts]
-```
+### 2. Fast LLM Fine-Tuning & Quantization
+For large language model training, the system integrates a PEFT QLoRA pipeline:
+- **Unsloth Training Engine (`unsloth_integration_service.py`)**: Uses Unsloth's `FastLanguageModel` to load models in 4-bit precision, configuring LoRA ranks (rank $r=16$, alpha $\alpha=32$) on target modules (`q_proj`, `k_proj`, etc.). Logs metrics (Loss, Learning Rate, tokens/sec, GPU VRAM) and outputs model adapters. Contains a fallback simulator for CPU development environments.
+- **LoRA Weight Fusion (`lora_merge_service.py`)**: Integrates PEFT's `merge_and_unload()` routines to combine trained Adapter weights back into base model parameters.
+- **llama.cpp Quantization Export (`gguf_export_service.py`)**: Quantizes PyTorch models into GGUF formats (e.g. `Q4_K_M`) and writes custom **Ollama Modelfile manifests** using ChatML tokenizer markers (`<|im_start|>`, `<|im_end|>`).
+- **Hugging Face Hub Publisher (`huggingface_service.py`)**: Authenticates using the developer's `HF_TOKEN` via `HfApi`, auto-creates repositories, and uploads adapter weights directly to `https://huggingface.co/{repo_id}`.
+- **Model Local Runner (`nexora_provider.py`)**: Loads local models dynamically from the Hugging Face cache folder (`HF_HUB_CACHE`) using PEFT, supporting GPU CUDA acceleration and CPU fallbacks.
 
-### 1. Ingestion & Preprocessing Pipeline
-- **Auto-Detection (`get_features_and_targets`)**: When a user selects a dataset document, the system scans all columns. It recommends target variables based on column names (e.g., matching keywords like *price, churn, target*) and detects types (numeric vs. categorical).
-- **Dynamic Preprocessing**:
-  - **Numerical columns**: Imputed using `SimpleImputer` (median strategy) and scaled using `StandardScaler`.
-  - **Categorical columns**: Imputed using `SimpleImputer` (most frequent strategy) and encoded using `OneHotEncoder` (handling unknown categories gracefully).
-  - All operations are bound inside a Scikit-Learn `ColumnTransformer`.
+### 3. Adaptive RAG & Search Pipeline
+RAG operations are dynamically managed using classification and intent-based routing:
+- **Adaptive Retrieval Engine (`adaptive_retrieval_service.py`)**: Queries are first classified into categories (Greeting, Summarization, Coding, Debugging). Retrieval parameters are adjusted accordingly:
+  - Dynamic Top-K is set (e.g. up to 12 context blocks for Coding/Debugging; only 2 for greetings).
+  - Near-duplicate matches are removed by computing text-similarity Jaccard indices.
+- **Parallel Hybrid Search (`hybrid_search_service.py`)**: Parallelizes Lexical search (SQLite FTS/PostgreSQL Full-Text indexes) and Semantic search (Qdrant vector indexes using the **`sentence-transformers/all-MiniLM-L6-v2`** 384-dimensional embedding model). Combines hits using Reciprocal Rank Fusion ($70\%$ vector, $30\%$ lexical).
+- **RAG Evaluation (`rag_evaluation_service.py`)**: Measures RAG quality using LLM-as-a-judge metrics: *Context Precision*, *Context Recall*, *Groundedness*, and *Faithfulness*.
+- **Semantic Knowledge Graphs (`knowledge_graph_service.py`)**: Extracts entities from text based on type rules (Languages: *python, rust*, etc.; Frameworks: *fastapi, nextjs*, etc.; Databases: *postgresql, redis*, etc.). Links concepts that appear together in a document using `KnowledgeNode` and `KnowledgeEdge` relations.
 
-### 2. Automated Task Selection & Model Training (`train_pipeline`)
-The engine dynamically chooses the modeling task type based on target cardinality:
-- **Classification**: Triggered if the target is non-numeric or has $\le 10$ unique classes. Algorithms supported: *Random Forest Classifier, Gradient Boosting Classifier, Logistic Regression*.
-- **Regression**: Triggered for continuous numerical targets. Algorithms supported: *Random Forest Regressor, Gradient Boosting Regressor, Linear Regression*.
-
-The data is split ($80\%$ training, $20\%$ test), the model is fitted, and primary metrics are calculated:
-- **Classification metrics**: Accuracy, Precision, Recall, F1-Score.
-- **Regression metrics**: $R^2$, Mean Absolute Error (MAE), Mean Squared Error (MSE).
-
-### 3. Serialization & Model Registry
-- **joblib Checkpoints**: Once trained, the entire pipeline (preprocessor + model estimator) is serialized and cached at `storage/ml_models/model_{doc_id}.joblib` for instant live predictions.
-- **Model Registry**: Training metrics and parameters are registered at `storage/ml_registry/comparison_{doc_id}.json` to compare different algorithms side-by-side.
-
-### 4. SHAP Feature Interpretability
-After training, the platform calculates **SHAP (SHapley Additive exPlanations)** values.
-- SHAP attribution ranks features by their mean absolute contribution ($|SHAP|$) to the target prediction.
-- This allows users (and AI agents) to understand *why* the model makes specific predictions (e.g. "Tenure contributes $35\%$ to churn risk").
-
-### 5. Hugging Face Hub Integration
-- **Hugging Face Model Publisher (`/publish/huggingface`)**: Developers can upload trained model weights and adapter checkpoints directly to the Hugging Face Hub using the `HuggingFaceService`. It validates the user's `HF_TOKEN`, creates a model repository on the hub, and pushes files to `https://huggingface.co/{repo_id}`.
-- **Inference Provider (`huggingface_provider.py`)**: Connects to the Hugging Face Serverless API router (`https://router.huggingface.co/v1`) using the model defined in `NEXORA_MODEL_ID` to run large chat models in the cloud without local hardware constraints.
-- **Local Model Runner (`nexora_provider.py`)**: For local inference, it loads the fine-tuned Nexora model (`vishvam26/nexora-qwen3.5-4b-lora-v1` built on the `Qwen/Qwen2.5-1.5B-Instruct` base model) with GPU CUDA acceleration and automatic CPU fallback. It uses `huggingface_hub.constants.HF_HUB_CACHE` to load and check for adapter files.
+### 4. Enterprise Security & Workspace Restoration
+- **PII Masking (`pii_masking_service.py`)**: Scans user prompts using regex compile rules to strip emails, phone numbers, credit card numbers, Indian Aadhar numbers, and API keys, replacing them with tokens (e.g., `[[MASKED_EMAIL]]`) before external LLM dispatch.
+- **Workspace Permission Control (`permission_service.py`)**: Enforces Role-Based Access Control (RBAC) across workspaces. Roles supported: `OWNER`, `ADMIN`, `MEMBER`, and `VIEWER`.
+- **JSON & ZIP Workspace Backups (`workspace_export_service.py`, `workspace_import_service.py`)**: Packages workspace folders, conversations, messages, reactions, comments, templates, and members into structured JSON archives. Imports backups back into active tables while managing full transactional database rollbacks on failure.
 
 ---
 
@@ -163,111 +152,54 @@ graph TD
 
 ---
 
-## 💾 Database Schema Design
+## 💾 Relational Database Design
 
-The backend uses SQLAlchemy to interact with the database. The database is designed with the following normalized table relationships:
+The database contains 24 normalization tables mapped in SQLAlchemy models under `app/models/`:
 
-```mermaid
-erDiagram
-    USERS {
-        int id PK
-        string full_name
-        string email
-        string password_hash
-        boolean is_active
-        datetime created_at
-    }
-    WORKSPACES {
-        int id PK
-        string name
-        int owner_id FK
-        datetime created_at
-    }
-    WORKSPACE_MEMBERS {
-        int id PK
-        int workspace_id FK
-        int user_id FK
-        string role
-        datetime joined_at
-    }
-    CONVERSATIONS {
-        int id PK
-        string title
-        int workspace_id FK
-        int user_id FK
-        datetime created_at
-    }
-    MESSAGES {
-        int id PK
-        int conversation_id FK
-        string role
-        string content
-        datetime timestamp
-    }
-    KNOWLEDGE_BASES {
-        int id PK
-        string name
-        int workspace_id FK
-        datetime created_at
-    }
-    TRAINING_PROJECTS {
-        int id PK
-        string name
-        int workspace_id FK
-        string status
-        datetime created_at
-    }
-    CALENDAR_EVENTS {
-        int id PK
-        string title
-        string description
-        datetime start_time
-        datetime end_time
-        string attendees
-        datetime created_at
-    }
-
-    USERS ||--o{ WORKSPACES : "owns"
-    WORKSPACES ||--o{ WORKSPACE_MEMBERS : "has"
-    USERS ||--o{ WORKSPACE_MEMBERS : "joined"
-    WORKSPACES ||--o{ CONVERSATIONS : "contains"
-    USERS ||--o{ CONVERSATIONS : "starts"
-    CONVERSATIONS ||--o{ MESSAGES : "has"
-    WORKSPACES ||--o{ KNOWLEDGE_BASES : "owns"
-    WORKSPACES ||--o{ TRAINING_PROJECTS : "tracks"
-```
+- **User Accounts (`user.py`)**: `users` stores profile information, email addresses, and passwords hashed using bcrypt.
+- **Workspace Structures**:
+  - `workspaces` (`workspace.py`): Tracks workspaces, ownership, and enterprise feature restrictions.
+  - `workspace_members` (`workspace_member.py`): Maps collaborators to workspaces with roles (`OWNER`, `ADMIN`, `MEMBER`, `VIEWER`).
+  - `workspace_invitations` (`workspace_invitation.py`): Manages tokenized invitations for new collaborators.
+  - `workspace_templates` (`workspace_template.py`): Configuration templates for starting workspaces.
+- **Chat Feed**:
+  - `conversations` (`conversation.py`): Chat streams grouped by folders.
+  - `messages` (`message.py`): Interactive message objects.
+  - `message_reactions` (`message_reaction.py`): Emoji reactions linked to messages.
+  - `conversation_comments` (`conversation_comment.py`): Review threads allowing user tagging and mentions (`mention.py`).
+  - `conversation_versions` (`conversation_version.py`): Version history of conversation trees.
+- **Knowledge Base & RAG**:
+  - `knowledge_bases` (`knowledge_base.py`): Relational catalog of workspace knowledge.
+  - `knowledge_documents` (`knowledge_document.py`): Physical paths of uploaded datasets.
+  - `document_chunks` (`document_chunk.py`): Text mappings to vector IDs.
+  - `retrieval_logs` (`retrieval_log.py`): Logs query latencies, vector hit counts, and LLM precision scores.
+  - `knowledge_nodes` & `knowledge_edges` (`knowledge_graph.py`): Concepts and concept relations.
+- **Training Studio (`training_project.py`)**:
+  - `training_projects`: Datasets linked for fine-tuning.
+  - `training_runs`: Active training checkpoints and targets.
+  - `training_logs`: Step-by-step step losses and learning rates.
+  - `training_artifacts`: Paths of adapter binaries.
+- **Calendar events (`calendar_event.py`)**: `calendar_events` stores booked meeting rooms, start/end datetimes, and attendees.
 
 ---
 
-## 🛣️ API Endpoint Specifications
+## 🎨 Frontend Component Map
 
-Below is a breakdown of the primary REST API endpoint categories available on the FastAPI backend:
+The dashboard frontend contains 15 modular React components written in TypeScript:
 
-### Authentication & Users
-- `POST /api/v1/auth/login`: Validate credentials and issue JWT tokens.
-- `POST /api/v1/auth/register`: Create a new user profile.
-- `GET /api/v1/users/me`: Fetch current active profile details.
-
-### Workspace Administration
-- `GET /api/v1/workspaces`: List all workspaces where the current user is an owner or collaborator.
-- `POST /api/v1/workspaces`: Create a new workspace template.
-- `POST /api/v1/workspaces/{id}/invite`: Send a workspace invitation link.
-- `POST /api/v1/workspaces/import`: Import a packaged workspace archive JSON.
-
-### Chat & Message Feed
-- `GET /api/v1/conversations`: Retrieve active chat histories.
-- `POST /api/v1/chat/stream`: Stream token responses from the Planner Agent (using Server-Sent Events / SSE).
-- `POST /api/v1/messages/{id}/reaction`: Add emoji reactions to chat bubbles.
-- `POST /api/v1/conversations/{id}/replay`: Replay step-by-step agent decisions for a past chat.
-
-### Knowledge Base & File Uploads
-- `POST /api/v1/knowledge/upload`: Parse and upload files to the vector index.
-- `GET /api/v1/knowledge/debug`: Inspect raw vector data chunks.
-- `GET /api/v1/search/advanced`: Run composite semantic + keyword queries.
-
-### Machine Learning Console
-- `GET /api/v1/training-projects`: Fetch status of active training runs.
-- `POST /api/v1/ml/evaluate`: Trigger an automated evaluation run on a model checkpoint.
+| Component | File | Responsibility |
+| :--- | :--- | :--- |
+| **Agent Studio** | `agent-studio.tsx` | UI to configure developer system prompts and LLM parameters. |
+| **Data Analytics** | `analytics-area.tsx` | Grid layout profiling dataset stats, columns, and correlations. |
+| **Calendar Scheduler**| `calendar-studio.tsx` | Calendar layout representing meeting rooms and sync `.ics` buttons. |
+| **Email Interface** | `email-studio.tsx` | Sandbox representing SMTP logs and MIME dispatch forms. |
+| **Evaluation Board** | `eval-dashboard.tsx` | Visual charts of RAG faithfulness and groundedness scores. |
+| **Knowledge Graph** | `knowledge-area.tsx` | Document vector lists and interactive D3 semantic networks. |
+| **ML Studio** | `ml-area.tsx` | Starts tabular model trainings and displays SHAP attribution graphs. |
+| **Code Sandbox** | `python-studio.tsx` | Editor panel executing secure Python scripts in backend runners. |
+| **Report Generator** | `report-area.tsx` | Renders boardroom PDF export previews. |
+| **SQL Terminal** | `sql-studio.tsx` | Database browser executing SELECT queries. |
+| **Chat Hub** | `chat-area.tsx` | SSE stream interface tracking multi-agent decisions. |
 
 ---
 
@@ -331,7 +263,7 @@ For production-simulated environments, we use Docker Compose to run the entire s
    ```bash
    make up
    ```
-   This orchestrating:
+   This orchestrates:
    - **Nginx Proxy**: Enforces routing (`/api` routes to FastAPI, other routes to Next.js).
    - **FastAPI backend (App)**: Web server.
    - **Next.js frontend (App)**: Static SSR server.
