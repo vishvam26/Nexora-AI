@@ -6,26 +6,47 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap');
 
 :root {
-  --background: #fcfcfd;
-  --foreground: #101828;
-  --border: #eaecf0;
-  --card: #ffffff;
+  --background: #f8f9fc;
+  --foreground: #0f172a;
+  --border: rgba(15, 23, 42, 0.08);
+  --card: rgba(255, 255, 255, 0.7);
   --primary: #4f46e5;
   --primary-hover: #4338ca;
-  --sidebar-bg: #f8f9fc;
-  --sidebar-active: #f1f3f9;
+  --sidebar-bg: rgba(241, 243, 249, 0.75);
+  --sidebar-active: rgba(228, 231, 242, 0.8);
+  
+  /* Nexora Light Design Tokens */
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  --glass-border: rgba(15, 23, 42, 0.06);
+  --glass-border-glow: rgba(79, 70, 229, 0.25);
+  --indigo: #4f46e5;
+  --violet: #7c3aed;
+  --cyan: #06b6d4;
+  --glow-indigo: 0 0 30px rgba(79, 70, 229, 0.08);
+  --glow-indigo-strong: 0 0 50px rgba(79, 70, 229, 0.15);
+  --grid-line: rgba(15, 23, 42, 0.02);
+  --panel-bg: rgba(255, 255, 255, 0.45);
+  
+  /* Text and input light tokens */
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --input-bg: rgba(255, 255, 255, 0.9);
+  --input-border: rgba(15, 23, 42, 0.12);
+  --glow-color: rgba(79, 70, 229, 0.3);
 }
 
 .dark {
   --background: #09090b;
   --foreground: #f4f4f5;
-  --border: #1f1f23;
-  --card: #121214;
+  --border: rgba(255, 255, 255, 0.05);
+  --card: rgba(20, 20, 25, 0.7);
   --primary: #6366f1;
   --primary-hover: #4f46e5;
-  --sidebar-bg: #080808;
-  --sidebar-active: #18181b;
-  /* Nexora Design Tokens */
+  --sidebar-bg: rgba(9, 9, 11, 0.75);
+  --sidebar-active: rgba(24, 24, 27, 0.85);
+  
+  /* Nexora Dark Design Tokens */
   --glass-bg: rgba(24, 24, 27, 0.45);
   --glass-border: rgba(39, 39, 42, 0.5);
   --glass-border-glow: rgba(99, 102, 241, 0.3);
@@ -34,6 +55,112 @@
   --cyan: #22d3ee;
   --glow-indigo: 0 0 30px rgba(99, 102, 241, 0.15);
   --glow-indigo-strong: 0 0 50px rgba(99, 102, 241, 0.25);
+  --grid-line: rgba(255, 255, 255, 0.025);
+  --panel-bg: rgba(9, 9, 11, 0.55);
+  
+  /* Text and input dark tokens */
+  --text-primary: #ffffff;
+  --text-secondary: #d4d4d8;
+  --text-muted: #71717a;
+  --input-bg: rgba(9, 9, 11, 0.9);
+  --input-border: rgba(255, 255, 255, 0.08);
+  --glow-color: rgba(99, 102, 241, 0.6);
+}
+
+/* ── Theme Global Overrides (Light Mode overrides) ────────────────────── */
+html:not(.dark) body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Sidebar and Left Panels */
+html:not(.dark) aside,
+html:not(.dark) .bg-zinc-950,
+html:not(.dark) .bg-zinc-900\/60,
+html:not(.dark) .bg-zinc-900\/90,
+html:not(.dark) .bg-zinc-900\/30,
+html:not(.dark) .bg-zinc-900\/10,
+html:not(.dark) .bg-zinc-900 {
+  background-color: var(--card) !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--border) !important;
+}
+
+/* Border overrides */
+html:not(.dark) .border-zinc-800,
+html:not(.dark) .border-zinc-900,
+html:not(.dark) .border-zinc-800\/60,
+html:not(.dark) .border-zinc-700 {
+  border-color: var(--border) !important;
+}
+
+/* Text overrides - Selective styling to avoid breaking button text contrast */
+html:not(.dark) h1,
+html:not(.dark) h2,
+html:not(.dark) h3,
+html:not(.dark) h4,
+html:not(.dark) h5,
+html:not(.dark) h6,
+html:not(.dark) .text-zinc-900,
+html:not(.dark) .text-zinc-800 {
+  color: var(--text-primary) !important;
+}
+
+html:not(.dark) p,
+html:not(.dark) .text-zinc-100,
+html:not(.dark) .text-zinc-200,
+html:not(.dark) .text-zinc-300,
+html:not(.dark) .text-zinc-400 {
+  color: var(--text-secondary) !important;
+}
+
+html:not(.dark) button .text-zinc-100,
+html:not(.dark) button .text-zinc-200,
+html:not(.dark) button .text-white,
+html:not(.dark) a .text-white,
+html:not(.dark) button.text-white,
+html:not(.dark) .bg-indigo-600 .text-white,
+html:not(.dark) .bg-gradient-to-br .text-white,
+html:not(.dark) .bg-gradient-to-r .text-white,
+html:not(.dark) .bg-indigo-600 .text-zinc-100 {
+  color: #ffffff !important;
+}
+
+html:not(.dark) .text-zinc-500,
+html:not(.dark) .text-zinc-650,
+html:not(.dark) .text-zinc-600,
+html:not(.dark) .text-zinc-700 {
+  color: var(--text-muted) !important;
+}
+
+/* Inputs and interactive elements */
+html:not(.dark) input,
+html:not(.dark) textarea,
+html:not(.dark) select {
+  background-color: var(--input-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--input-border) !important;
+}
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Chat container and bubble overrides */
+html:not(.dark) .bg-zinc-900\/50 {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  border-color: var(--border) !important;
+}
+html:not(.dark) .bg-indigo-600\/10 {
+  background-color: rgba(79, 70, 229, 0.08) !important;
+}
+
+/* Scrollbars in light mode */
+html:not(.dark) ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 /* ── Base Typography ─────────────────────────────────────────────────── */

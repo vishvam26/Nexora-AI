@@ -6,9 +6,8 @@ from fastapi import HTTPException, status
 from app.config import settings
 from app.providers.provider_interface import AIProviderInterface
 
-logger = logging.getLogger("app.providers.nexora_provider")
-logger.setLevel(logging.INFO)
 import os
+logger = logging.getLogger("app.providers.nexora_provider")
 try:
     file_handler = logging.FileHandler("C:/Users/vishv/.gemini/antigravity-ide/brain/ba311efa-90f6-4f38-a17e-4d8a2be32c35/backend.log", encoding="utf-8")
     file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
@@ -71,7 +70,6 @@ class NexoraProvider(AIProviderInterface):
                 # Clean up any stale HF lock files to prevent hanging/getting stuck
                 try:
                     from huggingface_hub.constants import HF_HUB_CACHE
-                    import os
                     if os.path.exists(HF_HUB_CACHE):
                         logger.info(f"Checking for stale lock files in HF cache: {HF_HUB_CACHE}")
                         for root, dirs, files in os.walk(HF_HUB_CACHE):

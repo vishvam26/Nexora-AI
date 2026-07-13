@@ -8,7 +8,7 @@ import {
   Brain, FileSpreadsheet, Play, Activity, 
   Settings, Loader2, ArrowLeft, HelpCircle, 
   Sliders, Sparkles, AlertCircle, Compass, 
-  CheckCircle2, Gauge, Award, Layers
+  CheckCircle2, Gauge, Award, Layers, ChevronLeft, ChevronRight
 } from "lucide-react";
 
 interface ColumnOption {
@@ -45,6 +45,7 @@ interface PredictionResult {
 
 export default function MLArea() {
   const { activeWorkspace, setActiveView } = useChatStore();
+  const [panelOpen, setPanelOpen] = useState(true);
 
   // Document states
   const [spreadsheets, setSpreadsheets] = useState<KnowledgeDocument[]>([]);
@@ -227,11 +228,22 @@ export default function MLArea() {
   };
 
   return (
-    <div className="flex h-full w-full bg-[#09090b] text-[#f4f4f5] overflow-hidden">
+    <div className="relative flex h-full w-full text-[#f4f4f5] overflow-hidden bg-transparent">
       
       {/* Left panel: Spreadsheet File Select */}
-      <div className="w-[320px] flex-shrink-0 border-r border-zinc-800 bg-zinc-950 flex flex-col justify-between">
-        <div className="p-6 overflow-y-auto flex-1 space-y-6">
+      <div 
+        className="flex-shrink-0 flex flex-col justify-between" 
+        style={{ 
+          width: panelOpen ? "320px" : "0px",
+          opacity: panelOpen ? 1 : 0,
+          pointerEvents: panelOpen ? "auto" : "none",
+          background: "var(--panel-bg)", 
+          borderRight: panelOpen ? "1px solid var(--border)" : "none", 
+          backdropFilter: "blur(12px)",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+        }}
+      >
+        <div className="p-6 overflow-y-auto flex-1 space-y-6 min-w-[320px]">
           <div className="flex items-center gap-2">
             <Brain className="h-5 w-5 text-indigo-500" />
             <h2 className="text-lg font-bold text-white">ML Studio</h2>
@@ -284,6 +296,21 @@ export default function MLArea() {
           </button>
         </div>
       </div>
+
+      {/* Floating Collapse Trigger */}
+      <button
+        onClick={() => setPanelOpen(!panelOpen)}
+        className="absolute top-6 z-30 flex h-6 w-6 items-center justify-center rounded-full text-zinc-500 hover:text-indigo-400 shadow-lg transition-all"
+        style={{ 
+          left: panelOpen ? "308px" : "12px", 
+          background: "var(--input-bg)", 
+          border: "1px solid var(--border)",
+          transition: "left 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+        }}
+        title={panelOpen ? "Collapse sidebar" : "Expand sidebar"}
+      >
+        {panelOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+      </button>
 
       {/* Main ML Studio Workspace */}
       <div className="flex-1 overflow-y-auto bg-zinc-900/10 p-8">

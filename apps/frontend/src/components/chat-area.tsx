@@ -39,6 +39,22 @@ export default function ChatArea() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  const [displayText, setDisplayText] = useState("");
+  const fullText = "How can Nexora AI help you?";
+
+  useEffect(() => {
+    let index = 0;
+    setDisplayText("");
+    const interval = setInterval(() => {
+      setDisplayText(fullText.slice(0, index + 1));
+      index++;
+      if (index >= fullText.length) {
+        clearInterval(interval);
+      }
+    }, 50);
+    return () => clearInterval(interval);
+  }, [activeConversation]);
+
   useEffect(() => {
     if (activeWorkspace) apiService.fetchKnowledgeBases(activeWorkspace.id);
   }, [activeWorkspace]);
@@ -116,9 +132,20 @@ export default function ChatArea() {
             </button>
           )}
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md"
-              style={{ background: "linear-gradient(135deg,rgba(99,102,241,0.3),rgba(139,92,246,0.2))", border: "1px solid rgba(99,102,241,0.25)" }}>
-              <Cpu className="h-3.5 w-3.5 text-indigo-400" />
+            <div className="flex h-6 w-6 items-center justify-center rounded-md border"
+              style={{ background: "linear-gradient(135deg,rgba(34,211,238,0.15),rgba(99,102,241,0.08))", borderColor: "rgba(34,211,238,0.25)" }}>
+              {/* Original Skyblue Bird Logo ^ */}
+              <svg viewBox="0 0 100 100" fill="none" className="h-4.5 w-4.5 filter drop-shadow-[0_0_4px_rgba(34,211,238,0.4)]">
+                <path d="M 50 10 L 60 40 L 55 70 L 45 70 L 40 40 Z" fill="url(#header-bird-grad)" />
+                <path d="M 50 40 Q 20 20 10 40 Q 30 45 50 50 Z" fill="url(#header-bird-grad)" />
+                <path d="M 50 40 Q 80 20 90 40 Q 70 45 50 50 Z" fill="url(#header-bird-grad)" />
+                <defs>
+                  <linearGradient id="header-bird-grad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#22d3ee" />
+                    <stop offset="100%" stopColor="#6366f1" />
+                  </linearGradient>
+                </defs>
+              </svg>
             </div>
             <h1 className="text-sm font-semibold text-zinc-200 tracking-tight">
               {activeWorkspace?.name || "Workspace"}
@@ -141,42 +168,71 @@ export default function ChatArea() {
       <div className="flex-1 overflow-y-auto px-6 py-8">
         {isEmptyState ? (
           /* ─ Welcome Screen ─ */
-          <div className="flex h-full flex-col items-center justify-center text-center max-w-[600px] mx-auto space-y-8 select-none pb-8">
+          <div className="flex h-full flex-col items-center justify-start text-center max-w-[600px] mx-auto space-y-8 select-none pt-14 md:pt-16 pb-8">
 
             {/* Animated badge */}
-            <div className="relative">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl"
+            <div className="relative mt-4">
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl border"
                 style={{
-                  background: "linear-gradient(135deg,rgba(99,102,241,0.15),rgba(139,92,246,0.08))",
-                  border: "1px solid rgba(99,102,241,0.25)",
-                  boxShadow: "0 0 40px rgba(99,102,241,0.15), 0 0 80px rgba(99,102,241,0.05)",
+                  background: "linear-gradient(135deg,rgba(34,211,238,0.15),rgba(99,102,241,0.08))",
+                  borderColor: "rgba(34,211,238,0.25)",
+                  boxShadow: "0 0 40px rgba(34,211,238,0.15), 0 0 80px rgba(99,102,241,0.05)",
                 }}>
-                <svg viewBox="0 0 40 40" className="h-10 w-10">
+                {/* Original Skyblue Bird Logo ^ */}
+                <svg viewBox="0 0 100 100" fill="none" className="h-12 w-12 animate-pulse filter drop-shadow-[0_0_12px_rgba(34,211,238,0.4)]">
+                  <path d="M 50 10 L 60 40 L 55 70 L 45 70 L 40 40 Z" fill="url(#chat-bird-grad)" />
+                  <path d="M 50 40 Q 20 20 10 40 Q 30 45 50 50 Z" fill="url(#chat-bird-grad)" />
+                  <path d="M 50 40 Q 80 20 90 40 Q 70 45 50 50 Z" fill="url(#chat-bird-grad)" />
                   <defs>
-                    <linearGradient id="nxg" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#818cf8"/>
-                      <stop offset="100%" stopColor="#c084fc"/>
+                    <linearGradient id="chat-bird-grad" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#22d3ee" />
+                      <stop offset="100%" stopColor="#6366f1" />
                     </linearGradient>
                   </defs>
-                  <path d="M20 3 L4 37 L20 27 L36 37 Z" fill="url(#nxg)" opacity="0.9"/>
                 </svg>
               </div>
               {/* Outer rings */}
               <div className="absolute inset-[-12px] rounded-3xl animate-ping opacity-10"
-                style={{ border: "1px solid rgba(99,102,241,0.5)" }} />
+                style={{ border: "1px solid rgba(34,211,238,0.4)" }} />
               <div className="absolute inset-[-24px] rounded-[2rem] animate-ping opacity-5"
-                style={{ border: "1px solid rgba(139,92,246,0.4)", animationDelay: "0.5s" }} />
+                style={{ border: "1px solid rgba(99,102,241,0.3)", animationDelay: "0.5s" }} />
             </div>
 
             {/* Headline */}
             <div className="space-y-3">
-              <h2 className="text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
-                How can{" "}
-                <span style={{ background: "linear-gradient(90deg,#818cf8,#c084fc)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                  Nexora AI
-                </span>{" "}
-                help you?
-              </h2>
+              {(() => {
+                const len = displayText.length;
+                const isDone = len === fullText.length;
+                let content;
+                if (len <= 8) {
+                  content = <span>{displayText}</span>;
+                } else if (len <= 17) {
+                  content = (
+                    <>
+                      How can{" "}
+                      <span style={{ background: "linear-gradient(90deg,#818cf8,#c084fc)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                        {displayText.slice(8)}
+                      </span>
+                    </>
+                  );
+                } else {
+                  content = (
+                    <>
+                      How can{" "}
+                      <span style={{ background: "linear-gradient(90deg,#818cf8,#c084fc)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                        Nexora AI
+                      </span>
+                      {displayText.slice(17)}
+                    </>
+                  );
+                }
+                return (
+                  <h2 className="text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+                    {content}
+                    {!isDone && <span className="animate-pulse text-indigo-400 ml-1">|</span>}
+                  </h2>
+                );
+              })()}
               <p className="text-sm text-zinc-500 max-w-md mx-auto leading-relaxed">
                 Running a fine-tuned Qwen model locally. Ground answers in custom files, train ML classifiers, or trigger background agents.
               </p>
@@ -271,7 +327,7 @@ export default function ChatArea() {
                 <div className="relative">
                   {selectedChatKb ? (
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
-                      style={{ border: "1px solid rgba(99,102,241,0.2)", background: "rgba(99,102,241,0.08)", color: "#a5b4fc" }}>
+                      style={{ border: "1px solid rgba(99,102,241,0.25)", background: "rgba(99,102,241,0.1)", color: "var(--indigo)" }}>
                       <span>{selectedChatKb.icon}</span>
                       <span className="truncate max-w-[130px]">{selectedChatKb.title}</span>
                       <button onClick={() => setSelectedChatKb(null)} className="ml-1 opacity-60 hover:opacity-100 transition">
@@ -280,26 +336,24 @@ export default function ChatArea() {
                     </div>
                   ) : (
                     <button onClick={() => setKbSelectorOpen(!kbSelectorOpen)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition"
-                      style={{ border: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.02)", color: "#52525b" }}>
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition border"
+                      style={{ borderColor: "var(--border)", background: "var(--input-bg)", color: "var(--text-secondary)" }}>
                       <BookOpen className="h-3.5 w-3.5" />
                       Select Knowledge Source
                     </button>
                   )}
                   {kbSelectorOpen && (
-                    <div className="absolute bottom-full left-0 mb-2 w-60 rounded-xl p-2 shadow-2xl z-50 space-y-0.5"
-                      style={{ background: "rgba(9,9,11,0.95)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(20px)" }}>
-                      <p className="text-[9px] font-bold text-zinc-600 px-2 py-1.5 uppercase tracking-wider">
+                    <div className="absolute bottom-full left-0 mb-2 w-60 rounded-xl p-2 shadow-2xl z-50 space-y-0.5 border"
+                      style={{ background: "var(--input-bg)", borderColor: "var(--border)", backdropFilter: "blur(20px)" }}>
+                      <p className="text-[9px] font-bold text-zinc-500 px-2 py-1.5 uppercase tracking-wider">
                         Bases ({knowledgeBases.length})
                       </p>
                       {knowledgeBases.length === 0 ? (
-                        <p className="text-[10px] text-zinc-600 px-2 py-2">No bases found. Add in Knowledge tab.</p>
+                        <p className="text-[10px] text-zinc-500 px-2 py-2">No bases found. Add in Knowledge tab.</p>
                       ) : knowledgeBases.map(kb => (
                         <button key={kb.id} onClick={() => { setSelectedChatKb(kb); setKbSelectorOpen(false); }}
-                          className="w-full flex items-center gap-2 p-2 rounded-lg text-left text-zinc-300 hover:text-white transition"
-                          style={{ background: "transparent" }}
-                          onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
-                          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
+                          className="w-full flex items-center gap-2 p-2 rounded-lg text-left text-zinc-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition"
+                          style={{ background: "transparent" }}>
                           <span className="text-sm">{kb.icon}</span>
                           <span className="text-xs font-semibold truncate">{kb.title}</span>
                         </button>
@@ -318,18 +372,18 @@ export default function ChatArea() {
           </div>
 
           {/* Textarea input */}
-          <div className="relative flex items-end gap-2 rounded-2xl p-2.5 transition-all duration-200"
+          <div className="relative flex items-end gap-2 rounded-2xl p-2.5 transition-all duration-200 border"
             style={{
-              background: "rgba(24,24,27,0.7)",
-              border: "1px solid rgba(255,255,255,0.07)",
+              background: "var(--input-bg)",
+              borderColor: "var(--input-border)",
               backdropFilter: "blur(12px)",
             }}
             onFocus={() => {}}
-            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(99,102,241,0.3)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 24px rgba(99,102,241,0.07)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.07)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; }}>
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "var(--primary)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "var(--glow-indigo)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "var(--input-border)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; }}>
 
             <button onClick={() => setKbSelectorOpen(!kbSelectorOpen)}
-              className="rounded-xl p-2 text-zinc-600 hover:text-zinc-400 transition-colors"
+              className="rounded-xl p-2 text-zinc-550 hover:text-indigo-400 transition-colors"
               title="Select Knowledge Base">
               <Paperclip className="h-4 w-4" />
             </button>
@@ -337,17 +391,17 @@ export default function ChatArea() {
             <textarea ref={textareaRef} rows={1} value={inputVal}
               onChange={e => setInputVal(e.target.value)} onKeyDown={handleKeyDown}
               placeholder={groundingEnabled && selectedChatKb ? `Ask about "${selectedChatKb.title}"...` : "Ask a question..."}
-              className="flex-1 resize-none bg-transparent py-2 px-1.5 text-sm text-zinc-100 outline-none min-h-[38px] max-h-[200px]"
-              style={{ caretColor: "#818cf8", color: "#e4e4e7" }}
+              className="flex-1 resize-none bg-transparent py-2 px-1.5 text-sm outline-none min-h-[38px] max-h-[200px]"
+              style={{ caretColor: "var(--primary)", color: "var(--text-primary)" }}
               disabled={isStreaming}
             />
 
             <button onClick={handleSend} disabled={!inputVal.trim() || isStreaming}
               className="rounded-xl p-2.5 transition-all duration-200"
               style={{
-                background: inputVal.trim() && !isStreaming ? "linear-gradient(135deg,#4f46e5,#7c3aed)" : "rgba(255,255,255,0.03)",
-                boxShadow: inputVal.trim() && !isStreaming ? "0 0 20px rgba(99,102,241,0.3)" : "none",
-                color: inputVal.trim() && !isStreaming ? "#fff" : "#3f3f46",
+                background: inputVal.trim() && !isStreaming ? "linear-gradient(135deg,var(--primary),var(--violet))" : "var(--border)",
+                boxShadow: inputVal.trim() && !isStreaming ? "var(--glow-indigo-strong)" : "none",
+                color: inputVal.trim() && !isStreaming ? "#fff" : "var(--text-muted)",
                 cursor: inputVal.trim() && !isStreaming ? "pointer" : "not-allowed",
               }}>
               {isStreaming ? (

@@ -33,6 +33,7 @@ export default function KnowledgeArea() {
 
   // Navigation and Tab State
   const [activeTab, setActiveTab] = useState<"files" | "search">("files");
+  const [panelOpen, setPanelOpen] = useState(true);
 
   // KB creation forms
   const [kbTitle, setKbTitle] = useState("");
@@ -273,10 +274,22 @@ export default function KnowledgeArea() {
   const currentPage = Math.floor(offset / topK) + 1;
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-transparent text-[#f4f4f5]">
+    <div className="relative flex h-full w-full overflow-hidden bg-transparent text-[#f4f4f5]">
+      
       {/* Left Panel: Knowledge Bases List */}
-      <div className="w-[320px] flex-shrink-0 border-r border-zinc-900 bg-[#080808]/60 backdrop-blur-md flex flex-col justify-between z-10">
-        <div className="p-6 overflow-y-auto flex-1">
+      <div 
+        className="flex-shrink-0 flex flex-col justify-between z-10" 
+        style={{ 
+          width: panelOpen ? "320px" : "0px",
+          opacity: panelOpen ? 1 : 0,
+          pointerEvents: panelOpen ? "auto" : "none",
+          background: "rgba(8,8,8,0.6)", 
+          borderRight: panelOpen ? "1px solid rgba(255,255,255,0.05)" : "none", 
+          backdropFilter: "blur(16px)",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+        }}
+      >
+        <div className="p-6 overflow-y-auto flex-1 min-w-[320px]">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <Database className="h-5 w-5 text-indigo-400" />
@@ -382,6 +395,21 @@ export default function KnowledgeArea() {
           </button>
         </div>
       </div>
+
+      {/* Floating Collapse Trigger */}
+      <button
+        onClick={() => setPanelOpen(!panelOpen)}
+        className="absolute top-6 z-30 flex h-6 w-6 items-center justify-center rounded-full text-zinc-500 hover:text-indigo-400 shadow-lg transition-all"
+        style={{ 
+          left: panelOpen ? "308px" : "12px", 
+          background: "var(--input-bg)", 
+          border: "1px solid var(--border)",
+          transition: "left 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+        }}
+        title={panelOpen ? "Collapse sidebar" : "Expand sidebar"}
+      >
+        {panelOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+      </button>
 
       {/* Right Panel: Selected KB dashboard */}
       <div className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-[#09090b]/20 z-0">

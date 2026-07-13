@@ -235,6 +235,7 @@ class ManagerAgent:
                 
                 # Check for Email dispatches and format summary details
                 if result.agent_name == "email_agent" and "to" in result.output:
+                    subject = result.output.get("subject", "N/A")
                     context_blocks.append(
                         f"### SMTP Mail Envelope Dispatch\n"
                         f"Recipient: {result.output.get('to')}\n"

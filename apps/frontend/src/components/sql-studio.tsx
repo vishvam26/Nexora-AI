@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useChatStore } from "../stores/chat-store";
 import {
   Database, Play, Loader2, AlertCircle, CheckCircle2,
-  Table, HelpCircle, Columns, ChevronDown, ChevronRight,
+  Table, HelpCircle, Columns, ChevronDown, ChevronRight, ChevronLeft,
   Code, Terminal, Sparkles, Send
 } from "lucide-react";
 
@@ -26,6 +26,7 @@ interface QueryResult {
 
 export default function SQLStudio() {
   const { token } = useChatStore();
+  const [panelOpen, setPanelOpen] = useState(true);
 
   // Schema state
   const [schema, setSchema] = useState<Record<string, TableColumn[]>>({});
@@ -151,10 +152,21 @@ export default function SQLStudio() {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#09090b] text-[#f4f4f5]">
+    <div className="relative flex h-screen w-full overflow-hidden text-[#f4f4f5] bg-transparent">
       {/* ── Left Sidebar: Schema Inspector ─────────────────────────── */}
-      <div className="flex w-72 shrink-0 flex-col border-r border-zinc-800 overflow-y-auto">
-        <div className="border-b border-zinc-800 px-5 py-4">
+      <div 
+        className="flex-shrink-0 flex flex-col overflow-y-auto" 
+        style={{ 
+          width: panelOpen ? "288px" : "0px",
+          opacity: panelOpen ? 1 : 0,
+          pointerEvents: panelOpen ? "auto" : "none",
+          background: "var(--panel-bg)", 
+          borderRight: panelOpen ? "1px solid var(--border)" : "none", 
+          backdropFilter: "blur(12px)",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+        }}
+      >
+        <div className="border-b border-zinc-800 px-5 py-4 min-w-[288px]">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20 border border-indigo-500/30">
               <Database className="h-4 w-4 text-indigo-400" />
@@ -206,6 +218,21 @@ export default function SQLStudio() {
           )}
         </div>
       </div>
+
+      {/* Floating Collapse Trigger */}
+      <button
+        onClick={() => setPanelOpen(!panelOpen)}
+        className="absolute top-6 z-30 flex h-6 w-6 items-center justify-center rounded-full text-zinc-500 hover:text-indigo-400 shadow-lg transition-all"
+        style={{ 
+          left: panelOpen ? "276px" : "12px", 
+          background: "var(--input-bg)", 
+          border: "1px solid var(--border)",
+          transition: "left 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+        }}
+        title={panelOpen ? "Collapse sidebar" : "Expand sidebar"}
+      >
+        {panelOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+      </button>
 
       {/* ── Right Content: Query Editor & Table Sandbox ─────────────── */}
       <div className="flex flex-1 flex-col overflow-hidden">

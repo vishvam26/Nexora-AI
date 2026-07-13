@@ -171,12 +171,6 @@ class ConversationService:
         if workspace_id is not None:
             PermissionService.check_permission(db, user_id, workspace_id, "view_workspace")
         else:
-            # Find all workspaces the user has memberships in
-            from app.models.workspace_member import WorkspaceMember
-            memberships = db.query(WorkspaceMember).filter(
-                WorkspaceMember.user_id == user_id,
-                WorkspaceMember.is_active == True
-            ).all()
             # If no workspace specified, check permission on all of user's active workspaces
             # Under the hood, get_conversations_filtered will return only user's owned/accessible chats.
             pass

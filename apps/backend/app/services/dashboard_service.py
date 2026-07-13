@@ -160,7 +160,7 @@ class DashboardService:
         ).join(Message, Message.user_id == User.id).filter(
             Message.conversation_id.in_(convo_ids_subquery),
             Message.is_deleted == False
-        ).group_by(User.id, User.full_name).order_by(sa.desc("cnt")).first()
+        ).group_by(User.id, User.full_name).order_by(func.count(Message.id).desc()).first()
 
         if active_user_query:
             most_active_member = active_user_query[0]
@@ -172,7 +172,7 @@ class DashboardService:
         ).join(Conversation, Conversation.folder_id == Folder.id).filter(
             Conversation.workspace_id == workspace_id,
             Conversation.is_deleted == False
-        ).group_by(Folder.id, Folder.name).order_by(sa.desc("cnt")).first()
+        ).group_by(Folder.id, Folder.name).order_by(func.count(Conversation.id).desc()).first()
 
         if used_folder_query:
             most_used_folder = used_folder_query[0]
@@ -185,7 +185,7 @@ class DashboardService:
             Conversation.workspace_id == workspace_id,
             Conversation.is_deleted == False,
             Message.is_deleted == False
-        ).group_by(Conversation.id, Conversation.title).order_by(sa.desc("cnt")).first()
+        ).group_by(Conversation.id, Conversation.title).order_by(func.count(Message.id).desc()).first()
 
         if top_convo_query:
             top_conversation = top_convo_query[0]

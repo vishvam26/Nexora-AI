@@ -227,13 +227,13 @@ class AnalyticsEngine:
                     kpis.append({
                         "label": f"Total Net {col}",
                         "value": f"${float(col_clean.sum()):,.2f}",
-                        "desc": f"Combined profit margin"
+                        "desc": "Combined profit margin"
                     })
                 elif any(k in col_lower for k in ["cost", "expense", "spend"]):
                     kpis.append({
                         "label": f"Total Expenses ({col})",
                         "value": f"${float(col_clean.sum()):,.2f}",
-                        "desc": f"Sum of expenses"
+                        "desc": "Sum of expenses"
                     })
 
             # Standard Row Count KPI

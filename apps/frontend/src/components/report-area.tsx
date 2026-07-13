@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { useChatStore } from "../stores/chat-store";
 import {
-  FileText, Zap, Download, RefreshCw, ChevronDown,
+  FileText, Zap, Download, RefreshCw, ChevronDown, ChevronLeft, ChevronRight,
   Brain, BarChart3, AlertTriangle, CheckCircle2,
   Layers, TrendingUp, BookOpen, Cpu, Loader2,
   Shield, ToggleLeft, ToggleRight, Star, Info
@@ -64,6 +64,7 @@ const EXPORT_FORMATS: { value: ExportFormat; label: string; color: string }[] = 
 
 export default function ReportArea() {
   const { token, documents } = useChatStore();
+  const [panelOpen, setPanelOpen] = useState(true);
 
   // Config state
   const [selectedDocId, setSelectedDocId] = useState<number | null>(null);
@@ -146,9 +147,20 @@ export default function ReportArea() {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#09090b] text-[#f4f4f5]">
+    <div className="relative flex h-screen w-full overflow-hidden text-[#f4f4f5] bg-transparent">
       {/* ── Left Config Panel ─────────────────────────────────────────── */}
-      <div className="flex w-80 shrink-0 flex-col border-r border-zinc-800 overflow-y-auto">
+      <div 
+        className="flex-shrink-0 flex flex-col overflow-y-auto" 
+        style={{ 
+          width: panelOpen ? "320px" : "0px",
+          opacity: panelOpen ? 1 : 0,
+          pointerEvents: panelOpen ? "auto" : "none",
+          background: "var(--panel-bg)", 
+          borderRight: panelOpen ? "1px solid var(--border)" : "none", 
+          backdropFilter: "blur(12px)",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+        }}
+      >
         {/* Header */}
         <div className="border-b border-zinc-800 px-5 py-4">
           <div className="flex items-center gap-2.5">
@@ -177,7 +189,7 @@ export default function ReportArea() {
                 <option value="">— Select a document —</option>
                 {documents.map((doc) => (
                   <option key={doc.id} value={doc.id}>
-                    {doc.file_name || `Document ${doc.id}`}
+                    {doc.filename || `Document ${doc.id}`}
                   </option>
                 ))}
               </select>
@@ -318,6 +330,21 @@ export default function ReportArea() {
           </button>
         </div>
       </div>
+
+      {/* Floating Collapse Trigger */}
+      <button
+        onClick={() => setPanelOpen(!panelOpen)}
+        className="absolute top-6 z-30 flex h-6 w-6 items-center justify-center rounded-full text-zinc-500 hover:text-indigo-400 shadow-lg transition-all"
+        style={{ 
+          left: panelOpen ? "308px" : "12px", 
+          background: "var(--input-bg)", 
+          border: "1px solid var(--border)",
+          transition: "left 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+        }}
+        title={panelOpen ? "Collapse sidebar" : "Expand sidebar"}
+      >
+        {panelOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+      </button>
 
       {/* ── Right Preview Panel ───────────────────────────────────────── */}
       <div className="flex flex-1 flex-col overflow-hidden">

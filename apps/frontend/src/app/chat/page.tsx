@@ -20,10 +20,22 @@ import NexoraLoader from "../../components/nexora-loader";
 
 export default function ChatPage() {
   const router = useRouter();
-  const { token, activeWorkspace, logout, setToken, activeView } = useChatStore();
+  const { token, activeWorkspace, logout, setToken, activeView, theme } = useChatStore();
   const [mounted, setMounted] = useState(false);
   const [initLoading, setInitLoading] = useState(true);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Synchronize document theme class
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const root = window.document.documentElement;
+      if (theme === "dark") {
+        root.classList.add("dark");
+      } else {
+        root.classList.remove("dark");
+      }
+    }
+  }, [theme]);
 
   // Initialize token from localStorage on mount
   useEffect(() => {
@@ -139,24 +151,36 @@ export default function ChatPage() {
   if (initLoading) return <NexoraLoader message="Loading your workspace..." subMessage="Syncing conversations & knowledge bases" />;
 
   return (
-    <div className="relative flex h-screen w-screen overflow-hidden bg-[#09090b] text-[#f4f4f5]">
+    <div className="relative flex h-screen w-screen overflow-hidden bg-background text-foreground transition-colors duration-300">
       {/* Futuristic grid backdrop */}
       <div
         className="absolute inset-0 z-0 pointer-events-none"
         style={{
           backgroundImage:
-            "linear-gradient(to right,rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,0.025) 1px,transparent 1px)",
+            "linear-gradient(to right,var(--grid-line) 1px,transparent 1px),linear-gradient(to bottom,var(--grid-line) 1px,transparent 1px)",
           backgroundSize: "80px 80px",
         }}
       />
 
       {/* Ambient glow blobs */}
-      <div className="absolute top-0 right-0 h-[550px] w-[550px] rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle,rgba(99,102,241,0.18) 0%,transparent 70%)", filter: "blur(60px)" }} />
-      <div className="absolute bottom-0 left-[25%] h-[450px] w-[450px] rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle,rgba(6,182,212,0.14) 0%,transparent 70%)", filter: "blur(60px)" }} />
-      <div className="absolute top-[40%] left-[10%] h-[300px] w-[300px] rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle,rgba(139,92,246,0.10) 0%,transparent 70%)", filter: "blur(50px)" }} />
+      <div className="absolute top-0 right-0 h-[550px] w-[550px] rounded-full pointer-events-none transition-opacity duration-300"
+        style={{ 
+          background: "radial-gradient(circle,rgba(99,102,241,0.18) 0%,transparent 70%)", 
+          filter: "blur(60px)",
+          opacity: theme === "dark" ? 1 : 0.4 
+        }} />
+      <div className="absolute bottom-0 left-[25%] h-[450px] w-[450px] rounded-full pointer-events-none transition-opacity duration-300"
+        style={{ 
+          background: "radial-gradient(circle,rgba(6,182,212,0.14) 0%,transparent 70%)", 
+          filter: "blur(60px)",
+          opacity: theme === "dark" ? 1 : 0.4 
+        }} />
+      <div className="absolute top-[40%] left-[10%] h-[300px] w-[300px] rounded-full pointer-events-none transition-opacity duration-300"
+        style={{ 
+          background: "radial-gradient(circle,rgba(139,92,246,0.10) 0%,transparent 70%)", 
+          filter: "blur(50px)",
+          opacity: theme === "dark" ? 1 : 0.4 
+        }} />
 
       {/* Particle canvas */}
       <canvas

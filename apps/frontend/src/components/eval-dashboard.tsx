@@ -153,7 +153,7 @@ export default function EvalDashboard() {
   }
 
   return (
-    <div className="flex h-full w-full flex-col bg-[#09090b] text-[#f4f4f5] overflow-y-auto">
+    <div className="flex h-full w-full flex-col text-[#f4f4f5] overflow-y-auto bg-transparent">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
         <div className="flex items-center gap-2.5">

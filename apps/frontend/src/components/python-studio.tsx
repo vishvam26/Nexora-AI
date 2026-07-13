@@ -217,9 +217,9 @@ export default function PythonStudio() {
   }, [result, headers, BACKEND_ROOT]);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#09090b] text-[#f4f4f5]">
+    <div className="flex h-screen w-full overflow-hidden text-[#f4f4f5] bg-transparent">
       {/* ── Left Workspace: Editor & Copilot ─────────────────────────── */}
-      <div className="flex flex-1 flex-col border-r border-zinc-800 overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden" style={{ background: "var(--panel-bg)", borderRight: "1px solid var(--border)", backdropFilter: "blur(12px)" }}>
         {/* Workspace Toolbar */}
         <div className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -307,8 +307,8 @@ export default function PythonStudio() {
 
       {/* ── Right Panel: Outputs Console & Generated Charts ─────────── */}
       <div
-        style={{ width: `${rightPanelWidth}px` }}
-        className="flex shrink-0 flex-col overflow-hidden bg-zinc-950/20 border-l border-zinc-800"
+        style={{ width: `${rightPanelWidth}px`, background: "var(--panel-bg)", backdropFilter: "blur(8px)" }}
+        className="flex shrink-0 flex-col overflow-hidden border-l border-zinc-800"
       >
         <div className="border-b border-zinc-800 px-5 py-4">
           <h2 className="text-xs font-bold text-white uppercase tracking-wider">Console & Visualizations</h2>
@@ -326,7 +326,7 @@ export default function PythonStudio() {
           {result ? (
             <div className="flex flex-col gap-5">
               {/* STDOUT console logs */}
-              <div className="rounded-xl border border-zinc-800 bg-[#0d0d0e]">
+              <div className="rounded-xl border border-zinc-800" style={{ background: "rgba(18,18,22,0.6)" }}>
                 <div className="border-b border-zinc-800 bg-zinc-900 px-4 py-2">
                   <span className="text-[9px] font-semibold text-zinc-400 uppercase tracking-wider">Console output (STDOUT)</span>
                 </div>

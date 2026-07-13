@@ -115,14 +115,26 @@ export default function ChatSidebar() {
       {/* ═══════════════════════════════════════════════
           LEFT NARROW ICON BAR — Feature Navigation (Nexora Glass Design)
       ══════════════════════════════════════════════ */}
-      <aside className="relative flex h-full w-[60px] flex-col items-center border-r py-3 gap-1 overflow-hidden" style={{ borderColor: "rgba(255,255,255,0.05)", background: "rgba(9,9,11,0.75)", backdropFilter: "blur(20px)" }}>
+      <aside className="relative flex h-full w-[60px] flex-col items-center border-r py-3 gap-1 overflow-visible" style={{ borderColor: "var(--border)", background: "var(--sidebar-bg)", backdropFilter: "blur(20px)" }}>
         {/* Left edge glow accent */}
         <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-indigo-600/30 to-transparent" />
-
-        {/* Nexora Bird Logo */}
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-violet-700 shadow-lg shadow-indigo-600/30 mb-2 shrink-0">
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" className="h-4.5 w-4.5">
-            <path d="M12 2L2 22l10-6 10 6L12 2z" strokeLinecap="round" strokeLinejoin="round" />
+ 
+        {/* Nexora Hex-Nexus Glowing Logo */}
+        <div className="group relative flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900/60 border border-zinc-800 hover:border-indigo-500/30 hover:bg-zinc-900/90 shadow-lg transition-all duration-300 mb-2 shrink-0 cursor-pointer overflow-hidden">
+          {/* Background interactive gradient glow */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-indigo-600/10 via-purple-600/10 to-pink-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          
+          {/* Original Skyblue Bird Logo ^ */}
+          <svg viewBox="0 0 100 100" fill="none" className="h-6 w-6 relative z-10 filter drop-shadow-[0_0_6px_rgba(34,211,238,0.5)] transform group-hover:scale-110 group-hover:rotate-[360deg] transition-all duration-500">
+            <path d="M 50 10 L 60 40 L 55 70 L 45 70 L 40 40 Z" fill="url(#sidebar-bird-grad)" />
+            <path d="M 50 40 Q 20 20 10 40 Q 30 45 50 50 Z" fill="url(#sidebar-bird-grad)" />
+            <path d="M 50 40 Q 80 20 90 40 Q 70 45 50 50 Z" fill="url(#sidebar-bird-grad)" />
+            <defs>
+              <linearGradient id="sidebar-bird-grad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#22d3ee" />
+                <stop offset="100%" stopColor="#6366f1" />
+              </linearGradient>
+            </defs>
           </svg>
         </div>
 
@@ -180,16 +192,7 @@ export default function ChatSidebar() {
           Only shown when activeView === "chat"
       ══════════════════════════════════════════════ */}
       {activeView === "chat" && (
-        <aside className={`relative flex h-full flex-col text-foreground transition-all duration-200 ${convPanelOpen ? "w-[240px]" : "w-0 overflow-hidden"}`} style={{ borderRight: "1px solid rgba(255,255,255,0.05)", background: "rgba(9,9,11,0.65)", backdropFilter: "blur(20px)" }}>
-
-          {/* Panel toggle button */}
-          <button
-            onClick={() => setConvPanelOpen(!convPanelOpen)}
-            className="absolute -right-3 top-6 z-30 flex h-6 w-6 items-center justify-center rounded-full text-zinc-500 hover:text-indigo-400 shadow-lg transition-all"
-            style={{ background: "rgba(9,9,11,0.9)", border: "1px solid rgba(255,255,255,0.08)" }}
-          >
-            {convPanelOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-          </button>
+        <aside className={`relative flex h-full flex-col text-foreground transition-all duration-200 ${convPanelOpen ? "w-[240px]" : "w-0 overflow-hidden"}`} style={{ borderRight: "1px solid var(--border)", background: "var(--sidebar-bg)", backdropFilter: "blur(20px)" }}>
 
           {convPanelOpen && (
             <>
@@ -289,7 +292,7 @@ export default function ChatSidebar() {
                                   <ConvoItem key={convo.id} convo={convo}
                                     active={activeConversation?.id === convo.id}
                                     onSelect={() => handleSelectConversation(convo)}
-                                    onDelete={e => handleDeleteConversation(convo.id, e)}
+                                    onDelete={(e: React.MouseEvent) => handleDeleteConversation(convo.id, e)}
                                   />
                                 ))
                               }
@@ -331,7 +334,7 @@ export default function ChatSidebar() {
                         <ConvoItem key={convo.id} convo={convo}
                           active={activeConversation?.id === convo.id}
                           onSelect={() => handleSelectConversation(convo)}
-                          onDelete={e => handleDeleteConversation(convo.id, e)}
+                          onDelete={(e: React.MouseEvent) => handleDeleteConversation(convo.id, e)}
                         />
                       ))
                       : <div className="py-2.5 px-3 text-[10px] text-zinc-600 italic">No chats in workspace yet</div>
@@ -361,6 +364,23 @@ export default function ChatSidebar() {
           )}
         </aside>
       )}
+
+      {/* Floating Conversation Toggle Button */}
+      {activeView === "chat" && (
+        <button
+          onClick={() => setConvPanelOpen(!convPanelOpen)}
+          className="absolute top-6 z-30 flex h-6 w-6 items-center justify-center rounded-full text-zinc-500 hover:text-indigo-400 shadow-lg transition-all"
+          style={{ 
+            left: convPanelOpen ? "288px" : "48px", 
+            background: "var(--input-bg)", 
+            border: "1px solid var(--border)",
+            transition: "left 0.2s cubic-bezier(0.4, 0, 0.2, 1)"
+          }}
+          title={convPanelOpen ? "Collapse sidebar" : "Expand sidebar"}
+        >
+          {convPanelOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        </button>
+      )}
     </div>
   );
 }
@@ -372,31 +392,47 @@ export default function ChatSidebar() {
 function NavIcon({ item, activeView, setActiveView, hovered, setHovered }: any) {
   const Icon = item.icon;
   const isActive = activeView === item.view;
+
+  // Custom premium glassmorphic styling for active state
+  const activeStyle = isActive 
+    ? {
+        background: "linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.15) 100%)",
+        borderColor: "rgba(99, 102, 241, 0.35)",
+        boxShadow: "0 0 15px rgba(99, 102, 241, 0.25), inset 0 0 10px rgba(99, 102, 241, 0.1)",
+        backdropFilter: "blur(4px)"
+      }
+    : {};
+
   return (
     <div className="relative group/nav" onMouseEnter={() => setHovered(item.view)} onMouseLeave={() => setHovered(null)}>
-      {/* Glowing vertical line indicator */}
-      <div className={`absolute left-[-12px] top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-r bg-gradient-to-b from-indigo-400 to-violet-500 transition-all duration-300 ${
+      {/* Glowing vertical line indicator with Indigo -> Purple -> Pink gradient */}
+      <div className={`absolute left-[-12px] top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-r bg-gradient-to-b from-indigo-400 via-purple-500 to-pink-500 transition-all duration-300 ${
         isActive ? "opacity-100 scale-y-100" : "opacity-0 scale-y-50 group-hover/nav:opacity-40 group-hover/nav:scale-y-75"
-      }`} style={{ boxShadow: "0 0 10px rgba(99, 102, 241, 0.8)" }} />
+      }`} style={{ boxShadow: "0 0 10px rgba(168, 85, 247, 0.8)" }} />
 
       <button
         onClick={() => setActiveView(item.view)}
-        className={`relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 ${
+        style={activeStyle}
+        className={`relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 border ${
           isActive
-            ? "bg-gradient-to-br from-indigo-550 to-violet-750 text-white shadow-lg shadow-indigo-600/30 border border-indigo-500/30"
-            : "text-zinc-500 hover:bg-indigo-500/10 hover:text-indigo-400 border border-transparent"
+            ? "text-white"
+            : "text-zinc-500 border-transparent hover:border-zinc-800/80 hover:bg-indigo-500/5 hover:text-indigo-400"
         }`}
       >
-        <Icon className="h-4.5 w-4.5" />
+        <Icon className={`h-4.5 w-4.5 transition-all duration-300 ${
+          isActive 
+            ? "scale-110 text-indigo-300 filter drop-shadow-[0_0_4px_rgba(99,102,241,0.7)]" 
+            : "group-hover/nav:scale-110 group-hover/nav:rotate-[5deg]"
+        }`} />
         {item.badge && (
-          <span className="absolute -top-1 -right-1 rounded-full bg-cyan-500 px-1 py-0.5 text-[5px] font-black text-[#09090b] tracking-wider uppercase animate-pulse">
+          <span className="absolute -top-1 -right-1 rounded-full bg-cyan-500 px-1 py-0.5 text-[5px] font-black text-[#09090b] tracking-wider uppercase animate-pulse shadow-md shadow-cyan-500/30">
             {item.badge}
           </span>
         )}
       </button>
-      {/* Tooltip */}
+      {/* Tooltip with blurred glass container (ignores pointer events to allow clicks to pass through) */}
       {hovered === item.view && (
-        <div className="absolute left-12 top-1/2 -translate-y-1/2 z-50 whitespace-nowrap rounded-lg bg-zinc-950 border border-zinc-800 px-3 py-1.5 text-[10px] font-bold tracking-wider uppercase text-zinc-350 shadow-2xl animate-fade-in">
+        <div className="absolute left-[60px] top-1/2 -translate-y-1/2 z-50 pointer-events-none whitespace-nowrap rounded-lg bg-zinc-950/90 border border-zinc-800 px-3 py-1.5 text-[9px] font-black tracking-wider uppercase text-zinc-350 shadow-2xl animate-fade-in backdrop-blur-md">
           {item.label}
           <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 border-4 border-transparent border-r-zinc-950" />
         </div>

@@ -9,7 +9,7 @@ from app.security.dependencies import get_current_user
 from app.models.message import Message
 from app.schemas.rag_evaluation import SessionReplayResponse, DatasetExportResponse
 from app.services.replay_service import ReplayService
-from app.services.dataset_exporter_service import DatasetExporterService
+from app.services.dataset_export_service import DatasetExportService
 
 logger = logging.getLogger("app.api.replay")
 
@@ -60,11 +60,11 @@ def export_dataset(
 
     fmt = format.lower().strip()
     if fmt == "sharegpt":
-        data = DatasetExporterService.export_sharegpt(messages)
+        data = DatasetExportService.format_sharegpt(messages)
     elif fmt == "openai":
-        data = DatasetExporterService.export_openai(messages)
+        data = DatasetExportService.format_openai(messages)
     elif fmt == "alpaca":
-        data = DatasetExporterService.export_alpaca(messages)
+        data = DatasetExportService.format_alpaca(messages)
     else:
         raise HTTPException(status_code=400, detail="Invalid format. Choose: sharegpt, openai, alpaca")
 

@@ -329,7 +329,7 @@ class MLService:
             clf = model_payload["pipeline"]
             task_type = model_payload["task_type"]
             feature_cols = model_payload["feature_columns"]
-            classes = model_payload["classes"]
+            _classes = model_payload["classes"]  # available for future label mapping
 
             # Map inputs into Pandas DataFrame row
             row_data = {}
@@ -630,7 +630,7 @@ class MLService:
         return session
 
 
-def train_test_split(X, y, test_ratio_test=0.2, random_state=42):
+def _fallback_train_test_split(X, y, test_ratio_test=0.2, random_state=42):
     # Standard fallback split implementation if sklearn import somehow breaks
     from sklearn.model_selection import train_test_split as sk_split
     return sk_split(X, y, test_size=test_ratio_test, random_state=random_state)

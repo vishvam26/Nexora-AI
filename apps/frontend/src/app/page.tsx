@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useChatStore } from "../stores/chat-store";
 import { apiService } from "../services/api-service";
-import { LogIn, UserPlus, ShieldAlert, Eye, EyeOff, Lock, Mail, User, Cpu, ChevronRight, Activity, Globe, Compass } from "lucide-react";
+import { LogIn, UserPlus, ShieldAlert, Eye, EyeOff, Lock, Mail, User, Cpu, ChevronRight, Activity, Globe, Compass, ArrowLeft } from "lucide-react";
 
 // ── Boid interface for 3D bird animation ────────────────────────────
 interface Boid {
@@ -192,6 +192,15 @@ export default function FuturisticLoginPage() {
   return (
     <div className="relative flex min-h-screen w-full flex-col lg:flex-row items-center justify-center bg-[#09090b] text-[#f4f4f5] select-none overflow-hidden font-outfit">
 
+      {/* Floating Back to Home button */}
+      <button 
+        onClick={() => router.push("/landing")}
+        className="absolute top-6 left-6 z-50 flex items-center gap-2 px-4 py-2 rounded-full border border-zinc-800 bg-[#09090b]/50 hover:bg-zinc-900 text-xs font-bold text-zinc-400 hover:text-white transition-all shadow-lg hover:border-zinc-700 backdrop-blur-md"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Back to Home
+      </button>
+
       {/* ── 3D Boids Canvas Background ─────────────────────────────── */}
       <canvas ref={canvasRef} className="absolute inset-0 z-0 pointer-events-none" />
 
@@ -279,10 +288,10 @@ export default function FuturisticLoginPage() {
             {/* Form Title */}
             <div className="mb-6">
               <h2 className="text-xl font-bold tracking-tight text-white font-playfair md:text-2xl" style={{ fontFamily: "'Playfair Display', serif" }}>
-                {isRegister ? "Create Console Account" : "Access Console"}
+                {isRegister ? "Sign Up" : "Sign In"}
               </h2>
               <p className="mt-1.5 text-xs text-zinc-500">
-                {isRegister ? "Register a secure developer key to start." : "Authenticate to establish connection."}
+                {isRegister ? "Create a new Nexora AI account to get started." : "Welcome back! Please enter your details."}
               </p>
             </div>
 
@@ -333,10 +342,10 @@ export default function FuturisticLoginPage() {
                   {!isRegister && (
                     <button 
                       type="button" 
-                      onClick={() => setError("Password reset is not configured for this enterprise node.")}
+                      onClick={() => setError("Password reset is not configured for this enterprise node. Please contact your system administrator.")}
                       className="text-[10px] text-indigo-400 hover:text-indigo-300 transition"
                     >
-                      Forgot Key?
+                      Forgot Password?
                     </button>
                   )}
                 </div>
@@ -392,22 +401,22 @@ export default function FuturisticLoginPage() {
                 {loading ? (
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 ) : isRegister ? (
-                  <><UserPlus className="h-4 w-4" /><span>Initialize Console</span></>
+                  <><UserPlus className="h-4 w-4" /><span>Sign Up</span></>
                 ) : (
-                  <><LogIn className="h-4 w-4" /><span>Establish Connection</span></>
+                  <><LogIn className="h-4 w-4" /><span>Sign In</span></>
                 )}
               </button>
             </form>
 
             {/* Alternative toggle options */}
             <div className="mt-6 text-center text-xs text-zinc-500">
-              {isRegister ? "Already configured?" : "New developer key?"}{" "}
+              {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
               <button 
                 onClick={() => { setError(null); setIsRegister(!isRegister); }} 
                 disabled={loading}
                 className="font-bold text-indigo-400 hover:text-indigo-300 transition focus:outline-none"
               >
-                {isRegister ? "Access Console" : "Configure Key Here"}
+                {isRegister ? "Sign In" : "Sign Up"}
               </button>
             </div>
 

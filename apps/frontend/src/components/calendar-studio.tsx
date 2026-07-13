@@ -173,9 +173,9 @@ export default function CalendarStudio() {
   const BACKEND_ROOT = API_BASE.replace("/api/v1", "");
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#09090b] text-[#f4f4f5]">
+    <div className="flex h-screen w-full overflow-hidden text-[#f4f4f5] bg-transparent">
       {/* ── Left Panel: Form Booking Scheduler ──────────────────────── */}
-      <div className="flex flex-1 flex-col border-r border-zinc-800 overflow-y-auto">
+      <div className="flex flex-1 flex-col overflow-y-auto" style={{ background: "var(--panel-bg)", borderRight: "1px solid var(--border)", backdropFilter: "blur(12px)" }}>
         <div className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20 border border-indigo-500/30">
@@ -292,7 +292,7 @@ export default function CalendarStudio() {
       </div>
 
       {/* ── Right Panel: Scheduled Slots List ──────────────────────── */}
-      <div className="flex w-96 shrink-0 flex-col bg-zinc-950/20 overflow-hidden">
+      <div className="flex w-96 shrink-0 flex-col overflow-hidden border-l border-zinc-800" style={{ background: "var(--panel-bg)", backdropFilter: "blur(8px)" }}>
         <div className="border-b border-zinc-800 px-5 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-xs font-bold text-white uppercase tracking-wider">Scheduled Slots</h2>
@@ -316,7 +316,7 @@ export default function CalendarStudio() {
             </div>
           ) : (
             events.map((ev) => (
-              <div key={ev.id} className="rounded-xl border border-zinc-800 bg-[#0d0d0e] p-4 flex flex-col gap-2">
+              <div key={ev.id} className="rounded-xl border border-zinc-800 p-4 flex flex-col gap-2" style={{ background: "rgba(18,18,22,0.6)", border: "1px solid rgba(255,255,255,0.07)" }}>
                 <div className="flex items-start justify-between gap-2">
                   <h4 className="text-xs font-bold text-zinc-200">{ev.title}</h4>
                   <a

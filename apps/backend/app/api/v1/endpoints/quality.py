@@ -39,11 +39,11 @@ def get_quality_dashboard(
         )
 
     total = len(logs)
-    avg_conf = sum(l.confidence_score for l in logs) / total
-    avg_latency = sum(l.latency_ms for l in logs) / total
+    avg_conf = sum(log.confidence_score for log in logs) / total
+    avg_latency = sum(log.latency_ms for log in logs) / total
 
     # Under 0.40 confidence or low scoring groundedness is flagged as potential hallucination
-    hallucination_count = sum(1 for l in logs if l.confidence_score < 0.45)
+    hallucination_count = sum(1 for log in logs if log.confidence_score < 0.45)
     hal_rate = hallucination_count / total
 
     return RAGQualityMetrics(

@@ -41,7 +41,6 @@ from app.api.v1.endpoints.python_agent import router as python_agent_router
 from app.api.v1.endpoints.email_agent import router as email_agent_router
 from app.api.v1.endpoints.calendar_agent import router as calendar_agent_router
 from app.api.v1.endpoints.eval import router as eval_router
-from app.api.v1.endpoints.health import router as health_router
 
 
 

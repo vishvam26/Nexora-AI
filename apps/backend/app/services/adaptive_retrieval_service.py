@@ -4,7 +4,7 @@ from typing import List, Optional, Dict, Any, Union
 
 from sqlalchemy.orm import Session
 
-from app.services.query_classifier import QueryClassifier
+from app.services.query_service import QueryService
 from app.services.context_strategy import ContextStrategyEngine
 from app.services.intent_service import IntentService
 from app.services.hybrid_search_service import HybridSearchService
@@ -57,7 +57,7 @@ class AdaptiveRetrievalService:
 
         try:
             # 2. Query Classification
-            classification = QueryClassifier.classify(user_query)
+            classification = QueryService.classify(user_query)
             category = classification["category"]
             intent_confidence = classification["confidence"]
 

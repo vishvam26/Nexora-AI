@@ -95,7 +95,7 @@ if len(plt.get_fignums()) > 0:
 """
 
         # Execute code wrapper in a separate python process
-        logger.info(f"[PythonAgent] Executing python sandbox query...")
+        logger.info("[PythonAgent] Executing python sandbox query...")
         try:
             # We run the script inside a subprocess wrapper to isolate execution state
             result = subprocess.run(

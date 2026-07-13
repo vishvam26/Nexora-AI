@@ -409,7 +409,7 @@ class ReportAssembler:
             title_box = slide.shapes.add_textbox(Inches(1.5), Inches(2.5), Inches(10), Inches(1.5))
             tf = title_box.text_frame
             p = tf.paragraphs[0]
-            p.text = f"Nexora AI Report"
+            p.text = "Nexora AI Report"
             p.font.size = Pt(40)
             p.font.bold = True
             p.font.color.rgb = WHITE
@@ -425,8 +425,8 @@ class ReportAssembler:
             lines = narrative.split("\n")
             chunks = [lines[i:i + 16] for i in range(0, len(lines), 16)]
             for idx, chunk in enumerate(chunks[:12]):  # max 12 content slides
-                title = next((l.lstrip("#").strip() for l in chunk if l.strip().startswith("#")), f"Report Section {idx + 1}")
-                body = [l for l in chunk if not l.strip().startswith("#")]
+                title = next((line.lstrip("#").strip() for line in chunk if line.strip().startswith("#")), f"Report Section {idx + 1}")
+                body = [line for line in chunk if not line.strip().startswith("#")]
                 add_slide_with_title(title, body)
 
             # ── ML Metrics Slide ────────────────────────────────────

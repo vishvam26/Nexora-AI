@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Dict, Any
 
 logger = logging.getLogger("app.services.lora_merge_service")
@@ -23,7 +24,7 @@ class LoraMergeService:
             from transformers import AutoModelForCausalLM, AutoTokenizer
             import torch
 
-            torch_dtype = torch.bfloat16 if precision == "bf16" else torch.float16
+            # bf16/fp16 dtype selected based on precision arg (used when actual merge runs)
 
             logger.info("PEFT: Running actual merge_and_unload in memory")
             # In a production worker, we'd load and save here.

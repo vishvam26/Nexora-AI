@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.user import User
 from app.security.dependencies import get_current_user
-from app.services.query_classifier import QueryClassifier
+from app.services.query_service import QueryService
 from app.services.context_strategy import ContextStrategyEngine
 from app.services.adaptive_retrieval_service import AdaptiveRetrievalService
 from app.schemas.analytics import RAGDebugBreakdown
@@ -33,7 +33,7 @@ def get_rag_debug_trace(
     """
     start_time = time.monotonic()
 
-    classification = QueryClassifier.classify(query)
+    classification = QueryService.classify(query)
     intent = classification["category"]
     strategy = ContextStrategyEngine.determine_strategy(intent)
 

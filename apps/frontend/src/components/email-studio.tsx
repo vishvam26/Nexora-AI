@@ -190,9 +190,9 @@ export default function EmailStudio() {
   };
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#09090b] text-[#f4f4f5]">
+    <div className="flex h-screen w-full overflow-hidden text-[#f4f4f5] bg-transparent">
       {/* ── Left Workspace: Form Inputs ─────────────────────────────── */}
-      <div className="flex flex-1 flex-col border-r border-zinc-800 overflow-y-auto">
+      <div className="flex flex-1 flex-col overflow-y-auto" style={{ background: "var(--panel-bg)", borderRight: "1px solid var(--border)", backdropFilter: "blur(12px)" }}>
         <div className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20 border border-indigo-500/30">
@@ -307,14 +307,14 @@ export default function EmailStudio() {
       </div>
 
       {/* ── Right Panel: Envelope Visual Preview ───────────────────── */}
-      <div className="flex w-96 shrink-0 flex-col bg-zinc-950/20 overflow-hidden">
+      <div className="flex w-96 shrink-0 flex-col overflow-hidden border-l border-zinc-800" style={{ background: "var(--panel-bg)", backdropFilter: "blur(8px)" }}>
         <div className="border-b border-zinc-800 px-5 py-4">
           <h2 className="text-xs font-bold text-white uppercase tracking-wider">Envelope Preview</h2>
           <p className="text-[10px] text-zinc-500">Visual message template</p>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5">
-          <div className="rounded-xl border border-zinc-800 bg-[#0d0d0e] p-5 shadow-2xl relative">
+          <div className="rounded-xl border p-5 shadow-2xl relative" style={{ background: "var(--card)", borderColor: "var(--border)" }}>
             {/* Header Stamp */}
             <div className="absolute top-4 right-4 text-[9px] font-bold text-zinc-700 border border-zinc-700 px-1.5 py-0.5 rounded uppercase tracking-wider font-mono">
               SMTP
