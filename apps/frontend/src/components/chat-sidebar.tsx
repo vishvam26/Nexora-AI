@@ -8,13 +8,13 @@ import {
   LogOut, Sun, Moon, Cpu, ChevronDown, User, Database,
   BarChart3, Brain, FileText, Sparkles, Terminal, Mail,
   Calendar, Activity, ChevronRight, ChevronLeft, Edit2,
-  ShieldCheck
+  ShieldCheck, Users
 } from "lucide-react";
 
 // ─────────────────────────────────────────────
 // LEFT ICON NAV BAR — Feature Navigation
 // ─────────────────────────────────────────────
-const NAV_ITEMS = [
+  { view: "team",      icon: Users,         label: "Team Hub (V2)",  group: "main", badge: "V2" },
   { view: "chat",      icon: MessageSquare, label: "Chat",           group: "main" },
   { view: "knowledge", icon: Database,      label: "Knowledge Base", group: "main" },
   { view: "analytics", icon: BarChart3,     label: "Analytics",      group: "main" },

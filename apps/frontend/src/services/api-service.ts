@@ -308,6 +308,50 @@ export const apiService = {
     );
     return response.data;
   },
+
+  // ─────────────────────────────────────────────
+  // V2 TEAM MODULE APIs
+  // ─────────────────────────────────────────────
+
+  // Tasks API
+  async fetchTasks(workspaceId: number, status?: string): Promise<any[]> {
+    const params: any = { workspace_id: workspaceId };
+    if (status) params.status = status;
+    const response = await apiClient.get("/tasks", { params });
+    return response.data;
+  },
+
+  async createTask(data: { workspace_id: number; title: string; description?: string; assigned_to_id?: number; priority?: string; due_date?: string }): Promise<any> {
+    const response = await apiClient.post("/tasks", data);
+    return response.data;
+  },
+
+  async updateTaskStatus(taskId: number, status: string): Promise<any> {
+    const response = await apiClient.patch(`/tasks/${taskId}/status`, { status });
+    return response.data;
+  },
+
+  async fetchAIPMInsights(workspaceId: number): Promise<any> {
+    const response = await apiClient.get(`/tasks/ai-pm/insights`, { params: { workspace_id: workspaceId } });
+    return response.data;
+  },
+
+  // Activity Feed API
+  async fetchActivityFeed(workspaceId: number, limit = 50): Promise<any[]> {
+    const response = await apiClient.get("/activity", { params: { workspace_id: workspaceId, limit } });
+    return response.data;
+  },
+
+  // Workspace Members API
+  async fetchWorkspaceMembers(workspaceId: number): Promise<any[]> {
+    const response = await apiClient.get(`/workspaces/${workspaceId}/members`);
+    return response.data;
+  },
+
+  async inviteWorkspaceMember(workspaceId: number, email: string, role = "EDITOR"): Promise<any> {
+    const response = await apiClient.post(`/workspaces/${workspaceId}/invitations`, { email, role });
+    return response.data;
+  },
 };
 
 // Response models from backend APIs

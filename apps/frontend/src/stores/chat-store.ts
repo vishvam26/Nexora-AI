@@ -18,7 +18,7 @@ interface ChatState {
   isStreaming: boolean;
   theme: "light" | "dark";
   sidebarOpen: boolean;
-  activeView: "chat" | "knowledge" | "analytics" | "ml" | "report" | "agents" | "sql" | "python" | "email" | "calendar" | "eval" | "admin";
+  activeView: "chat" | "knowledge" | "analytics" | "ml" | "report" | "agents" | "sql" | "python" | "email" | "calendar" | "eval" | "admin" | "team" | "tasks" | "activity";
 
 
 
@@ -47,7 +47,7 @@ interface ChatState {
   setTheme: (theme: "light" | "dark") => void;
   toggleTheme: () => void;
   toggleSidebar: () => void;
-  setActiveView: (view: "chat" | "knowledge" | "analytics" | "ml" | "report" | "agents" | "sql" | "python" | "email" | "calendar" | "eval" | "admin") => void;
+  setActiveView: (view: "chat" | "knowledge" | "analytics" | "ml" | "report" | "agents" | "sql" | "python" | "email" | "calendar" | "eval" | "admin" | "team" | "tasks" | "activity") => void;
 
 
 

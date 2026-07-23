@@ -18,6 +18,7 @@ import CalendarStudio from "../../components/calendar-studio";
 import EvalDashboard from "../../components/eval-dashboard";
 import NexoraLoader from "../../components/nexora-loader";
 import AdminArea from "../../components/admin-area";
+import TeamArea from "../../components/team-area";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -206,6 +207,7 @@ export default function ChatPage() {
           activeView === "python" ? <PythonStudio /> :
           activeView === "email" ? <EmailStudio /> :
           activeView === "calendar" ? <CalendarStudio /> :
+          activeView === "team" ? <TeamArea /> :
           activeView === "eval" ? <EvalDashboard /> :
           activeView === "admin" ? <AdminArea /> :
           <MLArea />}
