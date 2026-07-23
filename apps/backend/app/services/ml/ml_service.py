@@ -50,7 +50,7 @@ class MLService:
         Scans columns of CSV/spreadsheet, classifies them, and detects target recommendations.
         """
         if not os.path.isabs(file_path):
-            file_path = os.path.abspath(os.path.join("uploads", "knowledge", file_path))
+            file_path = os.path.abspath(os.path.join("storage", file_path))
 
         if pd is None or not os.path.exists(file_path):
             return {"error": f"Scikit-learn not imported or file missing. Checked: {file_path}"}
@@ -104,7 +104,7 @@ class MLService:
         evaluates metrics, computes feature importances, and caches it as joblib model.
         """
         if not os.path.isabs(file_path):
-            file_path = os.path.abspath(os.path.join("uploads", "knowledge", file_path))
+            file_path = os.path.abspath(os.path.join("storage", file_path))
 
         if pd is None or not os.path.exists(file_path):
             return {"error": f"Scikit-learn/Pandas dependency is missing or file not found. Checked: {file_path}"}

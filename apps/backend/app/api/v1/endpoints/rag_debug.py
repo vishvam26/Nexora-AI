@@ -43,6 +43,7 @@ def get_rag_debug_trace(
         user_query=query,
         workspace_id=workspace_id,
         enable_reranking=True,
+        user_id=current_user.id,
     )
 
     latency_ms = (time.monotonic() - start_time) * 1000

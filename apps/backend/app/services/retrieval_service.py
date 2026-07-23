@@ -33,6 +33,7 @@ class RetrievalService:
         top_k: int = 5,
         offset: int = 0,
         threshold: float = 0.0,
+        user_id: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """
         1. Embeds the query.
@@ -43,11 +44,37 @@ class RetrievalService:
         """
         start_time = time.perf_counter()
 
+        # Resolve company_id and manager status
+        company_id = 1
+        is_manager = False
+        if user_id:
+            from app.models.user import User
+            user = db.query(User).filter(User.id == user_id).first()
+            if user:
+                if user.company_id:
+                    company_id = user.company_id
+                if user.company_role in ["OWNER", "ADMIN"]:
+                    is_manager = True
+                else:
+                    from app.models.workspace_member import WorkspaceMember
+                    member = db.query(WorkspaceMember).filter(
+                        WorkspaceMember.workspace_id == workspace_id,
+                        WorkspaceMember.user_id == user_id,
+                        WorkspaceMember.is_active == True
+                    ).first()
+                    if member and member.workspace_role == "MANAGER":
+                        is_manager = True
+
         # 1. Embed query
         query_embedding = _embedder.generate_query_embedding(query)
 
         # 2. Build metadata filters
-        filters: Dict[str, Any] = {"workspace_id": workspace_id}
+        filters: Dict[str, Any] = {
+            "workspace_id": workspace_id,
+            "company_id": company_id,
+            "user_id": user_id,
+            "is_manager": is_manager,
+        }
         if knowledge_base_id:
             filters["knowledge_base_id"] = knowledge_base_id
         if document_id:
@@ -74,10 +101,14 @@ class RetrievalService:
             # Write empty log
             try:
                 log = RetrievalLog(
+                    workspace_id=workspace_id,
                     query=query,
-                    latency_ms=latency_ms,
-                    top_k=top_k,
-                    returned_document_ids=[]
+                    intent="Search",
+                    latency_ms=float(latency_ms),
+                    confidence_score=0.0,
+                    chunks_retrieved=0,
+                    chunks_accepted=0,
+                    chunks_rejected=0,
                 )
                 db.add(log)
                 db.commit()
@@ -116,10 +147,14 @@ class RetrievalService:
         # 5. Persist Retrieval Log
         try:
             log = RetrievalLog(
+                workspace_id=workspace_id,
                 query=query,
-                latency_ms=latency_ms,
-                top_k=top_k,
-                returned_document_ids=list(matched_doc_ids)
+                intent="Search",
+                latency_ms=float(latency_ms),
+                confidence_score=1.0,
+                chunks_retrieved=len(matches),
+                chunks_accepted=len(matches),
+                chunks_rejected=0,
             )
             db.add(log)
             db.commit()

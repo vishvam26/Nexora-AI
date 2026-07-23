@@ -75,7 +75,11 @@ class PermissionService:
     def validate_workspace_access(db: Session, user_id: int, workspace_id: int) -> None:
         """
         Enforces tenant company bounds and workspace access controls (including CEO/Manager hierarchy).
+        Bypasses checks in standalone mode (workspace_id is None).
         """
+        if workspace_id is None:
+            return
+
         from app.models.user import User
         user = db.query(User).filter(User.id == user_id).first()
         workspace = db.query(Workspace).filter(Workspace.id == workspace_id).first()
@@ -119,6 +123,7 @@ class PermissionService:
     def validate_conversation_access(db: Session, user_id: int, conversation_id: int) -> None:
         """
         Validates access to a conversation based on workspace permissions and management hierarchy.
+        Supports standalone personal mode fallback.
         """
         from app.models.conversation import Conversation
         from app.models.user import User
@@ -131,6 +136,15 @@ class PermissionService:
                 detail="User or Conversation not found"
             )
             
+        # Standalone Mode Bypass: If conversation has no workspace associated
+        if conv.workspace_id is None:
+            if conv.user_id != user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You do not have access to this standalone conversation"
+                )
+            return
+
         # Validate workspace access first
         PermissionService.validate_workspace_access(db, user_id, conv.workspace_id)
         
@@ -153,13 +167,22 @@ class PermissionService:
         """
         Enforces Role-Based Access Control policies for MANAGER and EMPLOYEE roles.
         Raises HTTP 403 Forbidden on permission violation.
+        Supports standalone personal mode bypass.
         """
+        if workspace_id is None:
+            if conversation_owner_id is not None and conversation_owner_id != user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You do not have permission to modify this standalone conversation"
+                )
+            return
+
         # Validate general workspace access first (tenant isolation, hierarchy, etc)
         PermissionService.validate_workspace_access(db, user_id, workspace_id)
         
         role = PermissionService.get_member_role(db, user_id, workspace_id)
         workspace = db.query(Workspace).filter(Workspace.id == workspace_id).first()
-
+ 
         # MANAGER permissions
         if role == "MANAGER":
             if action == "transfer_ownership":
@@ -169,7 +192,7 @@ class PermissionService:
                         detail="Only the workspace owner can perform this action"
                     )
             return
-
+ 
         # EMPLOYEE permissions
         if role == "EMPLOYEE":
             allowed_employee_actions = [
@@ -201,7 +224,7 @@ class PermissionService:
                         detail="Employees can only modify their own conversations"
                     )
             return
-
+ 
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions for this action"

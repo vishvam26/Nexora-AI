@@ -55,7 +55,8 @@ def retrieve_hybrid_context(
         enable_reranking=settings.ENABLE_RERANKING,
         vector_weight=settings.HYBRID_VECTOR_WEIGHT,
         keyword_weight=settings.HYBRID_KEYWORD_WEIGHT,
-        graph_max_depth=settings.GRAPH_MAX_DEPTH
+        graph_max_depth=settings.GRAPH_MAX_DEPTH,
+        user_id=current_user.id,
     )
 
 

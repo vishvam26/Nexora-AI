@@ -131,6 +131,7 @@ class QdrantVectorStore(VectorStoreInterface):
                 # Tenancy and visibility locks
                 company_id = filters.get("company_id")
                 user_id = filters.get("user_id")
+                is_manager = filters.get("is_manager", False)
                 
                 if company_id is not None:
                     conditions.append(
@@ -140,13 +141,12 @@ class QdrantVectorStore(VectorStoreInterface):
                         )
                     )
                 
-                if user_id is not None:
-                    # (visibility == "WORKSPACE") OR (visibility == "COMPANY") OR (created_by == user_id)
+                if user_id is not None and not is_manager:
+                    # Non-managers can only retrieve WORKSPACE visibility docs or documents they uploaded
                     conditions.append(
                         models.Filter(
                             should=[
                                 models.FieldCondition(key="visibility", match=models.MatchValue(value="WORKSPACE")),
-                                models.FieldCondition(key="visibility", match=models.MatchValue(value="COMPANY")),
                                 models.FieldCondition(key="created_by", match=models.MatchValue(value=user_id)),
                             ]
                         )

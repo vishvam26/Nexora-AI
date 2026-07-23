@@ -45,6 +45,12 @@ class ChatService:
                 detail="You do not have access to this conversation"
             )
 
+        # Validate workspace membership if workspace is associated
+        ws_id = conversation.workspace_id or request.workspace_id
+        if ws_id:
+            from app.services.permission_service import PermissionService
+            PermissionService.get_member_role(db, user_id, ws_id)
+
         # 2. Save user message
         user_message_obj = Message(
             conversation_id=request.conversation_id,
@@ -76,6 +82,7 @@ class ChatService:
                     similarity_threshold=settings.SIMILARITY_THRESHOLD,
                     max_context_tokens=settings.MAX_CONTEXT_TOKENS,
                     enable_reranking=settings.ENABLE_RERANKING,
+                    user_id=user_id,
                 )
 
                 print(f">>> [SYNC CHAT] RAG retrieved {len(rag_context.chunks_used)} chunks. Has knowledge: {rag_context.has_knowledge} <<<")
@@ -160,6 +167,12 @@ class ChatService:
                 detail="You do not have access to this conversation"
             )
 
+        # Validate workspace membership if workspace is associated
+        ws_id = conversation.workspace_id or request.workspace_id
+        if ws_id:
+            from app.services.permission_service import PermissionService
+            PermissionService.get_member_role(db, user_id, ws_id)
+
         # 2. Save user message
         user_message_obj = Message(
             conversation_id=request.conversation_id,
@@ -191,6 +204,7 @@ class ChatService:
                     similarity_threshold=settings.SIMILARITY_THRESHOLD,
                     max_context_tokens=settings.MAX_CONTEXT_TOKENS,
                     enable_reranking=settings.ENABLE_RERANKING,
+                    user_id=user_id,
                 )
 
                 print(f">>> [STREAM CHAT] RAG retrieved {len(rag_context.chunks_used)} chunks. Has knowledge: {rag_context.has_knowledge} <<<")

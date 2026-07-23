@@ -20,7 +20,7 @@ from app.services.storage.local_storage import LocalStorage
 logger = logging.getLogger("app.services.knowledge_base_service")
 
 # Singleton instances (swappable via DI in future)
-_storage = LocalStorage(base_upload_dir="uploads/knowledge")
+_storage = LocalStorage(base_upload_dir="storage")
 _processor = DocumentProcessor()
 _chunker = ChunkingEngine()
 _embedder = EmbeddingService()
@@ -195,11 +195,35 @@ class KnowledgeBaseService:
         return doc
 
     @staticmethod
+    def _validate_document_access(db: Session, doc: KnowledgeDocument, user_id: int) -> None:
+        """Helper to assert that a user has workspace access and document visibility."""
+        kb = KnowledgeBaseRepository.get_by_id(db, doc.knowledge_base_id)
+        if not kb:
+            raise HTTPException(status_code=404, detail="Knowledge base not found.")
+
+        # Check workspace membership
+        from app.services.permission_service import PermissionService
+        role = PermissionService.get_member_role(db, user_id, kb.workspace_id)
+
+        # Check role-based visibility bypass (Managers / Owners / Admins)
+        user = db.query(User).filter(User.id == user_id).first()
+        is_manager = (role == "MANAGER") or (user and user.company_role in ["OWNER", "ADMIN"])
+
+        if not is_manager and doc.uploaded_by != user_id and doc.visibility != "WORKSPACE":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to access this document"
+            )
+
+    @staticmethod
     def reprocess_document(db: Session, doc_id: int, user_id: int) -> KnowledgeDocument:
         """Re-runs the processing pipeline for an existing document."""
         doc = KnowledgeDocumentRepository.get_by_id(db, doc_id)
         if not doc:
             raise HTTPException(status_code=404, detail="Document not found.")
+
+        # Validate permission
+        KnowledgeBaseService._validate_document_access(db, doc, user_id)
 
         # Load file bytes from storage
         file_content = _storage.read_file(doc.storage_path)
@@ -225,6 +249,10 @@ class KnowledgeBaseService:
         doc = KnowledgeDocumentRepository.get_by_id(db, doc_id)
         if not doc:
             raise HTTPException(status_code=404, detail="Document not found.")
+
+        # Validate permission
+        KnowledgeBaseService._validate_document_access(db, doc, user_id)
+
         if hasattr(_vector_store, "delete_by_document"):
             _vector_store.delete_by_document(doc_id)
         DocumentChunkRepository.delete_by_document(db, doc_id)
@@ -235,21 +263,49 @@ class KnowledgeBaseService:
         KnowledgeDocumentRepository.soft_delete(db, doc)
 
     @staticmethod
-    def list_documents(db: Session, kb_id: int) -> List[KnowledgeDocument]:
-        return KnowledgeDocumentRepository.list_by_knowledge_base(db, kb_id)
+    def list_documents(db: Session, kb_id: int, user_id: int) -> List[KnowledgeDocument]:
+        kb = KnowledgeBaseRepository.get_by_id(db, kb_id)
+        if not kb:
+            raise HTTPException(status_code=404, detail="Knowledge base not found.")
+
+        # Validate workspace membership
+        from app.services.permission_service import PermissionService
+        role = PermissionService.get_member_role(db, user_id, kb.workspace_id)
+
+        # Fetch all active documents in this KB
+        all_docs = KnowledgeDocumentRepository.list_by_knowledge_base(db, kb_id)
+
+        # Check role-based bypass
+        user = db.query(User).filter(User.id == user_id).first()
+        is_manager = (role == "MANAGER") or (user and user.company_role in ["OWNER", "ADMIN"])
+
+        if is_manager:
+            return all_docs
+
+        return [
+            doc for doc in all_docs
+            if doc.visibility == "WORKSPACE" or doc.uploaded_by == user_id
+        ]
 
     @staticmethod
-    def get_document(db: Session, doc_id: int) -> KnowledgeDocument:
+    def get_document(db: Session, doc_id: int, user_id: int) -> KnowledgeDocument:
         doc = KnowledgeDocumentRepository.get_by_id(db, doc_id)
         if not doc:
             raise HTTPException(status_code=404, detail="Document not found.")
+
+        # Validate permission
+        KnowledgeBaseService._validate_document_access(db, doc, user_id)
         return doc
 
     @staticmethod
-    def get_document_stats(db: Session, doc_id: int) -> Dict[str, Any]:
+    def get_document_stats(db: Session, doc_id: int, user_id: int) -> Dict[str, Any]:
         doc = KnowledgeDocumentRepository.get_by_id(db, doc_id)
         if not doc:
             raise HTTPException(status_code=404, detail="Document not found.")
+
+        # Validate permission
+        KnowledgeBaseService._validate_document_access(db, doc, user_id)
+
         chunks = DocumentChunkRepository.list_by_document(db, doc_id)
         total_words = sum(len(c.text.split()) for c in chunks)
         total_chars = sum(len(c.text) for c in chunks)

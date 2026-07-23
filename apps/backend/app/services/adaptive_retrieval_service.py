@@ -44,6 +44,7 @@ class AdaptiveRetrievalService:
         graph_max_depth: int = 2,
         cache_expiry_seconds: int = 300,
         duplicate_threshold: float = 0.90,
+        user_id: Optional[int] = None,
     ) -> RAGContext:
         """
         Orchestrates classified RAG routing, dynamically resizing parameters and caching.
@@ -51,7 +52,7 @@ class AdaptiveRetrievalService:
         start_time = time.monotonic()
 
         # 1. Cache Check
-        cached = RetrievalCache.get(workspace_id, user_query, expiry_seconds=cache_expiry_seconds)
+        cached = RetrievalCache.get(workspace_id, user_query, expiry_seconds=cache_expiry_seconds, user_id=user_id)
         if cached:
             return cached
 
@@ -88,7 +89,8 @@ class AdaptiveRetrievalService:
                 vector_weight=vector_weight,
                 keyword_weight=keyword_weight,
                 top_k=dynamic_k * 2,
-                threshold=similarity_threshold
+                threshold=similarity_threshold,
+                user_id=user_id
             )
 
             if not raw_hits:
@@ -208,7 +210,7 @@ class AdaptiveRetrievalService:
             )
 
             # Save in Cache
-            RetrievalCache.set(workspace_id, user_query, result_context)
+            RetrievalCache.set(workspace_id, user_query, result_context, user_id=user_id)
             return result_context
 
         except Exception as exc:

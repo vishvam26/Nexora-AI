@@ -61,10 +61,10 @@ class PythonAgent(BaseAgent):
         chart_filename = f"{chart_id}.png"
         chart_filepath = os.path.join(PLOT_DIR, chart_filename)
 
-        # Resolve relative storage paths to absolute paths under "uploads/knowledge"
+        # Resolve relative storage paths to absolute paths under "storage"
         file_path = context.file_path
         if not os.path.isabs(file_path):
-            file_path = os.path.abspath(os.path.join("uploads", "knowledge", file_path))
+            file_path = os.path.abspath(os.path.join("storage", file_path))
 
         # Format DF_PATH using forward slashes for safety
         formatted_df_path = file_path.replace("\\", "/")

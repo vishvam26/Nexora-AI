@@ -27,4 +27,6 @@ class DashboardResponse(BaseModel):
     archived_conversations_count: int
     recent_members: List[str]  # names of recent members
     storage_usage_bytes: int
+    active_sessions_count: int
+    workspace_cost_usd: float
     analytics: DashboardAnalytics

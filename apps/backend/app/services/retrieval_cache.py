@@ -15,11 +15,12 @@ class RetrievalCache:
     """
 
     @staticmethod
-    def get(workspace_id: int, query: str, expiry_seconds: int = 300) -> Optional[Any]:
+    def get(workspace_id: int, query: str, expiry_seconds: int = 300, user_id: Optional[int] = None) -> Optional[Any]:
         """
         Retrieves cached RAGContext if valid and not expired.
         """
-        cache_key = f"{workspace_id}:{query.lower().strip()}"
+        user_suffix = f":{user_id}" if user_id is not None else ""
+        cache_key = f"{workspace_id}{user_suffix}:{query.lower().strip()}"
         if cache_key in _CACHE:
             context, timestamp = _CACHE[cache_key]
             if time.time() - timestamp < expiry_seconds:
@@ -31,9 +32,10 @@ class RetrievalCache:
         return None
 
     @staticmethod
-    def set(workspace_id: int, query: str, context: Any) -> None:
+    def set(workspace_id: int, query: str, context: Any, user_id: Optional[int] = None) -> None:
         """
         Saves RAGContext to local memory cache.
         """
-        cache_key = f"{workspace_id}:{query.lower().strip()}"
+        user_suffix = f":{user_id}" if user_id is not None else ""
+        cache_key = f"{workspace_id}{user_suffix}:{query.lower().strip()}"
         _CACHE[cache_key] = (context, time.time())

@@ -25,6 +25,7 @@ class KeywordService:
         workspace_id: int,
         knowledge_base_id: List[int] = None,
         top_k: int = 10,
+        user_id: int = None,
     ) -> List[Dict[str, Any]]:
         """
         Scans chunk text for matching keyword tokens and assigns a keyword relevance score.
@@ -33,6 +34,24 @@ class KeywordService:
         keywords = QueryService.extract_keywords(query)
         if not keywords:
             return []
+
+        # Resolve manager/owner status for BM25 search
+        is_manager = False
+        if user_id:
+            from app.models.user import User
+            user = db.query(User).filter(User.id == user_id).first()
+            if user:
+                if user.company_role in ["OWNER", "ADMIN"]:
+                    is_manager = True
+                else:
+                    from app.models.workspace_member import WorkspaceMember
+                    member = db.query(WorkspaceMember).filter(
+                        WorkspaceMember.workspace_id == workspace_id,
+                        WorkspaceMember.user_id == user_id,
+                        WorkspaceMember.is_active == True
+                    ).first()
+                    if member and member.workspace_role == "MANAGER":
+                        is_manager = True
 
         # Prepare base query filtering by workspace and document status
         base_query = (
@@ -47,6 +66,15 @@ class KeywordService:
                 DocumentChunk.embedding_status == "Completed",
             )
         )
+
+        if not is_manager and user_id:
+            from sqlalchemy import or_
+            base_query = base_query.filter(
+                or_(
+                    KnowledgeDocument.visibility == "WORKSPACE",
+                    KnowledgeDocument.uploaded_by == user_id
+                )
+            )
 
         if knowledge_base_id:
             base_query = base_query.filter(KnowledgeBase.id.in_(knowledge_base_id))

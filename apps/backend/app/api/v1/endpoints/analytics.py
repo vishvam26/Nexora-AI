@@ -18,8 +18,8 @@ router = APIRouter(
 
 
 def _get_absolute_path(storage_path: str) -> str:
-    """Resolves relative storage path to absolute disk path inside uploads/knowledge"""
-    return os.path.abspath(os.path.join("uploads/knowledge", storage_path))
+    """Resolves relative storage path to absolute disk path inside storage"""
+    return os.path.abspath(os.path.join("storage", storage_path))
 
 
 @router.get(

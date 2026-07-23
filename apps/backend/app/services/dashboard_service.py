@@ -1,4 +1,5 @@
 import logging
+import os
 from datetime import datetime, timedelta
 from sqlalchemy import func, and_, or_
 from sqlalchemy.orm import Session
@@ -190,6 +191,28 @@ class DashboardService:
         if top_convo_query:
             top_conversation = top_convo_query[0]
 
+        # Calculate active sessions and workspace cost from agent sessions on disk
+        SESSION_DIR = os.path.join("storage", "agent_sessions")
+        active_sessions_count = 0
+        workspace_cost_usd = 0.0
+
+        if os.path.exists(SESSION_DIR):
+            try:
+                files = [f for f in os.listdir(SESSION_DIR) if f.endswith(".json") and f != "index.json"]
+                for filename in files:
+                    filepath = os.path.join(SESSION_DIR, filename)
+                    try:
+                        with open(filepath, "r", encoding="utf-8") as fh:
+                            sess = json.load(fh)
+                            if sess.get("workspace_id") == workspace_id:
+                                workspace_cost_usd += sess.get("cost_usd", 0.0)
+                                if sess.get("status") == "running":
+                                    active_sessions_count += 1
+                    except Exception:
+                        continue
+            except Exception as e:
+                logger.error(f"Failed to scan agent sessions in DashboardService: {e}")
+
         # Log Activity
         ActivityService.log_activity(
             db=db,
@@ -225,5 +248,7 @@ class DashboardService:
             archived_conversations_count=archived_count,
             recent_members=recent_members,
             storage_usage_bytes=storage_usage,
+            active_sessions_count=active_sessions_count,
+            workspace_cost_usd=round(workspace_cost_usd, 6),
             analytics=analytics
         )

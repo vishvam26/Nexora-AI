@@ -160,7 +160,7 @@ def list_documents(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    docs = KnowledgeBaseService.list_documents(db, kb_id)
+    docs = KnowledgeBaseService.list_documents(db, kb_id, current_user.id)
     return KnowledgeDocumentListResponse(documents=docs, total=len(docs))
 
 
@@ -174,7 +174,7 @@ def get_document(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return KnowledgeBaseService.get_document(db, doc_id)
+    return KnowledgeBaseService.get_document(db, doc_id, current_user.id)
 
 
 @router.get(
@@ -187,7 +187,7 @@ def get_document_stats(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return KnowledgeBaseService.get_document_stats(db, doc_id)
+    return KnowledgeBaseService.get_document_stats(db, doc_id, current_user.id)
 
 
 @router.post(
@@ -248,6 +248,7 @@ def retrieve_chunks(
         top_k=schema.top_k,
         offset=schema.offset,
         threshold=schema.threshold,
+        user_id=current_user.id,
     )
     chunk_responses = [ChunkResponse(**r) for r in results]
     return RetrievalResponse(query=schema.query, results=chunk_responses, total=len(chunk_responses))

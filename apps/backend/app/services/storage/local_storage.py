@@ -10,7 +10,7 @@ class LocalStorage(StorageInterface):
     Local filesystem storage provider for saving and retrieving uploaded workspace files.
     """
 
-    def __init__(self, base_upload_dir: str = "uploads"):
+    def __init__(self, base_upload_dir: str = "storage"):
         self.base_dir = os.path.abspath(base_upload_dir)
         os.makedirs(self.base_dir, exist_ok=True)
 
