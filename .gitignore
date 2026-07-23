@@ -21,31 +21,69 @@ out/
 build/
 dist/
 
-# Env & Secrets (Local configuration)
+# ─────────────────────────────────────────────────
+# Env & Secrets — NEVER push to GitHub
+# ─────────────────────────────────────────────────
 .env
-.env*
 .env.*
+*.env
+!.env.example
+!versions/**/.env.example
 *.private.key
 *.pem
 *.key
 
-# Scratch & helper scripts
-scratch/
-cleanup_agent.py
+# ─────────────────────────────────────────────────
+# Large Data Files — too large for GitHub
+# ─────────────────────────────────────────────────
+datasets/*.jsonl
+datasets/*.zip
+datasets/*.csv
+datasets/*.parquet
+models/
+*.bin
+*.safetensors
+*.gguf
+*.pt
+*.pth
 
-# DBs & Vector databases (Ignore local SQLite and vector DB engines)
+# ─────────────────────────────────────────────────
+# Local DB & Vector Store — machine-specific
+# ─────────────────────────────────────────────────
 *.db
 *.sqlite
 *.sqlite3
 apps/backend/qdrant_db/
 apps/backend/uploads/
 apps/backend/storage/
+apps/backend/nexora_ai.db
 
+# ─────────────────────────────────────────────────
+# HuggingFace & ML Cache
+# ─────────────────────────────────────────────────
+.cache/huggingface/
+*.cache/
+
+# ─────────────────────────────────────────────────
+# Scratch & one-off helper scripts
+# ─────────────────────────────────────────────────
+scratch/
+cleanup_agent.py
+temp_readme.md
+apps/backend/temp_readme.md
+apps/backend/migrate_v2.py
+apps/backend/update_readme.py
+
+# ─────────────────────────────────────────────────
 # Logs
+# ─────────────────────────────────────────────────
 *.log
 apps/backend/backend.log
+logs/
 
+# ─────────────────────────────────────────────────
 # IDE & Editor files
+# ─────────────────────────────────────────────────
 .vscode/
 .idea/
 *.suo
