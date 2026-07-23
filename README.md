@@ -1,4 +1,4 @@
-# 🌌 Nexora AI — Version 1.0 Production Platform
+# 🌌 Nexora AI — Unified AI Workspace Platform
 
 <p align="center">
   <img src="apps/frontend/src/app/icon.svg" width="90" height="90" alt="Nexora AI Logo" />
@@ -15,9 +15,62 @@
 
 ---
 
-Welcome to **Nexora AI v1.0**. This document serves as the master technical blueprint and developer guide for the entire workspace. Nexora AI is a comprehensive dashboard enabling teams to build semantic knowledge bases, run sandboxed data analysis scripts, query corporate databases through AI, and train custom Machine Learning models with built-in interpretability.
+## 🧩 Editions — One Codebase, Three Modes
+
+```
+                     Nexora AI
+
+                   One Codebase
+                        │
+       ┌────────────────┼────────────────┐
+       │                │                │
+       ▼                ▼                ▼
+   Personal          Team          Enterprise
+      V1              V2               V3
+ APP_MODE=        APP_MODE=       APP_MODE=
+  PERSONAL           TEAM         ENTERPRISE
+```
+
+| | V1 Personal | V2 Team | V3 Enterprise |
+|---|---|---|---|
+| AI Chat + Memory | ✅ | ✅ | ✅ |
+| RAG + Knowledge Base | ✅ | ✅ | ✅ |
+| ML Studio | ✅ | ✅ | ✅ |
+| Python + SQL Sandbox | ✅ | ✅ | ✅ |
+| Analytics + Reports | ✅ | ✅ | ✅ |
+| Multi-Agent System | ✅ | ✅ | ✅ |
+| Team Workspaces | ❌ | ✅ | ✅ |
+| Tasks + Activity Feed | ❌ | ✅ | ✅ |
+| Document Comments | ❌ | ✅ | ✅ |
+| AI Project Manager | ❌ | ✅ | ✅ |
+| Company Hierarchy | ❌ | ❌ | ✅ |
+| CEO / Admin Dashboard | ❌ | ❌ | ✅ |
+| Audit Logs | ❌ | ❌ | ✅ |
+| Multi-tenant Isolation | ❌ | ❌ | ✅ |
+
+### Switch Editions
+
+Change **one line** in `apps/backend/.env`:
+
+```env
+# V1 — Personal (default)
+APP_MODE=PERSONAL
+
+# V2 — Team Collaboration
+APP_MODE=TEAM
+
+# V3 — Enterprise SaaS
+APP_MODE=ENTERPRISE
+```
+
+> 📁 Version-specific configs and start scripts: [`versions/`](./versions/)
 
 ---
+
+Welcome to **Nexora AI** — a comprehensive AI workspace enabling individuals and teams to build semantic knowledge bases, run sandboxed data analysis scripts, query databases through AI, and train custom Machine Learning models with built-in interpretability.
+
+---
+
 
 ## 📐 Platform Architecture & Flow
 
