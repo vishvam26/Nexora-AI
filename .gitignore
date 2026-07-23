@@ -23,13 +23,15 @@ dist/
 
 # Env & Secrets (Local configuration)
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env*
+.env.*
 *.private.key
 *.pem
 *.key
+
+# Scratch & helper scripts
+scratch/
+cleanup_agent.py
 
 # DBs & Vector databases (Ignore local SQLite and vector DB engines)
 *.db
