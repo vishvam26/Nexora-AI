@@ -54,7 +54,7 @@ class WorkspaceMemberRepository:
         """
         Updates role field.
         """
-        member.role = role
+        member.workspace_role = role
         db.commit()
         db.refresh(member)
         return member

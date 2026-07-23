@@ -45,6 +45,7 @@ class RAGService:
         vector_weight: float = 0.70,
         keyword_weight: float = 0.30,
         graph_max_depth: int = 2,
+        user_id: Optional[int] = None,
     ) -> RAGContext:
         """
         Runs advanced RAG pipeline, expanding query concepts, doing hybrid search,
@@ -69,7 +70,8 @@ class RAGService:
                 vector_weight=vector_weight,
                 keyword_weight=keyword_weight,
                 top_k=top_k * 2,
-                threshold=similarity_threshold
+                threshold=similarity_threshold,
+                user_id=user_id,
             )
 
             if not raw_hits:

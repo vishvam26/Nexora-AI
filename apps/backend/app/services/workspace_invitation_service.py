@@ -28,12 +28,12 @@ class WorkspaceInvitationService:
         Validates caller is Owner/Admin, email is not already a member,
         generates UUID token, and creates a WorkspaceInvitation.
         """
-        # Validate caller is Owner/Admin
+        # Validate caller is MANAGER
         caller_role = PermissionService.get_member_role(db, user_id, workspace_id)
-        if caller_role not in ["OWNER", "ADMIN"]:
+        if caller_role != "MANAGER":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only workspace owners or admins can invite new members"
+                detail="Only workspace managers can invite new members"
             )
 
         # Normalise email
@@ -145,10 +145,11 @@ class WorkspaceInvitationService:
         if existing_member:
             return existing_member
 
+        workspace_role = "MANAGER" if invitation.role.upper() in ["OWNER", "ADMIN", "MANAGER"] else "EMPLOYEE"
         member = WorkspaceMember(
             workspace_id=invitation.workspace_id,
             user_id=user_id,
-            role=invitation.role,
+            workspace_role=workspace_role,
             is_active=True
         )
         created_member = WorkspaceMemberRepository.create(db, member)
@@ -161,7 +162,7 @@ class WorkspaceInvitationService:
             action="Member Joined",
             entity="User",
             entity_id=user_id,
-            metadata={"role": invitation.role}
+            metadata={"role": workspace_role}
         )
 
         return created_member

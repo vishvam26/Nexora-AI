@@ -84,6 +84,7 @@ class AgentOrchestrator:
     def ask(
         self,
         question: str,
+        user_id: Optional[int] = None,
         workspace_id: Optional[int] = None,
         knowledge_base_id: Optional[int] = None,
         doc_id: Optional[int] = None,
@@ -117,6 +118,7 @@ class AgentOrchestrator:
         # ── 2. Build Context ──────────────────────────────────────────
         context = AgentContext(
             question=question,
+            user_id=user_id,
             workspace_id=workspace_id,
             knowledge_base_id=knowledge_base_id,
             doc_id=doc_id,
@@ -186,6 +188,7 @@ class AgentOrchestrator:
     def ask_stream(
         self,
         question: str,
+        user_id: Optional[int] = None,
         workspace_id: Optional[int] = None,
         knowledge_base_id: Optional[int] = None,
         doc_id: Optional[int] = None,
@@ -216,6 +219,7 @@ class AgentOrchestrator:
 
         context = AgentContext(
             question=question,
+            user_id=user_id,
             workspace_id=workspace_id,
             knowledge_base_id=knowledge_base_id,
             doc_id=doc_id,

@@ -91,11 +91,11 @@ class WorkspaceTemplateService:
         db.commit()
         db.refresh(workspace)
 
-        # 2. Auto-provision OWNER membership
+        # 2. Auto-provision MANAGER membership
         member = WorkspaceMember(
             workspace_id=workspace.id,
             user_id=user_id,
-            role="OWNER",
+            workspace_role="MANAGER",
             is_active=True
         )
         db.add(member)

@@ -78,6 +78,7 @@ def ask_agents(
     try:
         session = orchestrator.ask(
             question=payload.question,
+            user_id=current_user.id,
             workspace_id=payload.workspace_id,
             knowledge_base_id=payload.knowledge_base_id,
             doc_id=payload.doc_id,
@@ -137,6 +138,7 @@ def ask_agents_stream(
         try:
             yield from orchestrator.ask_stream(
                 question=question,
+                user_id=current_user.id,
                 workspace_id=workspace_id,
                 knowledge_base_id=knowledge_base_id,
                 doc_id=doc_id,

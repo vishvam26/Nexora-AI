@@ -46,9 +46,9 @@ def update_member_role(
     db: Session = Depends(get_db)
 ):
     """
-    Changes role (ADMIN, EDITOR, VIEWER) of an existing workspace member.
+    Changes role (MANAGER, EMPLOYEE) of an existing workspace member.
     """
-    return WorkspaceMemberService.update_member_role(db, current_user.id, id, request.role)
+    return WorkspaceMemberService.update_member_role(db, current_user.id, id, request.workspace_role)
 
 
 @router.delete(

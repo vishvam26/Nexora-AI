@@ -7,7 +7,8 @@ import {
   Plus, MessageSquare, Folder, FolderOpen, Search, Trash2,
   LogOut, Sun, Moon, Cpu, ChevronDown, User, Database,
   BarChart3, Brain, FileText, Sparkles, Terminal, Mail,
-  Calendar, Activity, ChevronRight, ChevronLeft, Edit2
+  Calendar, Activity, ChevronRight, ChevronLeft, Edit2,
+  ShieldCheck
 } from "lucide-react";
 
 // ─────────────────────────────────────────────
@@ -167,6 +168,21 @@ export default function ChatSidebar() {
 
         {/* Spacer */}
         <div className="flex-1" />
+
+        {/* Admin Console (Visible to Owners & Admins only) */}
+        {(user?.company_role === "OWNER" || user?.company_role === "ADMIN") && (
+          <button
+            onClick={() => setActiveView("admin")}
+            className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 border mb-2 shrink-0 ${
+              activeView === "admin"
+                ? "bg-indigo-500/15 border-indigo-500/30 text-white"
+                : "text-zinc-550 border-transparent hover:border-zinc-800 hover:bg-indigo-500/5 hover:text-indigo-400"
+            }`}
+            title="Admin Console"
+          >
+            <ShieldCheck className="h-4.5 w-4.5" />
+          </button>
+        )}
 
         {/* Theme toggle */}
         <button

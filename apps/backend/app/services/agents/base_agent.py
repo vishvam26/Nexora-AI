@@ -30,6 +30,7 @@ class AgentContext:
     Agents only read what's relevant to them.
     """
     question: str                           # Original CEO question
+    user_id: Optional[int] = None           # Calling user ID
     workspace_id: Optional[int] = None      # For RAG scoping
     knowledge_base_id: Optional[int] = None # For specific KB scoping
     doc_id: Optional[int] = None            # For Analytics/ML scoping

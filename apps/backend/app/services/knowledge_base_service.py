@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.models.knowledge_base import KnowledgeBase
 from app.models.knowledge_document import KnowledgeDocument
 from app.models.document_chunk import DocumentChunk
+from app.models.user import User
 from app.repositories.knowledge_base_repository import KnowledgeBaseRepository
 from app.repositories.knowledge_document_repository import KnowledgeDocumentRepository
 from app.repositories.document_chunk_repository import DocumentChunkRepository
@@ -74,6 +75,7 @@ class KnowledgeBaseService:
         file_content: bytes,
         filename: str,
         mime_type: str,
+        visibility: str = "WORKSPACE",
     ) -> KnowledgeDocument:
         """
         Persists the uploaded file, triggers text extraction, chunking, and embedding.
@@ -83,9 +85,20 @@ class KnowledgeBaseService:
         if not kb:
             raise HTTPException(status_code=404, detail="Knowledge base not found.")
 
+        # Resolve tenancy context
+        user = db.query(User).filter(User.id == user_id).first()
+        company_id = user.company_id if (user and user.company_id) else 1
+        workspace_id = kb.workspace_id
+
+        # Partitioned path logic
+        if visibility == "PRIVATE":
+            subfolder = f"company_{company_id}/workspace_{workspace_id}/user_{user_id}"
+        else:
+            subfolder = f"company_{company_id}/workspace_{workspace_id}/shared"
+
         # Save file to storage
         safe_filename = f"{uuid.uuid4().hex}_{filename}"
-        storage_path = _storage.save_file(file_content, safe_filename, subfolder=str(kb_id))
+        storage_path = _storage.save_file(file_content, safe_filename, subfolder=subfolder)
         checksum = _processor.compute_checksum(file_content)
 
         # Create document record
@@ -99,6 +112,7 @@ class KnowledgeBaseService:
             status="Processing",
             storage_path=storage_path,
             checksum=checksum,
+            visibility=visibility,
         )
 
         try:
@@ -136,9 +150,12 @@ class KnowledgeBaseService:
                     chunk_id=chunk.id,
                     embedding=emb,
                     metadata={
+                        "company_id": company_id,
                         "workspace_id": kb.workspace_id,
                         "knowledge_base_id": kb_id,
                         "document_id": doc.id,
+                        "created_by": user_id,
+                        "visibility": visibility,
                         "text": chunk.text,
                         "page_number": chunk.page or 1,
                         "section_title": chunk.section or "",
@@ -200,6 +217,7 @@ class KnowledgeBaseService:
             file_content=file_content,
             filename=doc.filename,
             mime_type=doc.mime_type,
+            visibility=doc.visibility,
         )
 
     @staticmethod

@@ -92,6 +92,14 @@ def startup_event():
 
     print("[System] Startup environment validations successfully checked.")
 
+    # Trigger custom v2 DB migration
+    try:
+        from migrate_v2 import migrate
+        migrate()
+        print("[System] V2 database migrations applied successfully.")
+    except Exception as e:
+        print(f"[CRITICAL] Database migration failed: {e}")
+
     if settings.AI_PROVIDER.lower().strip() == "nexora":
         print(">>> NEXORA AI PROVIDER IS ACTIVE — Eagerly preloading model on startup <<<")
         try:

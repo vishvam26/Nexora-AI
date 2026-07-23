@@ -6,6 +6,7 @@ from app.services.vector_store.qdrant_vector_store import QdrantVectorStore
 from app.services.embedding.embedding_service import EmbeddingService
 from app.services.keyword_service import KeywordService
 from app.repositories.document_chunk_repository import DocumentChunkRepository
+from app.models.user import User
 
 logger = logging.getLogger("app.services.hybrid_search_service")
 
@@ -30,6 +31,7 @@ class HybridSearchService:
         keyword_weight: float = 0.30,
         top_k: int = 10,
         threshold: float = 0.1,
+        user_id: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """
         Runs both searches, normalizes their scores, merges items, and returns top K.
@@ -51,9 +53,20 @@ class HybridSearchService:
             top_k=top_k * 2,
         )
 
+        # Resolve tenancy context
+        company_id = 1
+        if user_id:
+            user = db.query(User).filter(User.id == user_id).first()
+            if user and user.company_id:
+                company_id = user.company_id
+
         # 2. Semantic Vector Search
         query_embedding = _embedder.generate_query_embedding(query)
-        filters = {"workspace_id": workspace_id}
+        filters = {
+            "workspace_id": workspace_id,
+            "company_id": company_id,
+            "user_id": user_id,
+        }
         if knowledge_base_id:
             filters["knowledge_base_id"] = knowledge_base_id
 

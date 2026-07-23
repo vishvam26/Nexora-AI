@@ -1,13 +1,14 @@
-from sqlalchemy import Boolean, DateTime, Integer, String
+from sqlalchemy import Boolean, DateTime, Integer, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
-from typing import List, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 
 from app.db.database import Base
 
 if TYPE_CHECKING:
     from app.models.conversation import Conversation
     from app.models.workspace import Workspace
+    from app.models.company import Company
 
 
 class User(Base):
@@ -25,11 +26,25 @@ class User(Base):
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
+    company_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("companies.id", ondelete="SET NULL"), nullable=True
+    )
+    company_role: Mapped[Optional[str]] = mapped_column(
+        String(20), nullable=True, default="EMPLOYEE"
+    )
+    manager_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
+
+    # Relationships
+    company: Mapped[Optional["Company"]] = relationship("Company", back_populates="users")
+    manager: Mapped[Optional["User"]] = relationship("User", remote_side=[id])
 
     conversations: Mapped[List["Conversation"]] = relationship(
         "Conversation", back_populates="user", cascade="all, delete-orphan"

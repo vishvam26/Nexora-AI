@@ -2,6 +2,8 @@ export interface User {
   id: number;
   full_name: string;
   email: string;
+  company_id?: number | null;
+  company_role?: string | null;
 }
 
 export interface Workspace {

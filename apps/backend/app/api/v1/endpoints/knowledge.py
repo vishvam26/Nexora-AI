@@ -127,6 +127,7 @@ def delete_knowledge_base(
 async def upload_document(
     kb_id: int = Form(..., description="Knowledge Base ID to attach document to"),
     file: UploadFile = File(..., description="Document file to upload"),
+    visibility: str = Form("WORKSPACE", description="Visibility of the document (WORKSPACE, PRIVATE, COMPANY)"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -145,6 +146,7 @@ async def upload_document(
         file_content=file_content,
         filename=file.filename or "upload",
         mime_type=mime_type,
+        visibility=visibility,
     )
 
 

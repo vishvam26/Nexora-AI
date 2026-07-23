@@ -30,7 +30,7 @@ class WorkspaceMemberService:
         db: Session, user_id: int, member_id: int, new_role: str
     ) -> WorkspaceMember:
         """
-        Updates role field of a member under strict RBAC restrictions.
+        Updates workspace_role field of a member under strict RBAC restrictions.
         """
         target_member = WorkspaceMemberRepository.get_by_id(db, member_id)
         if not target_member:
@@ -40,33 +40,34 @@ class WorkspaceMemberService:
             )
 
         workspace_id = target_member.workspace_id
+        workspace = db.query(Workspace).filter(Workspace.id == workspace_id).first()
         acting_role = PermissionService.get_member_role(db, user_id, workspace_id)
 
-        # OWNER validations
-        if target_member.role == "OWNER":
+        # Owner validations
+        if workspace and workspace.owner_id == target_member.user_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot modify the role of the workspace owner. Ownership must be transferred instead."
             )
 
         # RBAC validations
-        if acting_role == "VIEWER" or acting_role == "EDITOR":
+        if acting_role == "EMPLOYEE":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Insufficient permissions to modify member roles"
             )
 
-        if acting_role == "ADMIN":
-            # Admin cannot modify admins or promote/demote to/from owner
-            if target_member.role == "ADMIN":
+        # If acting user is a MANAGER but NOT the owner:
+        if acting_role == "MANAGER" and workspace and workspace.owner_id != user_id:
+            if target_member.workspace_role == "MANAGER":
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Workspace admins cannot modify other workspace admins"
+                    detail="Workspace managers can only be modified by the workspace owner"
                 )
-            if new_role == "OWNER" or new_role == "ADMIN":
+            if new_role == "MANAGER":
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Workspace admins cannot promote members to OWNER or ADMIN"
+                    detail="Only the workspace owner can promote members to MANAGER"
                 )
 
         updated_member = WorkspaceMemberRepository.update_role(db, target_member, new_role)
@@ -97,34 +98,35 @@ class WorkspaceMemberService:
             )
 
         workspace_id = target_member.workspace_id
+        workspace = db.query(Workspace).filter(Workspace.id == workspace_id).first()
         acting_role = PermissionService.get_member_role(db, user_id, workspace_id)
 
         # Prevent owner deletion
-        if target_member.role == "OWNER":
+        if workspace and workspace.owner_id == target_member.user_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot remove the workspace owner"
             )
 
-        # Prevent self removal via member edit (use leave endpoint instead, or block here)
+        # Prevent self removal via member edit
         if target_member.user_id == user_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Use workspace leave instead of deleting yourself"
             )
 
-        if acting_role == "VIEWER" or acting_role == "EDITOR":
+        if acting_role == "EMPLOYEE":
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Insufficient permissions to remove members"
             )
 
-        if acting_role == "ADMIN":
-            # Admin cannot delete Admin
-            if target_member.role == "ADMIN":
+        if acting_role == "MANAGER" and workspace and workspace.owner_id != user_id:
+            # Manager cannot delete other Managers
+            if target_member.workspace_role == "MANAGER":
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Admins cannot remove other workspace admins"
+                    detail="Workspace managers can only be removed by the workspace owner"
                 )
 
         WorkspaceMemberRepository.remove(db, target_member)
@@ -143,8 +145,8 @@ class WorkspaceMemberService:
     @staticmethod
     def transfer_ownership(db: Session, user_id: int, workspace_id: int, target_user_id: int) -> Workspace:
         """
-        Transfers workspace ownership. Target user must be an active workspace Admin.
-        Owner becomes Admin. Workspace owner_id is updated.
+        Transfers workspace ownership. Target user must be an active workspace MANAGER.
+        Owner remains MANAGER. Workspace owner_id is updated.
         """
         workspace = db.query(Workspace).filter(
             Workspace.id == workspace_id,
@@ -172,10 +174,10 @@ class WorkspaceMemberService:
                 detail="Target user is not a member of this workspace"
             )
 
-        if target_member.role != "ADMIN":
+        if target_member.workspace_role != "MANAGER":
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Ownership can only be transferred to an existing workspace ADMIN"
+                detail="Ownership can only be transferred to an existing workspace MANAGER"
             )
 
         # Get current owner member record
@@ -185,16 +187,16 @@ class WorkspaceMemberService:
             owner_member = WorkspaceMember(
                 workspace_id=workspace_id,
                 user_id=user_id,
-                role="OWNER",
+                workspace_role="MANAGER",
                 is_active=True
             )
             db.add(owner_member)
             db.commit()
             db.refresh(owner_member)
 
-        # Swap roles
-        target_member.role = "OWNER"
-        owner_member.role = "ADMIN"
+        # Confirm roles and swap owner_id
+        target_member.workspace_role = "MANAGER"
+        owner_member.workspace_role = "MANAGER"
         workspace.owner_id = target_user_id
 
         db.commit()

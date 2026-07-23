@@ -29,6 +29,7 @@ class KnowledgeDocument(Base):
     language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     checksum: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     storage_path: Mapped[str] = mapped_column(String(255), nullable=False)
+    visibility: Mapped[str] = mapped_column(String(20), nullable=False, default="WORKSPACE")  # WORKSPACE, PRIVATE, COMPANY
     doc_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     
     uploaded_by: Mapped[int] = mapped_column(

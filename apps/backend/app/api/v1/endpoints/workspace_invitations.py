@@ -30,7 +30,7 @@ def invite_user(
     db: Session = Depends(get_db)
 ):
     """
-    Sends/Creates an invitation to join a workspace. Requires Owner or Admin privileges.
+    Sends/Creates an invitation to join a workspace. Requires Manager privileges.
     """
     return WorkspaceInvitationService.create_invitation(
         db=db,

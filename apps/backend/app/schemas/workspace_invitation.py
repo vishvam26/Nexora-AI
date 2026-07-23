@@ -5,14 +5,14 @@ from typing import List, Optional
 
 class WorkspaceInvitationCreate(BaseModel):
     email: EmailStr = Field(..., description="The email address to invite")
-    role: str = Field("VIEWER", description="The role assigned to the invitation (ADMIN, EDITOR, VIEWER)")
+    role: str = Field("EMPLOYEE", description="The role assigned to the invitation (MANAGER, EMPLOYEE)")
 
     @field_validator("role")
     @classmethod
     def validate_role(cls, value: str) -> str:
         value = value.strip().upper()
-        if value not in ["ADMIN", "EDITOR", "VIEWER"]:
-            raise ValueError("Invitation role must be one of: ADMIN, EDITOR, VIEWER")
+        if value not in ["MANAGER", "EMPLOYEE"]:
+            raise ValueError("Invitation role must be one of: MANAGER, EMPLOYEE")
         return value
 
 

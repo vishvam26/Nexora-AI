@@ -74,9 +74,9 @@ class QdrantVectorStore(VectorStoreInterface):
                     }
                 )
 
-            # Ensure payload indexes exist for filtering fields (workspace_id, knowledge_base_id)
+            # Ensure payload indexes exist for filtering fields (workspace_id, knowledge_base_id, company_id)
             # This is required by Qdrant Cloud cluster settings when index requirements are enforced.
-            for field in ["workspace_id", "knowledge_base_id"]:
+            for field in ["workspace_id", "knowledge_base_id", "company_id"]:
                 try:
                     self.client.create_payload_index(
                         collection_name=self.collection_name,
@@ -127,8 +127,33 @@ class QdrantVectorStore(VectorStoreInterface):
             query_filter = None
             if filters:
                 conditions = []
+                
+                # Tenancy and visibility locks
+                company_id = filters.get("company_id")
+                user_id = filters.get("user_id")
+                
+                if company_id is not None:
+                    conditions.append(
+                        models.FieldCondition(
+                            key="company_id",
+                            match=models.MatchValue(value=company_id)
+                        )
+                    )
+                
+                if user_id is not None:
+                    # (visibility == "WORKSPACE") OR (visibility == "COMPANY") OR (created_by == user_id)
+                    conditions.append(
+                        models.Filter(
+                            should=[
+                                models.FieldCondition(key="visibility", match=models.MatchValue(value="WORKSPACE")),
+                                models.FieldCondition(key="visibility", match=models.MatchValue(value="COMPANY")),
+                                models.FieldCondition(key="created_by", match=models.MatchValue(value=user_id)),
+                            ]
+                        )
+                    )
+
                 for k, v in filters.items():
-                    if v is None:
+                    if k in ["company_id", "user_id"] or v is None:
                         continue
                     if k == "start_date":
                         conditions.append(

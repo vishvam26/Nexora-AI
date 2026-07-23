@@ -54,13 +54,13 @@ class WorkspaceService:
         )
         FolderRepository.create(db, general_folder)
 
-        # Auto-provision OWNER workspace membership
+        # Auto-provision MANAGER workspace membership
         from app.models.workspace_member import WorkspaceMember
         from app.repositories.workspace_member_repository import WorkspaceMemberRepository
         owner_member = WorkspaceMember(
             workspace_id=created_ws.id,
             user_id=owner_id,
-            role="OWNER",
+            workspace_role="MANAGER",
             is_active=True
         )
         WorkspaceMemberRepository.create(db, owner_member)
@@ -99,7 +99,7 @@ class WorkspaceService:
             Workspace.deleted_at.is_(None)
         ).all()
 
-        # Enforce that owners have a WorkspaceMember entry of role OWNER
+        # Enforce that owners have a WorkspaceMember entry of role MANAGER
         for ws in owned_ws:
             member = db.query(WorkspaceMember).filter(
                 WorkspaceMember.workspace_id == ws.id,
@@ -110,7 +110,7 @@ class WorkspaceService:
                 new_m = WorkspaceMember(
                     workspace_id=ws.id,
                     user_id=owner_id,
-                    role="OWNER",
+                    workspace_role="MANAGER",
                     is_active=True
                 )
                 db.add(new_m)

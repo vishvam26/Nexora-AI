@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from app.models.user import User
     from app.models.conversation import Conversation
     from app.models.folder import Folder
+    from app.models.company import Company
 
 
 class Workspace(Base):
@@ -27,6 +28,9 @@ class Workspace(Base):
     )
     owner_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    company_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=True
     )
     name: Mapped[str] = mapped_column(String(60), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -81,6 +85,7 @@ class Workspace(Base):
 
     # Relationships
     owner: Mapped["User"] = relationship("User", back_populates="workspaces")
+    company: Mapped[Optional["Company"]] = relationship("Company", back_populates="workspaces")
     conversations: Mapped[list["Conversation"]] = relationship(
         "Conversation", back_populates="workspace", cascade="all, delete-orphan"
     )

@@ -1,5 +1,11 @@
 from app.db.database import Base
 
+# Import new SaaS models
+from app.models.company import Company
+from app.models.company_settings import CompanySettings
+from app.models.company_secrets import CompanySecrets
+from app.models.invitation import Invitation
+
 # Import all models here
 from app.models.user import User
 from app.models.conversation import Conversation

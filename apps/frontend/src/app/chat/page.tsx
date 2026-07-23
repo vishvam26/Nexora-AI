@@ -17,6 +17,7 @@ import EmailStudio from "../../components/email-studio";
 import CalendarStudio from "../../components/calendar-studio";
 import EvalDashboard from "../../components/eval-dashboard";
 import NexoraLoader from "../../components/nexora-loader";
+import AdminArea from "../../components/admin-area";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -206,6 +207,7 @@ export default function ChatPage() {
           activeView === "email" ? <EmailStudio /> :
           activeView === "calendar" ? <CalendarStudio /> :
           activeView === "eval" ? <EvalDashboard /> :
+          activeView === "admin" ? <AdminArea /> :
           <MLArea />}
       </div>
     </div>

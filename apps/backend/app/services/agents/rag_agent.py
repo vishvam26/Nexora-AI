@@ -59,8 +59,25 @@ class RAGAgent(BaseAgent):
             query_embedding = embedder.embed_text(search_query)
             tool_calls.append("EmbeddingService.embed_text")
 
+            # Resolve user company context
+            company_id = 1
+            if context.user_id:
+                try:
+                    from app.db.session import SessionLocal
+                    from app.models.user import User
+                    with SessionLocal() as db:
+                        user = db.query(User).filter(User.id == context.user_id).first()
+                        if user and user.company_id:
+                            company_id = user.company_id
+                except Exception as db_err:
+                    logger.error(f"Failed to load user company in RAGAgent: {db_err}")
+
             # Search Qdrant
-            filters = {"workspace_id": context.workspace_id}
+            filters = {
+                "workspace_id": context.workspace_id,
+                "company_id": company_id,
+                "user_id": context.user_id,
+            }
             if getattr(context, "knowledge_base_id", None):
                 filters["knowledge_base_id"] = context.knowledge_base_id
 

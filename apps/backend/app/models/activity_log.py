@@ -26,6 +26,10 @@ class ActivityLog(Base):
     entity: Mapped[str] = mapped_column(String(50), nullable=False)
     entity_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     metadata_json: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True, name="metadata")
+    ip_address: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
+    device: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    browser: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    status: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, default="SUCCESS")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, index=True)
 
     # Relationships

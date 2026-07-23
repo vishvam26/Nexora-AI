@@ -7,7 +7,7 @@ class WorkspaceMemberResponse(BaseModel):
     id: int
     workspace_id: int
     user_id: int
-    role: str
+    workspace_role: str
     joined_at: datetime
     last_active: Optional[datetime]
     is_active: bool
@@ -18,16 +18,16 @@ class WorkspaceMemberResponse(BaseModel):
 
 
 class WorkspaceMemberRoleUpdate(BaseModel):
-    role: str = Field(..., description="The role to assign (ADMIN, EDITOR, VIEWER)")
+    workspace_role: str = Field(..., description="The role to assign (MANAGER, EMPLOYEE)")
 
-    @field_validator("role")
+    @field_validator("workspace_role")
     @classmethod
-    def validate_role(cls, value: str) -> str:
+    def validate_workspace_role(cls, value: str) -> str:
         value = value.strip().upper()
-        if value not in ["ADMIN", "EDITOR", "VIEWER"]:
-            raise ValueError("Role must be one of: ADMIN, EDITOR, VIEWER")
+        if value not in ["MANAGER", "EMPLOYEE"]:
+            raise ValueError("Role must be one of: MANAGER, EMPLOYEE")
         return value
 
 
 class WorkspaceOwnershipTransfer(BaseModel):
-    target_user_id: int = Field(..., description="The ID of the existing workspace admin to transfer ownership to")
+    target_user_id: int = Field(..., description="The ID of the existing workspace manager to transfer ownership to")
