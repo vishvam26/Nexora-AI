@@ -75,9 +75,10 @@ class PermissionService:
     def validate_workspace_access(db: Session, user_id: int, workspace_id: int) -> None:
         """
         Enforces tenant company bounds and workspace access controls (including CEO/Manager hierarchy).
-        Bypasses checks in standalone mode (workspace_id is None).
+        Bypasses checks in standalone mode (workspace_id is None) or PERSONAL mode.
         """
-        if workspace_id is None:
+        from app.config import settings
+        if settings.APP_MODE == "PERSONAL" or workspace_id is None:
             return
 
         from app.models.user import User
@@ -90,12 +91,13 @@ class PermissionService:
                 detail="User or Workspace not found"
             )
             
-        # 1. Company Tenant Isolation Check
-        if user.company_id != workspace.company_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied: tenant isolation mismatch"
-            )
+        # 1. Company Tenant Isolation Check (Enterprise Mode Only)
+        if settings.APP_MODE == "ENTERPRISE":
+            if user.company_id != workspace.company_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Access denied: tenant isolation mismatch"
+                )
             
         # 2. CEO/Owner/Admin Check
         if user.company_role in ["OWNER", "ADMIN"]:
@@ -110,9 +112,10 @@ class PermissionService:
         if member:
             return
             
-        # 4. Management Hierarchy Check
-        if PermissionService.is_manager_of(db, user_id, workspace.owner_id):
-            return
+        # 4. Management Hierarchy Check (Enterprise Mode Only)
+        if settings.APP_MODE == "ENTERPRISE":
+            if PermissionService.is_manager_of(db, user_id, workspace.owner_id):
+                return
             
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -127,6 +130,7 @@ class PermissionService:
         """
         from app.models.conversation import Conversation
         from app.models.user import User
+        from app.config import settings
         
         user = db.query(User).filter(User.id == user_id).first()
         conv = db.query(Conversation).filter(Conversation.id == conversation_id).first()
@@ -136,8 +140,8 @@ class PermissionService:
                 detail="User or Conversation not found"
             )
             
-        # Standalone Mode Bypass: If conversation has no workspace associated
-        if conv.workspace_id is None:
+        # Standalone Mode Bypass: If conversation has no workspace associated or PERSONAL mode
+        if settings.APP_MODE == "PERSONAL" or conv.workspace_id is None:
             if conv.user_id != user_id:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -148,13 +152,22 @@ class PermissionService:
         # Validate workspace access first
         PermissionService.validate_workspace_access(db, user_id, conv.workspace_id)
         
-        # Non-admin/owner roles can only see own convs or of their subordinates
-        if user.company_role not in ["OWNER", "ADMIN"]:
+        # Non-admin/owner roles can only see own convs or of their subordinates (Enterprise Hierarchy only)
+        if settings.APP_MODE == "ENTERPRISE" and user.company_role not in ["OWNER", "ADMIN"]:
             if conv.user_id != user_id and not PermissionService.is_manager_of(db, user_id, conv.user_id):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Insufficient permissions to access this conversation"
                 )
+        elif settings.APP_MODE == "TEAM":
+            # Simple team workspace: can see own convs or admin can view all
+            if conv.user_id != user_id:
+                role = PermissionService.get_member_role(db, user_id, conv.workspace_id)
+                if role not in ["OWNER", "ADMIN"]:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Insufficient permissions to access this conversation"
+                    )
 
     @staticmethod
     def check_permission(
@@ -169,7 +182,8 @@ class PermissionService:
         Raises HTTP 403 Forbidden on permission violation.
         Supports standalone personal mode bypass.
         """
-        if workspace_id is None:
+        from app.config import settings
+        if settings.APP_MODE == "PERSONAL" or workspace_id is None:
             if conversation_owner_id is not None and conversation_owner_id != user_id:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,

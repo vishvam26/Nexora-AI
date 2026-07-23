@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     APP_NAME: str = "Nexora AI"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = True
+    APP_MODE: str = "PERSONAL" # "PERSONAL", "TEAM", "ENTERPRISE"
     DATABASE_URL: str = "postgresql://nexora:nexora123@localhost:5432/nexora_ai"
     SECRET_KEY: str = "CHANGE_THIS_LATER_IN_ENV"
     ALGORITHM: str = "HS256"
@@ -78,6 +79,21 @@ class Settings(BaseSettings):
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = "noreply@nexora.ai"
+
+    # ─────────────────────────────────────────────────────
+    # Feature Flags (development / testing control)
+    # All features are FREE. Flags control which modules
+    # are active — useful for staged testing.
+    # ─────────────────────────────────────────────────────
+    ENABLE_ANALYTICS: bool = True
+    ENABLE_ML: bool = True
+    ENABLE_PYTHON: bool = True
+    ENABLE_SQL: bool = True
+    ENABLE_REPORTS: bool = True
+    ENABLE_MEMORY: bool = True
+    ENABLE_RAG: bool = True
+    ENABLE_TEAM: bool = True       # Requires APP_MODE=TEAM or ENTERPRISE
+    ENABLE_ENTERPRISE: bool = False # Requires APP_MODE=ENTERPRISE
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
