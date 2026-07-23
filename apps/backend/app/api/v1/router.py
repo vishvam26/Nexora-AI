@@ -42,6 +42,8 @@ from app.api.v1.endpoints.email_agent import router as email_agent_router
 from app.api.v1.endpoints.calendar_agent import router as calendar_agent_router
 from app.api.v1.endpoints.eval import router as eval_router
 from app.api.v1.endpoints.company import router as company_router
+from app.api.v1.endpoints.tasks import router as tasks_router
+from app.api.v1.endpoints.activity import router as activity_router
 
 
 
@@ -94,7 +96,10 @@ api_router.include_router(email_agent_router)
 api_router.include_router(calendar_agent_router)
 api_router.include_router(eval_router)
 api_router.include_router(company_router)
+api_router.include_router(tasks_router)
+api_router.include_router(activity_router)
 api_router.include_router(health_router)
+
 
 
 

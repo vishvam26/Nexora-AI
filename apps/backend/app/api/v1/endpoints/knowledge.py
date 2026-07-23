@@ -252,3 +252,19 @@ def retrieve_chunks(
     )
     chunk_responses = [ChunkResponse(**r) for r in results]
     return RetrievalResponse(query=schema.query, results=chunk_responses, total=len(chunk_responses))
+
+
+@router.post(
+    "/documents/{doc_id}/restore",
+    response_model=KnowledgeDocumentResponse,
+    summary="Restore a soft-deleted document"
+)
+def restore_document(
+    doc_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Enables users to restore a previously soft-deleted knowledge document.
+    """
+    return KnowledgeBaseService.restore_document(db, doc_id, current_user.id)

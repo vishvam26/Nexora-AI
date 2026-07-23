@@ -321,3 +321,40 @@ class KnowledgeBaseService:
             "total_characters": total_chars,
             "language": doc.language or "unknown",
         }
+
+    @staticmethod
+    def restore_document(db: Session, doc_id: int, user_id: int) -> KnowledgeDocument:
+        """
+        Restores a soft-deleted document by setting deleted_at back to None.
+        """
+        doc = db.query(KnowledgeDocument).filter(
+            KnowledgeDocument.id == doc_id
+        ).first()
+        if not doc:
+            raise HTTPException(status_code=404, detail="Document not found.")
+
+        # Validate permission
+        KnowledgeBaseService._validate_document_access(db, doc, user_id)
+
+        doc.deleted_at = None
+        db.commit()
+        db.refresh(doc)
+        
+        # Log Activity
+        try:
+            from app.services.activity_service import ActivityService
+            kb = KnowledgeBaseRepository.get_by_id(db, doc.knowledge_base_id)
+            if kb:
+                ActivityService.log_activity(
+                    db=db,
+                    workspace_id=kb.workspace_id,
+                    user_id=user_id,
+                    action="Document Restored",
+                    entity="Document",
+                    entity_id=doc.id,
+                    metadata_json={"title": doc.filename}
+                )
+        except Exception as activity_err:
+            logger.warning(f"Failed to log document restore activity: {activity_err}")
+            
+        return doc

@@ -31,6 +31,8 @@ from app.models.chat_feedback import ChatFeedback
 from app.models.dataset_project import DatasetProject, DatasetVersion, DatasetReviewItem
 from app.models.training_project import TrainingProject, TrainingRun, TrainingArtifact, TrainingLog
 from app.models.calendar_event import CalendarEvent
+from app.models.task import Task
+from app.models.document_comment import DocumentComment
 
 
 
