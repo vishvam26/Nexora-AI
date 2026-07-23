@@ -14,7 +14,14 @@ class Settings(BaseSettings):
     APP_NAME: str = "Nexora AI"
     APP_VERSION: str = "1.0.0"
     DEBUG: bool = True
-    APP_MODE: str = "PERSONAL" # "PERSONAL", "TEAM", "ENTERPRISE"
+
+    # ─────────────────────────────────────────────
+    # App Mode — the ONLY setting you need to change
+    # PERSONAL   → Single user, no team/enterprise features
+    # TEAM       → Team collaboration (workspaces, tasks, activity feed)
+    # ENTERPRISE → Full company hierarchy (CEO, admin, audit logs)
+    # ─────────────────────────────────────────────
+    APP_MODE: str = "PERSONAL"  # "PERSONAL" | "TEAM" | "ENTERPRISE"
     DATABASE_URL: str = "postgresql://nexora:nexora123@localhost:5432/nexora_ai"
     SECRET_KEY: str = "CHANGE_THIS_LATER_IN_ENV"
     ALGORITHM: str = "HS256"
@@ -80,22 +87,21 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = "noreply@nexora.ai"
 
-    # ─────────────────────────────────────────────────────
-    # Feature Flags (development / testing control)
-    # All features are FREE. Flags control which modules
-    # are active — useful for staged testing.
-    # ─────────────────────────────────────────────────────
-    ENABLE_ANALYTICS: bool = True
-    ENABLE_ML: bool = True
-    ENABLE_PYTHON: bool = True
-    ENABLE_SQL: bool = True
-    ENABLE_REPORTS: bool = True
-    ENABLE_MEMORY: bool = True
-    ENABLE_RAG: bool = True
-    ENABLE_TEAM: bool = True       # Requires APP_MODE=TEAM or ENTERPRISE
-    ENABLE_ENTERPRISE: bool = False # Requires APP_MODE=ENTERPRISE
-
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    # ─────────────────────────────────────────────────────
+    # Derived Feature Flags (auto-computed from APP_MODE)
+    # DO NOT set these manually — they are derived.
+    # ─────────────────────────────────────────────────────
+    @property
+    def enable_team(self) -> bool:
+        """Team features active in TEAM and ENTERPRISE mode."""
+        return self.APP_MODE in ("TEAM", "ENTERPRISE")
+
+    @property
+    def enable_enterprise(self) -> bool:
+        """Enterprise features active only in ENTERPRISE mode."""
+        return self.APP_MODE == "ENTERPRISE"
 
 
 settings = Settings()

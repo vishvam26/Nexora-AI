@@ -1,3 +1,8 @@
+# ===================================================
+# CORE MODULE — AI Chat
+# Used by:  PERSONAL | TEAM | ENTERPRISE
+# ===================================================
+
 from fastapi import APIRouter, Depends, status, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session

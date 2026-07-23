@@ -1,3 +1,9 @@
+# ===================================================
+# TEAM MODULE — Workspaces
+# Used by:  TEAM | ENTERPRISE
+# NOT used by: PERSONAL
+# ===================================================
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 from app.db.session import get_db

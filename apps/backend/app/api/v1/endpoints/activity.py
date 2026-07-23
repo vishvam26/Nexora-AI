@@ -1,3 +1,9 @@
+# ===================================================
+# TEAM MODULE — Activity Feed
+# Used by:  TEAM | ENTERPRISE
+# NOT used by: PERSONAL
+# ===================================================
+
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any

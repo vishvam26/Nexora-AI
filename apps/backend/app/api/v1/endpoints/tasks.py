@@ -1,3 +1,9 @@
+# ===================================================
+# TEAM MODULE — Tasks & AI Project Manager
+# Used by:  TEAM | ENTERPRISE
+# NOT used by: PERSONAL
+# ===================================================
+
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
