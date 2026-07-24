@@ -34,7 +34,7 @@ export default function SQLStudio() {
   const [loadingSchema, setLoadingSchema] = useState(true);
 
   // Editor/Query state
-  const [query, setQuery] = useState("SELECT * FROM users LIMIT 10;");
+  const [query, setQuery] = useState("SELECT * FROM conversations LIMIT 10;");
   const [result, setResult] = useState<QueryResult | null>(null);
   const [running, setRunning] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -55,9 +55,20 @@ export default function SQLStudio() {
       const res = await fetch(`${API_BASE}/mcp/schema`, { headers: headers() });
       if (res.ok) {
         const data = await res.json();
-        setSchema(data.schema || {});
-        // Auto-expand the first table
-        const firstTable = Object.keys(data.schema || {})[0];
+        const rawSchema = data.schema || {};
+        
+        // Filter out internal system tables (users, companies, secrets) for clean user experience
+        const cleanSchema: Record<string, TableColumn[]> = {};
+        const hiddenInternalTables = ["users", "companies", "company_secrets", "company_settings"];
+        
+        for (const [tableName, columns] of Object.entries(rawSchema)) {
+          if (!hiddenInternalTables.includes(tableName.toLowerCase())) {
+            cleanSchema[tableName] = columns as TableColumn[];
+          }
+        }
+
+        setSchema(cleanSchema);
+        const firstTable = Object.keys(cleanSchema)[0];
         if (firstTable) {
           setExpandedTables({ [firstTable]: true });
         }
@@ -273,7 +284,7 @@ export default function SQLStudio() {
               value={naturalLanguage}
               onChange={(e) => setNaturalLanguage(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") handleAICopilot(); }}
-              placeholder="Ask SQL Copilot (e.g. 'Show table row counts' or 'List recent users')"
+              placeholder="Ask SQL Copilot (e.g. 'Show table row counts' or 'List recent tasks')"
               className="flex-1 bg-transparent text-xs text-zinc-200 placeholder:text-zinc-500 focus:outline-none"
             />
             <button
