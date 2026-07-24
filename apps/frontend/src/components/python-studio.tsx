@@ -62,7 +62,7 @@ export default function PythonStudio() {
 
   // Editor/Script state
   const [code, setCode] = useState(
-    "# Injected: df = pd.read_csv(DF_PATH)\nprint(df.info())\n\n# Generate a sample histogram plot:\n# df.hist(bins=15)\n# plt.show()"
+    "# Auto-loaded CSV Dataset into pandas DataFrame 'df'\nprint('--- DATASET INFORMATION ---')\nprint(df.info())\n\nprint('\\n--- FIRST 5 ROWS ---')\nprint(df.head())\n\n# Generate Histogram Plot\ndf.hist(bins=15, figsize=(8, 5))\nplt.tight_layout()\nplt.show()"
   );
   const [result, setResult] = useState<SandboxResult | null>(null);
   const [running, setRunning] = useState(false);
@@ -330,8 +330,8 @@ export default function PythonStudio() {
                 <div className="border-b border-zinc-800 bg-zinc-900 px-4 py-2">
                   <span className="text-[9px] font-semibold text-zinc-400 uppercase tracking-wider">Console output (STDOUT)</span>
                 </div>
-                <div className="p-4 font-mono text-xs text-zinc-300 leading-relaxed min-h-[80px] h-32 resize-y overflow-y-auto whitespace-pre-wrap rounded-b-xl">
-                  {result.stdout || <span className="text-zinc-700">Script completed with no STDOUT messages.</span>}
+                <div className="p-4 font-mono text-xs text-emerald-400/90 leading-relaxed min-h-[140px] max-h-[320px] overflow-y-auto whitespace-pre-wrap rounded-b-xl border-t border-zinc-800/40 select-text">
+                  {result.stdout || <span className="text-zinc-600 italic">Script completed with no STDOUT messages.</span>}
                 </div>
               </div>
 
