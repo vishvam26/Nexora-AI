@@ -189,7 +189,17 @@ export const useChatStore = create<ChatState>((set) => ({
 
   setActiveView: (activeView) => set({ activeView }),
   
-  setKnowledgeBases: (knowledgeBases) => set({ knowledgeBases }),
+  setKnowledgeBases: (knowledgeBases) => set((state) => {
+    const uniqueMap = new Map();
+    (knowledgeBases || []).forEach(kb => {
+      if (kb && kb.id) uniqueMap.set(kb.id, kb);
+    });
+    const cleanBases = Array.from(uniqueMap.values());
+    const active = state.activeKnowledgeBase
+      ? cleanBases.find(k => k.id === state.activeKnowledgeBase?.id) || cleanBases[0] || null
+      : cleanBases[0] || null;
+    return { knowledgeBases: cleanBases, activeKnowledgeBase: active };
+  }),
   
   setActiveKnowledgeBase: (activeKnowledgeBase) => set({ activeKnowledgeBase }),
   

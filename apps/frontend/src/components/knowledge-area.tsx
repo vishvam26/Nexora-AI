@@ -114,10 +114,12 @@ export default function KnowledgeArea() {
         kbTitle.trim(),
         kbDesc.trim()
       );
-      setActiveKnowledgeBase(newKB);
       setKbTitle("");
       setKbDesc("");
       setIsCreatingKB(false);
+      if (newKB) {
+        setActiveKnowledgeBase(newKB);
+      }
     } catch (err) {
       console.error("Failed to create knowledge base:", err);
     }
