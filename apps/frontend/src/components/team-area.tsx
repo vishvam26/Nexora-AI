@@ -282,9 +282,9 @@ export default function TeamArea() {
             {/* Kanban Columns */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* TODO Column */}
-              <div className="rounded-xl border border-border bg-card/30 p-4 space-y-3">
-                <div className="flex items-center justify-between border-b border-border pb-2">
-                  <div className="flex items-center gap-2 font-semibold text-xs text-muted-foreground">
+              <div className="rounded-xl border border-border bg-card/70 shadow-sm p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-border/70 pb-2.5">
+                  <div className="flex items-center gap-2 font-bold text-xs text-foreground">
                     <Clock className="h-4 w-4 text-amber-500" /> To Do ({todoTasks.length})
                   </div>
                 </div>
@@ -292,14 +292,14 @@ export default function TeamArea() {
                   {todoTasks.map(t => (
                     <TaskCard key={t.id} task={t} onMove={(status) => handleUpdateStatus(t.id, status)} />
                   ))}
-                  {todoTasks.length === 0 && <p className="text-xs text-center text-muted-foreground py-6">No tasks to do</p>}
+                  {todoTasks.length === 0 && <p className="text-xs text-center text-muted-foreground font-medium py-8">No tasks to do</p>}
                 </div>
               </div>
 
               {/* IN PROGRESS Column */}
-              <div className="rounded-xl border border-border bg-card/30 p-4 space-y-3">
-                <div className="flex items-center justify-between border-b border-border pb-2">
-                  <div className="flex items-center gap-2 font-semibold text-xs text-muted-foreground">
+              <div className="rounded-xl border border-border bg-card/70 shadow-sm p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-border/70 pb-2.5">
+                  <div className="flex items-center gap-2 font-bold text-xs text-foreground">
                     <Activity className="h-4 w-4 text-cyan-500" /> In Progress ({inProgressTasks.length})
                   </div>
                 </div>
@@ -307,14 +307,14 @@ export default function TeamArea() {
                   {inProgressTasks.map(t => (
                     <TaskCard key={t.id} task={t} onMove={(status) => handleUpdateStatus(t.id, status)} />
                   ))}
-                  {inProgressTasks.length === 0 && <p className="text-xs text-center text-muted-foreground py-6">No active tasks</p>}
+                  {inProgressTasks.length === 0 && <p className="text-xs text-center text-muted-foreground font-medium py-8">No active tasks</p>}
                 </div>
               </div>
 
               {/* COMPLETED Column */}
-              <div className="rounded-xl border border-border bg-card/30 p-4 space-y-3">
-                <div className="flex items-center justify-between border-b border-border pb-2">
-                  <div className="flex items-center gap-2 font-semibold text-xs text-muted-foreground">
+              <div className="rounded-xl border border-border bg-card/70 shadow-sm p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-border/70 pb-2.5">
+                  <div className="flex items-center gap-2 font-bold text-xs text-foreground">
                     <CheckCircle2 className="h-4 w-4 text-emerald-500" /> Completed ({completedTasks.length})
                   </div>
                 </div>
@@ -322,7 +322,7 @@ export default function TeamArea() {
                   {completedTasks.map(t => (
                     <TaskCard key={t.id} task={t} onMove={(status) => handleUpdateStatus(t.id, status)} />
                   ))}
-                  {completedTasks.length === 0 && <p className="text-xs text-center text-muted-foreground py-6">No finished tasks</p>}
+                  {completedTasks.length === 0 && <p className="text-xs text-center text-muted-foreground font-medium py-8">No finished tasks</p>}
                 </div>
               </div>
             </div>
