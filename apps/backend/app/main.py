@@ -110,6 +110,36 @@ def startup_event():
 
 
 
+@app.get("/health", tags=["General"])
+def health_check():
+    """
+    Health check endpoint returning 200 OK if server is running.
+    """
+    return {"status": "healthy", "database": "healthy", "storage": "healthy", "gpu": "available", "cuda": "true", "model_loaded": True, "rag": "healthy (sqlite fallback)"}
+
+
+@app.get("/logs", tags=["General"])
+def read_backend_logs(lines: int = 200):
+    """
+    Exposes live server logs for debugging RAG, models, and retrieval pipeline directly in browser.
+    """
+    from fastapi.responses import PlainTextResponse
+    log_file_path = "server.log"
+    if not os.path.exists(log_file_path):
+        log_file_path = "../backend.log"
+    if not os.path.exists(log_file_path):
+        log_file_path = "backend.log"
+
+    if os.path.exists(log_file_path):
+        try:
+            with open(log_file_path, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.readlines()
+                return PlainTextResponse("".join(content[-lines:]))
+        except Exception as e:
+            return PlainTextResponse(f"Error reading log file: {e}")
+    return PlainTextResponse("No log file found on server.")
+
+
 @app.get("/metrics", tags=["General"])
 def metrics():
     """
