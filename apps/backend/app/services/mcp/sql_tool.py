@@ -80,17 +80,37 @@ class SQLTool:
                     "error": f"Security Block: Forbidden write operation keywords found in query: {word}"
                 }
 
+        # 3. Block sensitive credential queries
+        forbidden_sensitive = [r"\bcompany_secrets\b", r"\bsecrets\b"]
+        for word in forbidden_sensitive:
+            if re.search(word, clean_query, re.IGNORECASE):
+                return {
+                    "success": False,
+                    "error": "Security Access Denied: Accessing system credentials or sensitive secret tables is restricted."
+                }
+
         try:
             result = db.execute(text(clean_query))
             # Resolve headers
             headers = list(result.keys())
-            rows = [dict(zip(headers, row)) for row in result.fetchall()]
+            raw_rows = [dict(zip(headers, row)) for row in result.fetchall()]
             
+            # Security Sanitize: Automatically mask password hashes and sensitive tokens
+            sanitized_rows = []
+            for r in raw_rows:
+                row_copy = {}
+                for k, v in r.items():
+                    if k.lower() in ["password_hash", "password", "secret_key", "access_token", "share_token"]:
+                        row_copy[k] = "[REDACTED_PROTECTED]"
+                    else:
+                        row_copy[k] = v
+                sanitized_rows.append(row_copy)
+
             return {
                 "success": True,
-                "row_count": len(rows),
+                "row_count": len(sanitized_rows),
                 "headers": headers,
-                "rows": rows[:100] # Cap rows at 100 to prevent buffer overload
+                "rows": sanitized_rows[:100] # Cap rows at 100 to prevent buffer overload
             }
         except Exception as e:
             logger.error(f"[SQLTool] Query failed: {e}")
