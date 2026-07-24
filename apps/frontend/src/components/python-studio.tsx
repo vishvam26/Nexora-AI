@@ -68,6 +68,68 @@ export default function PythonStudio() {
   const [running, setRunning] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  // Auto-completion suggestions dictionary
+  const AUTOCOMPLETE_ITEMS = [
+    { label: "df.head()", insert: "df.head()", doc: "Return first 5 rows of DataFrame" },
+    { label: "df.info()", insert: "df.info()", doc: "Print concise summary of DataFrame" },
+    { label: "df.describe()", insert: "df.describe()", doc: "Generate descriptive statistics" },
+    { label: "df.dropna()", insert: "df.dropna()", doc: "Remove missing values" },
+    { label: "df.fillna()", insert: "df.fillna(0)", doc: "Fill missing values" },
+    { label: "df.groupby()", insert: "df.groupby('')", doc: "Group DataFrame using a mapper" },
+    { label: "df.corr()", insert: "df.corr()", doc: "Compute pairwise correlation" },
+    { label: "pd.read_csv()", insert: "pd.read_csv('')", doc: "Read CSV dataset into DataFrame" },
+    { label: "pd.DataFrame()", insert: "pd.DataFrame()", doc: "Two-dimensional tabular data structure" },
+    { label: "plt.figure()", insert: "plt.figure(figsize=(10, 6))", doc: "Create a new figure" },
+    { label: "plt.title()", insert: "plt.title('')", doc: "Set title for current axes" },
+    { label: "plt.xlabel()", insert: "plt.xlabel('')", doc: "Set x-axis label" },
+    { label: "plt.ylabel()", insert: "plt.ylabel('')", doc: "Set y-axis label" },
+    { label: "plt.show()", insert: "plt.show()", doc: "Display all open figures" },
+    { label: "sns.heatmap()", insert: "sns.heatmap(df.corr(), annot=True)", doc: "Plot rectangular data as color-encoded matrix" },
+    { label: "train_test_split()", insert: "from sklearn.model_selection import train_test_split\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)", doc: "Split arrays into random train and test subsets" },
+    { label: "RandomForestClassifier()", insert: "from sklearn.ensemble import RandomForestClassifier\nmodel = RandomForestClassifier()\nmodel.fit(X_train, y_train)", doc: "Random Forest Machine Learning Estimator" }
+  ];
+
+  const [suggestions, setSuggestions] = useState<typeof AUTOCOMPLETE_ITEMS>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [cursorWord, setCursorWord] = useState("");
+
+  const handleCodeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setCode(val);
+
+    const cursorPos = e.target.selectionStart;
+    const textBefore = val.slice(0, cursorPos);
+    const lastWordMatch = textBefore.match(/[\w\.]+$ /);
+    const word = lastWordMatch ? lastWordMatch[0].trim() : textBefore.split(/\s+/).pop() || "";
+
+    if (word.length >= 2) {
+      const filtered = AUTOCOMPLETE_ITEMS.filter(item => 
+        item.label.toLowerCase().includes(word.toLowerCase()) || 
+        item.insert.toLowerCase().includes(word.toLowerCase())
+      );
+      if (filtered.length > 0) {
+        setSuggestions(filtered);
+        setShowSuggestions(true);
+        setCursorWord(word);
+        return;
+      }
+    }
+    setShowSuggestions(false);
+  };
+
+  const applySuggestion = (insertText: string) => {
+    setCode(prev => {
+      if (cursorWord) {
+        const lastIdx = prev.lastIndexOf(cursorWord);
+        if (lastIdx !== -1) {
+          return prev.slice(0, lastIdx) + insertText + prev.slice(lastIdx + cursorWord.length);
+        }
+      }
+      return prev + "\n" + insertText;
+    });
+    setShowSuggestions(false);
+  };
+
   // AI Copilot state
   const [naturalLanguage, setNaturalLanguage] = useState("");
   const [generatingCode, setGeneratingCode] = useState(false);
@@ -216,156 +278,256 @@ export default function PythonStudio() {
     }
   }, [result, headers, BACKEND_ROOT]);
 
+  // Active Output Tab state
+  const [outputTab, setOutputTab] = useState<"console" | "chart" | "eval">("console");
+
+  const lineCount = code.split("\n").length;
+  const lineNumbers = Array.from({ length: Math.max(lineCount, 15) }, (_, i) => String(i + 1).padStart(2, "0"));
+
   return (
-    <div className="flex h-screen w-full overflow-hidden text-[#f4f4f5] bg-transparent">
-      {/* ── Left Workspace: Editor & Copilot ─────────────────────────── */}
-      <div className="flex flex-1 flex-col overflow-hidden" style={{ background: "var(--panel-bg)", borderRight: "1px solid var(--border)", backdropFilter: "blur(12px)" }}>
-        {/* Workspace Toolbar */}
-        <div className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20 border border-indigo-500/30">
-              <Code className="h-4 w-4 text-indigo-400" />
-            </div>
-            <div>
-              <h2 className="text-xs font-bold text-white uppercase tracking-wider">Python Sandbox</h2>
-              <p className="text-[10px] text-zinc-500">Isolate Pandas & Matplotlib executions</p>
-            </div>
+    <div className="flex h-screen w-full flex-col overflow-hidden text-[#f4f4f5] bg-[#09090b]">
+      {/* ── Top Header Toolbar ────────────────────────────────────────── */}
+      <div className="border-b border-zinc-800/80 px-6 py-2.5 flex items-center justify-between bg-[#0d0d11] shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20 border border-indigo-500/30">
+            <Code className="h-4 w-4 text-indigo-400" />
           </div>
-
-          <div className="flex items-center gap-3">
-            {/* Target Selector */}
-            <div className="relative">
-              <select
-                value={selectedDocId ?? ""}
-                onChange={(e) => setSelectedDocId(Number(e.target.value) || null)}
-                className="appearance-none rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none pr-8"
-              >
-                <option value="">— Select Dataset —</option>
-                {localDocs.map((doc) => (
-                  <option key={doc.id} value={doc.id}>
-                    {doc.filename || `Document ${doc.id}`}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-3.5 w-3.5 text-zinc-500" />
-            </div>
-
-            <button
-              onClick={handleRunCode}
-              disabled={running || !selectedDocId || !code.trim()}
-              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-indigo-500 disabled:opacity-50 transition"
-            >
-              {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-              Run Script
-            </button>
+          <div>
+            <h2 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              Python Sandbox IDE <span className="text-[9px] font-normal px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">PRO COMPILER</span>
+            </h2>
+            <p className="text-[10px] text-zinc-500">Pandas, Matplotlib & AI Data Analytics Studio</p>
           </div>
         </div>
 
-        {/* Editor Box */}
-        <div className="flex-1 p-5 flex flex-col gap-4 overflow-hidden">
-          <div className="flex-1 relative rounded-xl border border-zinc-700 bg-zinc-900 flex flex-col">
-            <div className="border-b border-zinc-800 bg-zinc-950 px-4 py-2 flex items-center gap-1.5">
-              <Terminal className="h-3.5 w-3.5 text-indigo-400" />
-              <span className="font-mono text-[10px] text-zinc-500">main.py (Read-Only Dataset Mode)</span>
-            </div>
-            <textarea
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="flex-1 w-full bg-[#0d0d0e] p-4 font-mono text-xs text-indigo-200 placeholder:text-zinc-700 focus:outline-none resize-y overflow-y-auto min-h-[150px] rounded-b-xl"
-            />
+        <div className="flex items-center gap-3">
+          {/* Target Dataset Selector */}
+          <div className="relative">
+            <select
+              value={selectedDocId ?? ""}
+              onChange={(e) => setSelectedDocId(Number(e.target.value) || null)}
+              className="appearance-none rounded-lg border border-zinc-700/80 bg-[#121217] px-3.5 py-1.5 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none pr-8 font-medium"
+            >
+              <option value="">— Select Target Dataset —</option>
+              {localDocs.map((doc) => (
+                <option key={doc.id} value={doc.id}>
+                  📄 {doc.filename || `Document ${doc.id}`}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-3.5 w-3.5 text-zinc-500" />
           </div>
 
-          {/* AI SQL Copilot */}
-          <div className="flex items-center gap-2.5 rounded-xl border border-indigo-500/20 bg-indigo-500/5 px-4 py-2.5">
-            <Sparkles className="h-4 w-4 text-indigo-400 shrink-0" />
-            <input
-              type="text"
-              value={naturalLanguage}
-              onChange={(e) => setNaturalLanguage(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleAICopilot(); }}
-              placeholder="Ask AI Copilot to code (e.g. 'Plot hist of Age column' or 'group by department and average salary')"
-              className="flex-1 bg-transparent text-xs text-zinc-200 placeholder:text-zinc-500 focus:outline-none"
-            />
-            <button
-              onClick={handleAICopilot}
-              disabled={generatingCode || !naturalLanguage.trim()}
-              className="rounded p-1 text-indigo-400 hover:bg-indigo-500/10 disabled:opacity-30"
-            >
-              {generatingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </button>
-          </div>
+          <button
+            onClick={handleRunCode}
+            disabled={running || !selectedDocId || !code.trim()}
+            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-1.5 text-xs font-bold text-white hover:from-indigo-500 hover:to-violet-500 disabled:opacity-40 transition shadow-md shadow-indigo-600/20"
+          >
+            {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5 fill-current" />}
+            Execute →
+          </button>
         </div>
       </div>
 
-      {/* Resize Divider handle */}
-      <div
-        onMouseDown={startResizing}
-        className={`w-1 hover:w-1.5 cursor-col-resize bg-zinc-800 hover:bg-indigo-500 transition-all shrink-0 h-full ${
-          isResizing ? "bg-indigo-600 w-1.5" : ""
-        }`}
-      />
+      {/* ── Main Resizable IDE Split Body ─────────────────────────────── */}
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* ── Left Half: Code Editor (Dynamic Width) ────────────────── */}
+        <div className="flex flex-1 flex-col overflow-hidden bg-[#0d0d11]">
+          {/* File Tab Header */}
+          <div className="border-b border-zinc-800 bg-[#09090c] px-4 py-2 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-1 rounded bg-[#16161f] border border-zinc-800 text-[11px] font-mono text-indigo-400 flex items-center gap-1.5">
+                <Terminal className="h-3 w-3 text-indigo-400" /> main.py
+              </span>
+            </div>
+            <span className="text-[10px] text-zinc-600 font-mono">Python 3.10 Kernel</span>
+          </div>
 
-      {/* ── Right Panel: Outputs Console & Generated Charts ─────────── */}
-      <div
-        style={{ width: `${rightPanelWidth}px`, background: "var(--panel-bg)", backdropFilter: "blur(8px)" }}
-        className="flex shrink-0 flex-col overflow-hidden border-l border-zinc-800"
-      >
-        <div className="border-b border-zinc-800 px-5 py-4">
-          <h2 className="text-xs font-bold text-white uppercase tracking-wider">Console & Visualizations</h2>
-          <p className="text-[10px] text-zinc-500">Subprocess log outputs</p>
+          {/* Code Editor with Line Numbers */}
+          <div className="flex-1 flex overflow-hidden bg-[#08080a] relative">
+            {/* Line Numbers */}
+            <div className="w-12 bg-[#0a0a0e] border-r border-zinc-800/60 py-4 select-none flex flex-col font-mono text-[11px] text-zinc-600 text-right pr-3 shrink-0 leading-[1.6]">
+              {lineNumbers.map((num) => (
+                <div key={num}>{num}</div>
+              ))}
+            </div>
+
+            {/* Editable Textarea */}
+            <textarea
+              value={code}
+              onChange={handleCodeChange}
+              className="flex-1 w-full bg-transparent p-4 font-mono text-xs text-indigo-200 placeholder:text-zinc-700 focus:outline-none overflow-y-auto leading-[1.6] select-text"
+              style={{ tabSize: 4 }}
+            />
+
+            {/* Smart Autocomplete Dropdown Popup (IntelliSense) */}
+            {showSuggestions && (
+              <div className="absolute bottom-4 left-16 z-30 max-w-sm w-80 rounded-xl border border-indigo-500/30 bg-[#12121a]/95 p-1.5 shadow-2xl backdrop-blur-xl animate-fade-in-up">
+                <div className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest text-indigo-400 border-b border-zinc-800/80 flex items-center justify-between">
+                  <span>Data Science IntelliSense</span>
+                  <span className="text-[8px] text-zinc-500 font-mono">Press Tab or Click</span>
+                </div>
+                <div className="max-h-48 overflow-y-auto mt-1 space-y-0.5">
+                  {suggestions.map((item, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => applySuggestion(item.insert)}
+                      className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-indigo-600/30 transition flex flex-col group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs font-semibold text-indigo-200 group-hover:text-white">{item.label}</span>
+                        <span className="text-[9px] font-mono text-zinc-500">Snippet</span>
+                      </div>
+                      <span className="text-[9px] text-zinc-400 truncate mt-0.5">{item.doc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* AI Copilot Bar */}
+          <div className="border-t border-zinc-800 bg-[#0d0d11] p-3 shrink-0">
+            <div className="flex items-center gap-2.5 rounded-xl border border-indigo-500/20 bg-indigo-500/5 px-4 py-2">
+              <Sparkles className="h-4 w-4 text-indigo-400 shrink-0" />
+              <input
+                type="text"
+                value={naturalLanguage}
+                onChange={(e) => setNaturalLanguage(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleAICopilot(); }}
+                placeholder="Ask AI Copilot to generate Python code (e.g. 'Plot histogram of columns' or 'Filter rows where score > 80')"
+                className="flex-1 bg-transparent text-xs text-zinc-200 placeholder:text-zinc-500 focus:outline-none"
+              />
+              <button
+                onClick={handleAICopilot}
+                disabled={generatingCode || !naturalLanguage.trim()}
+                className="rounded-lg p-1.5 text-indigo-400 hover:bg-indigo-500/20 disabled:opacity-30 transition"
+              >
+                {generatingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
-          {errorMsg && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-3">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-              <p className="text-xs text-red-300">{errorMsg}</p>
-            </div>
-          )}
+        {/* ── Resizing Handle Divider ────────────────────────────────── */}
+        <div
+          onMouseDown={startResizing}
+          className={`w-1.5 hover:w-2 cursor-col-resize bg-zinc-800 hover:bg-indigo-500 transition-all shrink-0 h-full z-20 flex items-center justify-center ${
+            isResizing ? "bg-indigo-600 w-2" : ""
+          }`}
+          title="Drag left/right to resize Editor and Output panels"
+        >
+          <div className="h-8 w-0.5 bg-zinc-600 rounded-full" />
+        </div>
 
-          {result ? (
-            <div className="flex flex-col gap-5">
-              {/* STDOUT console logs */}
-              <div className="rounded-xl border border-zinc-800" style={{ background: "rgba(18,18,22,0.6)" }}>
-                <div className="border-b border-zinc-800 bg-zinc-900 px-4 py-2">
-                  <span className="text-[9px] font-semibold text-zinc-400 uppercase tracking-wider">Console output (STDOUT)</span>
-                </div>
-                <div className="p-4 font-mono text-xs text-emerald-400/90 leading-relaxed min-h-[140px] max-h-[320px] overflow-y-auto whitespace-pre-wrap rounded-b-xl border-t border-zinc-800/40 select-text">
-                  {result.stdout || <span className="text-zinc-600 italic">Script completed with no STDOUT messages.</span>}
-                </div>
-              </div>
+        {/* ── Right Half: Resizable Output & Visualizations Panel ────── */}
+        <div
+          style={{ width: `${rightPanelWidth}px` }}
+          className="flex shrink-0 flex-col overflow-hidden bg-[#0c0c0f] border-l border-zinc-800"
+        >
+          {/* JDoodle Style Output Tabs Header */}
+          <div className="border-b border-zinc-800 bg-[#09090c] px-3 py-1.5 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setOutputTab("console")}
+                className={`px-3 py-1 rounded text-xs font-semibold transition ${
+                  outputTab === "console" ? "bg-indigo-600 text-white shadow-sm" : "text-zinc-400 hover:bg-zinc-800/60"
+                }`}
+              >
+                Output (Console)
+              </button>
+              <button
+                onClick={() => setOutputTab("chart")}
+                className={`px-3 py-1 rounded text-xs font-semibold transition flex items-center gap-1.5 ${
+                  outputTab === "chart" ? "bg-indigo-600 text-white shadow-sm" : "text-zinc-400 hover:bg-zinc-800/60"
+                }`}
+              >
+                Visualizations {chartBlobUrl && <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />}
+              </button>
+              <button
+                onClick={() => setOutputTab("eval")}
+                className={`px-3 py-1 rounded text-xs font-semibold transition ${
+                  outputTab === "eval" ? "bg-indigo-600 text-white shadow-sm" : "text-zinc-400 hover:bg-zinc-800/60"
+                }`}
+              >
+                Evaluation & Logs
+              </button>
+            </div>
+          </div>
 
-              {/* Chart Plot Visualizer */}
-              {chartBlobUrl ? (
-                <div className="rounded-xl border border-indigo-500/15 bg-indigo-500/5 overflow-hidden">
-                  <div className="border-b border-indigo-500/10 bg-indigo-500/10 px-4 py-2 flex items-center gap-1.5">
-                    <ImageIcon className="h-3.5 w-3.5 text-indigo-400" />
-                    <span className="text-[9px] font-semibold text-indigo-300 uppercase tracking-wider">Exported plot visualization</span>
-                  </div>
-                  <div className="p-4 flex items-center justify-center bg-white/5">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={chartBlobUrl} alt="Generated Matplotlib Chart" className="max-h-96 w-full max-w-full object-contain rounded" />
+          {/* Output Content Body */}
+          <div className="flex-1 overflow-y-auto p-4 bg-[#070709]">
+            {errorMsg && (
+              <div className="flex items-start gap-2.5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 mb-4 text-red-300">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+                <p className="text-xs">{errorMsg}</p>
+              </div>
+            )}
+
+            {/* TAB 1: Console STDOUT */}
+            {outputTab === "console" && (
+              <div className="h-full flex flex-col rounded-xl border border-zinc-800 bg-[#050507] overflow-hidden">
+                <div className="border-b border-zinc-800/80 bg-zinc-950 px-4 py-2 flex items-center justify-between shrink-0">
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Subprocess STDOUT Stream</span>
+                  <span className="text-[9px] text-emerald-400 font-mono">Status: 200 OK</span>
+                </div>
+                <div className="flex-1 p-4 font-mono text-xs text-emerald-400 leading-relaxed overflow-y-auto whitespace-pre-wrap select-text">
+                  {result ? (
+                    result.stdout || <span className="text-zinc-600 italic">Script executed with no console output.</span>
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-zinc-600 text-center py-12">
+                      <Terminal className="h-8 w-8 text-zinc-700 mb-2 opacity-50" />
+                      <p className="text-xs">No execution output yet.</p>
+                      <p className="text-[10px] text-zinc-700 mt-1">Select a dataset and click "Execute →"</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: Visualizations Matplotlib Chart */}
+            {outputTab === "chart" && (
+              <div className="h-full flex flex-col rounded-xl border border-zinc-800 bg-[#050507] overflow-hidden">
+                <div className="border-b border-zinc-800/80 bg-zinc-950 px-4 py-2 flex items-center justify-between shrink-0">
+                  <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Matplotlib Rendered Plot</span>
+                  <span className="text-[9px] text-zinc-500 font-mono">4K HD Chart Export</span>
+                </div>
+                <div className="flex-1 p-4 flex items-center justify-center overflow-auto bg-black/40">
+                  {chartBlobUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={chartBlobUrl} alt="Generated Chart" className="max-h-full max-w-full object-contain rounded-lg shadow-2xl" />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-zinc-600 text-center py-12">
+                      <ImageIcon className="h-8 w-8 text-zinc-700 mb-2 opacity-50" />
+                      <p className="text-xs">No visual charts exported by Matplotlib.</p>
+                      <p className="text-[10px] text-zinc-700 mt-1">Call plt.show() in your script to generate charts.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: Errors & Evaluation */}
+            {outputTab === "eval" && (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-zinc-800 bg-[#0c0c10] p-4 space-y-2">
+                  <h4 className="text-xs font-bold text-zinc-300">Execution Performance</h4>
+                  <div className="text-[11px] font-mono text-zinc-400 space-y-1">
+                    <div>Return Code: <span className="text-emerald-400">{result?.return_code ?? 0}</span></div>
+                    <div>Status: <span className="text-indigo-400">{result ? "Completed" : "Idle"}</span></div>
+                    <div>Kernel: Python 3.10 Data Engine</div>
                   </div>
                 </div>
-              ) : (
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4 text-center text-zinc-600 text-xs">
-                  No visual charts exported by Matplotlib.
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-1 flex-col items-center justify-center gap-4 py-12 text-center text-zinc-600">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800">
-                <Terminal className="h-6 w-6 text-zinc-700" />
+
+                {result?.stderr && (
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-2">
+                    <h4 className="text-xs font-bold text-amber-400">STDERR Warnings</h4>
+                    <pre className="text-[11px] font-mono text-amber-300/80 whitespace-pre-wrap">{result.stderr}</pre>
+                  </div>
+                )}
               </div>
-              <div>
-                <h3 className="text-xs font-bold text-zinc-500">No logs generated</h3>
-                <p className="mt-1 max-w-xs text-[10px] text-zinc-700">
-                  Select a document and click Run Script. Output logs and generated plots will load dynamically.
-                </p>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

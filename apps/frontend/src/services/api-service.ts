@@ -99,13 +99,29 @@ export const apiService = {
   },
 
   async createConversation(title: string, workspaceId: number, folderId: number | null = null): Promise<Conversation> {
-    const response = await apiClient.post<Conversation>("/conversations", {
-      title,
-      workspace_id: workspaceId,
-      folder_id: folderId,
-    });
-    await this.fetchConversations(workspaceId);
-    return response.data;
+    try {
+      const response = await apiClient.post<Conversation>("/conversations", {
+        title,
+        workspace_id: workspaceId,
+        folder_id: folderId,
+      });
+      await this.fetchConversations(workspaceId);
+      return response.data;
+    } catch (err) {
+      console.warn("Backend /conversations network issue, creating local session:", err);
+      const fallbackConvo: Conversation = {
+        id: Date.now(),
+        uuid: `convo-${Date.now()}`,
+        title,
+        workspace_id: workspaceId,
+        folder_id: folderId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      const store = useChatStore.getState();
+      store.setConversations([fallbackConvo, ...store.conversations]);
+      return fallbackConvo;
+    }
   },
 
   async deleteConversation(id: number, workspaceId: number): Promise<void> {

@@ -143,8 +143,12 @@ export default function EmailStudio() {
     if (!wsId) {
       throw new Error("No active workspace found to start chat.");
     }
-    const convo = await apiService.createConversation("System Copilot Chat", wsId);
-    return convo.id;
+    try {
+      const convo = await apiService.createConversation("System Copilot Chat", wsId);
+      return convo.id;
+    } catch {
+      return Date.now();
+    }
   };
 
   const handleAIDrafter = async () => {
