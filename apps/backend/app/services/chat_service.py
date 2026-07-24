@@ -221,6 +221,20 @@ class ChatService:
                     user_id=user_id,
                 )
 
+                # Fallback: if 0 chunks found with strict threshold, retry with low threshold to ensure PDF text reaches LLM
+                if not rag_context.has_knowledge:
+                    rag_context = AdaptiveRetrievalService.retrieve_context(
+                        db=db,
+                        user_query=request.message,
+                        workspace_id=request.workspace_id,
+                        knowledge_base_id=kb_ids,
+                        top_k=settings.RAG_TOP_K,
+                        similarity_threshold=0.01,
+                        max_context_tokens=settings.MAX_CONTEXT_TOKENS,
+                        enable_reranking=False,
+                        user_id=user_id,
+                    )
+
                 print(f">>> [STREAM CHAT] RAG retrieved {len(rag_context.chunks_used)} chunks. Has knowledge: {rag_context.has_knowledge} <<<")
                 if rag_context.has_knowledge:
                     retrieved_knowledge = rag_context.formatted_context
