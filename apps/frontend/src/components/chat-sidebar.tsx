@@ -14,6 +14,7 @@ import {
 // ─────────────────────────────────────────────
 // LEFT ICON NAV BAR — Feature Navigation
 // ─────────────────────────────────────────────
+const NAV_ITEMS = [
   { view: "team",      icon: Users,         label: "Team Hub (V2)",  group: "main", badge: "V2" },
   { view: "chat",      icon: MessageSquare, label: "Chat",           group: "main" },
   { view: "knowledge", icon: Database,      label: "Knowledge Base", group: "main" },

@@ -36,12 +36,22 @@ class QdrantVectorStore(VectorStoreInterface):
 
         try:
             # Zero-Config Setup: Connect to local folder storage if URL is not defined
-            if settings.QDRANT_URL:
-                logger.info(f"Connecting to Qdrant Cloud Cluster: {settings.QDRANT_URL}")
+            if settings.QDRANT_URL and settings.QDRANT_URL.strip():
+                url = settings.QDRANT_URL.strip()
+                # Ensure scheme protocol
+                if not url.startswith("http://") and not url.startswith("https://"):
+                    url = f"https://{url}"
+                # Strip 6333 port if using HTTPS Cloud cluster to avoid SSL timeout
+                if "cloud.qdrant.io" in url and ":6333" in url:
+                    url = url.replace(":6333", "")
+
+                logger.info(f"Connecting to Qdrant Cloud Cluster: {url}")
                 self.client = QdrantClient(
-                    url=settings.QDRANT_URL,
-                    api_key=settings.QDRANT_API_KEY or None
+                    url=url,
+                    api_key=settings.QDRANT_API_KEY.strip() if settings.QDRANT_API_KEY else None,
+                    timeout=30.0
                 )
+                logger.info("Successfully connected to Qdrant Cloud!")
             else:
                 logger.info("QDRANT_URL not defined. Connecting to persistent SQLite folder store 'qdrant_db'")
                 self.client = QdrantClient(path="qdrant_db")
@@ -49,8 +59,13 @@ class QdrantVectorStore(VectorStoreInterface):
             # Ensure collection exists
             self._ensure_collection()
         except Exception as e:
-            logger.error(f"Failed to initialize Qdrant client: {e}")
-            self.client = None
+            logger.error(f"Failed to connect to Qdrant Cloud ({settings.QDRANT_URL}): {e}. Falling back to local disk 'qdrant_db'")
+            try:
+                self.client = QdrantClient(path="qdrant_db")
+                self._ensure_collection()
+            except Exception as fallback_err:
+                logger.error(f"Local Qdrant fallback also failed: {fallback_err}")
+                self.client = None
 
     def _ensure_collection(self):
         if not self.client:

@@ -47,9 +47,9 @@ export default function TeamArea() {
     try {
       setLoadingTasks(true);
       const data = await apiService.fetchTasks(activeWorkspace.id);
-      setTasks(data);
-    } catch (err) {
-      console.error("Failed loading tasks", err);
+      setTasks(Array.isArray(data) ? data : []);
+    } catch {
+      setTasks([]);
     } finally {
       setLoadingTasks(false);
     }
@@ -60,9 +60,9 @@ export default function TeamArea() {
     try {
       setLoadingMembers(true);
       const data = await apiService.fetchWorkspaceMembers(activeWorkspace.id);
-      setMembers(data);
-    } catch (err) {
-      console.error("Failed loading members", err);
+      setMembers(Array.isArray(data) ? data : []);
+    } catch {
+      setMembers([]);
     } finally {
       setLoadingMembers(false);
     }
@@ -73,9 +73,9 @@ export default function TeamArea() {
     try {
       setLoadingActivities(true);
       const data = await apiService.fetchActivityFeed(activeWorkspace.id);
-      setActivities(data);
-    } catch (err) {
-      console.error("Failed loading activities", err);
+      setActivities(Array.isArray(data) ? data : []);
+    } catch {
+      setActivities([]);
     } finally {
       setLoadingActivities(false);
     }
@@ -117,8 +117,8 @@ export default function TeamArea() {
       setLoadingAI(true);
       const data = await apiService.fetchAIPMInsights(activeWorkspace.id);
       setAiInsights(data);
-    } catch (err) {
-      console.error("Failed AI PM insights", err);
+    } catch {
+      setAiInsights(null);
     } finally {
       setLoadingAI(false);
     }
