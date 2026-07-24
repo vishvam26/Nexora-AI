@@ -53,7 +53,11 @@ class KeywordService:
                     if member and member.workspace_role == "MANAGER":
                         is_manager = True
 
-        # Prepare base query filtering by workspace and document status
+        keywords = QueryService.extract_keywords(query)
+        if not keywords:
+            keywords = [w.lower() for w in query.split() if len(w) > 2]
+
+        # Prepare base query filtering by workspace (soft status matching)
         base_query = (
             db.query(DocumentChunk)
             .join(KnowledgeDocument, DocumentChunk.document_id == KnowledgeDocument.id)
@@ -62,8 +66,6 @@ class KeywordService:
                 KnowledgeBase.workspace_id == workspace_id,
                 KnowledgeBase.deleted_at.is_(None),
                 KnowledgeDocument.deleted_at.is_(None),
-                KnowledgeDocument.status == "Completed",
-                DocumentChunk.embedding_status == "Completed",
             )
         )
 
