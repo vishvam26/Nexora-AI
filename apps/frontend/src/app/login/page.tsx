@@ -307,7 +307,7 @@ export default function LoginPage() {
                       type="text" 
                       value={fullName} 
                       onChange={(e) => setFullName(e.target.value)} 
-                      placeholder="Vishvam Patel" 
+                      placeholder="Vishvam Prajapati" 
                       disabled={loading}
                       className="input-glow w-full rounded-xl border border-zinc-800 bg-zinc-950/60 py-2.5 pl-10 pr-4 text-sm text-white placeholder-zinc-700 outline-none transition" 
                     />

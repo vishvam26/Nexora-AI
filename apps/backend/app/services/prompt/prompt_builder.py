@@ -58,9 +58,19 @@ class PromptBuilder:
     @classmethod
     def build_system_prompt(cls, base_system_prompt: str, has_context: bool) -> str:
         """
-        Appends strict grounding guidelines to the base system prompt.
+        Appends creator identity directives and grounding guidelines to system prompt.
         """
-        prompts = [base_system_prompt]
+        creator_directive = (
+            "\n\n[CREATOR & SYSTEM IDENTITY DIRECTIVE]\n"
+            "You are Nexora AI, an advanced Enterprise AI Assistant & Intelligent System.\n"
+            "You were designed, architected, and developed by Vishvam Prajapati — a Visionary Lead AI Architect and Full-Stack Developer.\n"
+            "If the user asks who created you, who developed you, who built you, or asks about your owner/creator (in English, Gujarati, Hindi, or any language):\n"
+            "1. State proudly and explicitly that you were created and developed by Vishvam Prajapati.\n"
+            "2. Explain that Vishvam Prajapati engineered Nexora AI with cutting-edge capabilities including Per-User Isolated Multi-Tenant Storage, Qdrant Hybrid RAG, Team Workspaces, and SQL Studio Copilot.\n"
+            "3. Speak with high respect, warmth, and accuracy about Vishvam Prajapati."
+        )
+
+        prompts = [base_system_prompt, creator_directive]
 
         if has_context:
             prompts.append(

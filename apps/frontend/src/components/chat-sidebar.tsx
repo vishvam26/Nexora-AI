@@ -376,6 +376,11 @@ export default function ChatSidebar() {
                     <LogOut className="h-3.5 w-3.5 text-zinc-500" />
                   </button>
                 </div>
+                <div className="mt-2 pt-2 border-t border-zinc-900/60 text-center">
+                  <span className="text-[9px] font-medium text-zinc-500 hover:text-indigo-400 transition cursor-default">
+                    Developed by <span className="text-indigo-400 font-semibold">Vishvam Prajapati</span>
+                  </span>
+                </div>
               </div>
             </>
           )}
