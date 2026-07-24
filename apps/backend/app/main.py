@@ -92,13 +92,12 @@ def startup_event():
 
     print("[System] Startup environment validations successfully checked.")
 
-    # Trigger custom v2 DB migration
+    # Ensure database schema is initialized via SQLAlchemy Metadata
     try:
-        from migrate_v2 import migrate
-        migrate()
-        print("[System] V2 database migrations applied successfully.")
+        Base.metadata.create_all(bind=engine)
+        print("[System] Database tables verified successfully.")
     except Exception as e:
-        print(f"[CRITICAL] Database migration failed: {e}")
+        print(f"[WARNING] Database schema verification: {e}")
 
     if settings.AI_PROVIDER.lower().strip() == "nexora":
         print(">>> NEXORA AI PROVIDER IS ACTIVE — Eagerly preloading model on startup <<<")
