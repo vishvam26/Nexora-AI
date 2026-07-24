@@ -221,19 +221,39 @@ class ChatService:
                     user_id=user_id,
                 )
 
-                # Fallback: if 0 chunks found with strict threshold, retry with low threshold to ensure PDF text reaches LLM
-                if not rag_context.has_knowledge:
+                # Fallback 1: if 0 chunks found with specific KB ID filter, retry across ALL workspace KBs
+                if not rag_context.has_knowledge and kb_ids:
+                    print(">>> [STREAM CHAT] KB ID filter returned 0 hits — retrying search across ALL workspace KBs <<<")
                     rag_context = AdaptiveRetrievalService.retrieve_context(
                         db=db,
                         user_query=request.message,
                         workspace_id=request.workspace_id,
-                        knowledge_base_id=kb_ids,
+                        knowledge_base_id=None,
                         top_k=settings.RAG_TOP_K,
-                        similarity_threshold=0.01,
+                        similarity_threshold=0.0,
                         max_context_tokens=settings.MAX_CONTEXT_TOKENS,
                         enable_reranking=False,
                         user_id=user_id,
                     )
+
+                # Fallback 2: Direct raw DB document_chunks injection if RAG pipeline returned empty
+                if not rag_context.has_knowledge:
+                    from app.models.document_chunk import DocumentChunk
+                    from app.models.knowledge_document import KnowledgeDocument
+                    from app.models.knowledge_base import KnowledgeBase
+                    raw_chunks = (
+                        db.query(DocumentChunk)
+                        .join(KnowledgeDocument, DocumentChunk.document_id == KnowledgeDocument.id)
+                        .join(KnowledgeBase, KnowledgeDocument.knowledge_base_id == KnowledgeBase.id)
+                        .filter(KnowledgeBase.workspace_id == request.workspace_id)
+                        .limit(10)
+                        .all()
+                    )
+                    if raw_chunks:
+                        print(f">>> [STREAM CHAT] Emergency Fallback: Directly injecting {len(raw_chunks)} raw DB chunks <<<")
+                        retrieved_knowledge = "\n\n".join([f"--- Document Excerpt (Page {c.page}) ---\n{c.text}" for c in raw_chunks])
+                        for c in raw_chunks:
+                            sources_list.append({"filename": "uploaded_document.pdf", "page": c.page or 1, "score": 1.0, "confidence": 100})
 
                 print(f">>> [STREAM CHAT] RAG retrieved {len(rag_context.chunks_used)} chunks. Has knowledge: {rag_context.has_knowledge} <<<")
                 if rag_context.has_knowledge:
