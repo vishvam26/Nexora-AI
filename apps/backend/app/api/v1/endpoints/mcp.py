@@ -31,15 +31,20 @@ def get_db_schema(
     db: Session = Depends(get_db),
 ):
     """
-    Returns active schema lists dynamically reflected from active database engines.
+    Returns active schema lists dynamically reflected from current user's isolated tenant database.
     """
-    res = SQLTool.get_schema_info(db)
-    if not res.get("success"):
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=res.get("error", "Database reflection failed.")
-        )
-    return res
+    from app.db.tenant_session import get_tenant_session
+    tenant_db = get_tenant_session(current_user.id)
+    try:
+        res = SQLTool.get_schema_info(tenant_db)
+        if not res.get("success"):
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=res.get("error", "Database reflection failed.")
+            )
+        return res
+    finally:
+        tenant_db.close()
 
 
 @router.post(
@@ -53,12 +58,17 @@ def execute_sql_query(
     db: Session = Depends(get_db),
 ):
     """
-    Executes SELECT queries with security regex checks to prevent write queries.
+    Executes SELECT queries against current user's isolated tenant database only.
     """
-    res = SQLTool.execute_query(db, payload.query)
-    if not res.get("success"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=res.get("error", "SQL Query execution failed.")
-        )
-    return res
+    from app.db.tenant_session import get_tenant_session
+    tenant_db = get_tenant_session(current_user.id)
+    try:
+        res = SQLTool.execute_query(tenant_db, payload.query)
+        if not res.get("success"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=res.get("error", "SQL Query execution failed.")
+            )
+        return res
+    finally:
+        tenant_db.close()
