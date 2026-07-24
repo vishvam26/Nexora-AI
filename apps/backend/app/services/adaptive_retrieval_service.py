@@ -66,21 +66,12 @@ class AdaptiveRetrievalService:
             strategy = ContextStrategyEngine.determine_strategy(category)
             logger.info(f"Adaptive RAG: Category={category} | Intent Confidence={intent_confidence} | Strategy={strategy}")
 
-            if strategy == "No Retrieval":
-                empty_res = AdaptiveRetrievalService._empty_context(start_time, category, strategy)
-                return empty_res
-
-            # 4. Dynamic Top-K Adjustment
+            # 4. Dynamic Top-K Adjustment & Query Expansion
             dynamic_k = top_k
-            if category in ["Greeting", "Summarization"]:
-                dynamic_k = 2
-            elif category in ["Coding", "Debugging"]:
-                dynamic_k = 12  # Large contexts for debugging
-
-            # 5. Hybrid Search Retrieval
             expanded_terms = IntentService.expand_query(user_query)
-            search_query = " ".join(expanded_terms)
+            search_query = " ".join(expanded_terms) if expanded_terms else user_query
 
+            # Force retrieval if query is short or summary-like when grounded is requested
             raw_hits = HybridSearchService.search(
                 db=db,
                 query=search_query,
@@ -92,6 +83,43 @@ class AdaptiveRetrievalService:
                 threshold=similarity_threshold,
                 user_id=user_id
             )
+
+            # Fallback 1: Retry without knowledge_base_id filter in case KB ID mismatch
+            if not raw_hits and knowledge_base_id:
+                logger.info("RAG search 0 hits with KB filter — retrying search across all workspace KBs")
+                raw_hits = HybridSearchService.search(
+                    db=db,
+                    query=search_query,
+                    workspace_id=workspace_id,
+                    knowledge_base_id=None,
+                    vector_weight=1.0,
+                    keyword_weight=0.0,
+                    top_k=dynamic_k * 2,
+                    threshold=0.0,
+                    user_id=user_id
+                )
+
+            # Fallback 2: Direct Qdrant Collection Retrieval if DB records empty
+            if not raw_hits:
+                try:
+                    from app.services.vector_store.qdrant_vector_store import QdrantVectorStore
+                    qstore = QdrantVectorStore()
+                    if qstore.client:
+                        logger.info("Directly querying Qdrant Cloud Collection nexora_chunks as final fallback")
+                        qhits = qstore.search(query_text=user_query, top_k=top_k, threshold=0.0)
+                        if qhits:
+                            raw_hits = [{
+                                "id": h.chunk_id,
+                                "document_id": h.document_id,
+                                "text": h.text,
+                                "score": h.score,
+                                "metadata": h.metadata or {},
+                                "doc_filename": h.metadata.get("doc_filename", "uploaded_resume.pdf") if h.metadata else "uploaded_resume.pdf",
+                                "page": h.metadata.get("page", 1) if h.metadata else 1,
+                                "section": h.metadata.get("section", "") if h.metadata else "",
+                            } for h in qhits]
+                except Exception as fallback_err:
+                    logger.warning(f"Direct Qdrant fallback failed: {fallback_err}")
 
             if not raw_hits:
                 return AdaptiveRetrievalService._empty_context(start_time, category, strategy)
