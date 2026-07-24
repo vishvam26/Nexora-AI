@@ -74,6 +74,18 @@ class HybridSearchService:
             user_id=user_id,
         )
 
+        # Fallback: If strict KB ID returns 0 hits, fallback to searching all KBs in the workspace
+        if not keyword_results and kb_filter:
+            logger.info(f"0 keyword hits for KB {kb_filter} — retrying search across all workspace KBs")
+            keyword_results = KeywordService.search(
+                db=db,
+                query=query,
+                workspace_id=workspace_id,
+                knowledge_base_id=None,
+                top_k=top_k * 2,
+                user_id=user_id,
+            )
+
         # 2. Semantic Vector Search
         query_embedding = _embedder.generate_query_embedding(query)
         filters = {
