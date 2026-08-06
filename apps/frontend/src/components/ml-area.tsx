@@ -244,9 +244,11 @@ export default function MLArea() {
         }}
       >
         <div className="p-6 overflow-y-auto flex-1 space-y-6 min-w-[320px]">
-          <div className="flex items-center gap-2">
-            <Brain className="h-5 w-5 text-indigo-500" />
-            <h2 className="text-lg font-bold text-white">ML Studio</h2>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-[#018ABE] to-[#02457A] shadow-md shadow-blue-500/20">
+              <Brain className="h-4 w-4 text-white" />
+            </div>
+            <h2 className="text-lg font-bold text-foreground">ML Studio</h2>
           </div>
 
           <div className="space-y-3">
@@ -446,8 +448,8 @@ export default function MLArea() {
                   disabled={isTraining || featureCols.length === 0}
                   className={`w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition shadow-md mt-6 ${
                     isTraining || featureCols.length === 0
-                      ? "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                      : "bg-indigo-600 hover:bg-indigo-500 text-white"
+                      ? "bg-card text-muted-foreground cursor-not-allowed border border-border"
+                      : "bg-gradient-to-r from-[#018ABE] to-[#02457A] text-white hover:opacity-90 shadow-md shadow-blue-500/20"
                   }`}
                 >
                   {isTraining ? (

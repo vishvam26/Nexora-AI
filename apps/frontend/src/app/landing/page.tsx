@@ -277,7 +277,7 @@ export default function BluebirdLanding() {
   }, []);
 
   return (
-    <div className="relative font-outfit min-h-screen w-full bg-[#09090b] text-[#f4f4f5] overflow-x-hidden select-none">
+    <div className="dark landing-page relative font-outfit min-h-screen w-full bg-[#09090b] text-[#f4f4f5] overflow-x-hidden select-none">
       <FontLoader />
 
       {/* ── 3D Canvas Interactive Background ──────────────────────────── */}

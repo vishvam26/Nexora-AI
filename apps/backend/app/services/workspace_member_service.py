@@ -11,12 +11,10 @@ from app.services.activity_service import ActivityService
 
 logger = logging.getLogger("app.services.workspace_member_service")
 
-
 class WorkspaceMemberService:
     """
     Service layer coordinating Workspace Membership, Roles, and Ownership transfers.
     """
-
     @staticmethod
     def list_members(db: Session, user_id: int, workspace_id: int) -> List[WorkspaceMember]:
         """

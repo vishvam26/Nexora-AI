@@ -280,22 +280,21 @@ export default function KnowledgeArea() {
       
       {/* Left Panel: Knowledge Bases List */}
       <div 
-        className="flex-shrink-0 flex flex-col justify-between z-10" 
+        className="flex-shrink-0 flex flex-col justify-between z-10 bg-card border-r border-border" 
         style={{ 
           width: panelOpen ? "320px" : "0px",
           opacity: panelOpen ? 1 : 0,
           pointerEvents: panelOpen ? "auto" : "none",
-          background: "rgba(8,8,8,0.6)", 
-          borderRight: panelOpen ? "1px solid rgba(255,255,255,0.05)" : "none", 
-          backdropFilter: "blur(16px)",
           transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
         }}
       >
         <div className="p-6 overflow-y-auto flex-1 min-w-[320px]">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <Database className="h-5 w-5 text-indigo-400" />
-              <h2 className="text-base font-bold text-white tracking-tight">Knowledge Bases</h2>
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-[#018ABE] to-[#02457A] shadow-md shadow-blue-500/20">
+                <Database className="h-4 w-4 text-white" />
+              </div>
+              <h2 className="text-base font-bold text-foreground tracking-tight">Knowledge Bases</h2>
             </div>
             <button 
               onClick={() => setIsCreatingKB(true)}
@@ -387,10 +386,10 @@ export default function KnowledgeArea() {
         </div>
 
         {/* Back to Chat view Footer */}
-        <div className="p-4 border-t border-zinc-900 bg-zinc-950/20">
+        <div className="p-4 border-t border-border bg-card/60">
           <button 
             onClick={() => setActiveView("chat")}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-zinc-800 bg-[#09090b]/40 hover:bg-zinc-900 text-xs font-semibold text-zinc-300 hover:text-white transition-all"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-border bg-background hover:bg-accent text-xs font-semibold text-foreground transition-all shadow-sm"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Workspace
@@ -401,7 +400,7 @@ export default function KnowledgeArea() {
       {/* Floating Collapse Trigger */}
       <button
         onClick={() => setPanelOpen(!panelOpen)}
-        className="absolute top-6 z-30 flex h-6 w-6 items-center justify-center rounded-full text-zinc-500 hover:text-indigo-400 shadow-lg transition-all"
+        className="absolute top-6 z-30 flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:text-indigo-500 shadow-lg transition-all"
         style={{ 
           left: panelOpen ? "308px" : "12px", 
           background: "var(--input-bg)", 
@@ -414,7 +413,7 @@ export default function KnowledgeArea() {
       </button>
 
       {/* Right Panel: Selected KB dashboard */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-[#09090b]/20 z-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-background z-0">
         {activeKnowledgeBase ? (
           <div className="p-8 max-w-5xl w-full mx-auto space-y-8 animate-fade-in">
             {/* Header info */}

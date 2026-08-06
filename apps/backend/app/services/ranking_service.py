@@ -57,6 +57,14 @@ class RankingService:
                 logger.debug(f"Duplicate chunk removed: chunk_id={chunk.get('chunk_id')}")
 
         if not enable_reranking:
+            # Attach doc_filename and kb_title from metadata
+            for chunk in unique_chunks:
+                doc_id = chunk.get("document_id", 0)
+                meta = doc_metadata.get(doc_id, {})
+                if "doc_filename" not in chunk or not chunk["doc_filename"]:
+                    chunk["doc_filename"] = meta.get("filename", "document")
+                if "kb_title" not in chunk or not chunk["kb_title"]:
+                    chunk["kb_title"] = meta.get("kb_title", "Knowledge Base")
             # Sort by raw similarity only
             unique_chunks.sort(key=lambda c: c.get("score", 0), reverse=True)
             return RankingService._apply_token_budget(unique_chunks, max_context_tokens)

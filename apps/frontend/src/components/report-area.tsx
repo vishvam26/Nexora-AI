@@ -164,7 +164,7 @@ export default function ReportArea() {
         {/* Header */}
         <div className="border-b border-zinc-800 px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#018ABE] to-[#02457A] shadow-md shadow-blue-500/20">
               <FileText className="h-4 w-4 text-white" />
             </div>
             <div>
@@ -314,7 +314,7 @@ export default function ReportArea() {
           <button
             onClick={handleGenerate}
             disabled={generating || !selectedDocId}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-900/30 transition-all hover:from-indigo-500 hover:to-purple-500 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#018ABE] to-[#02457A] px-4 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/20 transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {generating ? (
               <>

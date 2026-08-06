@@ -178,19 +178,19 @@ export default function CalendarStudio() {
       <div className="flex flex-1 flex-col overflow-y-auto" style={{ background: "var(--panel-bg)", borderRight: "1px solid var(--border)", backdropFilter: "blur(12px)" }}>
         <div className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20 border border-indigo-500/30">
-              <Calendar className="h-4 w-4 text-indigo-400" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-[#018ABE] to-[#02457A] shadow-md shadow-blue-500/20">
+              <Calendar className="h-4 w-4 text-white" />
             </div>
             <div>
-              <h2 className="text-xs font-bold text-white uppercase tracking-wider">Calendar Studio</h2>
-              <p className="text-[10px] text-zinc-500">Plan & schedule meeting slots</p>
+              <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">Calendar Studio</h2>
+              <p className="text-[10px] text-muted-foreground">Plan & schedule meeting slots</p>
             </div>
           </div>
 
           <button
             onClick={handleBookSlot}
             disabled={booking}
-            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-indigo-500 disabled:opacity-50 transition"
+            className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#018ABE] to-[#02457A] px-4 py-1.5 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50 transition shadow-md shadow-blue-500/20"
           >
             {booking ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
             Book Slot

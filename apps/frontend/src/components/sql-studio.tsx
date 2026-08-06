@@ -177,14 +177,14 @@ export default function SQLStudio() {
           transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
         }}
       >
-        <div className="border-b border-zinc-800 px-5 py-4 min-w-[288px]">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20 border border-indigo-500/30">
-              <Database className="h-4 w-4 text-indigo-400" />
+        <div className="border-b border-border px-5 py-4 min-w-[288px]">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-[#018ABE] to-[#02457A] shadow-md shadow-blue-500/20">
+              <Database className="h-4 w-4 text-white" />
             </div>
             <div>
-              <h2 className="text-xs font-bold text-white uppercase tracking-wider">Schema Inspector</h2>
-              <p className="text-[10px] text-zinc-500">Live database columns</p>
+              <h2 className="text-xs font-bold text-foreground uppercase tracking-wider">Schema Inspector</h2>
+              <p className="text-[10px] text-muted-foreground">Live database columns</p>
             </div>
           </div>
         </div>
@@ -257,22 +257,22 @@ export default function SQLStudio() {
             <button
               onClick={() => handleRunQuery()}
               disabled={running || !query.trim()}
-              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-indigo-500 disabled:opacity-50 transition"
+              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#018ABE] to-[#02457A] px-4 py-1.5 text-xs font-bold text-white hover:opacity-90 disabled:opacity-50 transition shadow-md shadow-blue-500/20"
             >
               {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
               Execute Query
             </button>
           </div>
 
-          <div className="relative rounded-xl border border-zinc-700 bg-zinc-900">
-            <div className="border-b border-zinc-800 bg-zinc-950 px-4 py-2 flex items-center gap-1.5">
-              <Code className="h-3.5 w-3.5 text-indigo-400" />
-              <span className="font-mono text-[10px] text-zinc-500">Query Editor (PostgreSQL mode)</span>
+          <div className="relative rounded-xl border border-border bg-card">
+            <div className="border-b border-border bg-card/60 px-4 py-2 flex items-center gap-1.5">
+              <Code className="h-3.5 w-3.5 text-indigo-500" />
+              <span className="font-mono text-[10px] text-muted-foreground">Query Editor (PostgreSQL mode)</span>
             </div>
             <textarea
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full bg-[#0d0d0e] p-4 font-mono text-xs text-indigo-200 placeholder:text-zinc-700 focus:outline-none min-h-[100px] resize-y rounded-b-xl"
+              className="w-full bg-background p-4 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:outline-none min-h-[100px] resize-y rounded-b-xl"
             />
           </div>
 

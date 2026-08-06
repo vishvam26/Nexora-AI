@@ -114,9 +114,9 @@ class AdaptiveRetrievalService:
                                 "text": h.text,
                                 "score": h.score,
                                 "metadata": h.metadata or {},
-                                "doc_filename": h.metadata.get("doc_filename", "uploaded_resume.pdf") if h.metadata else "uploaded_resume.pdf",
-                                "page": h.metadata.get("page", 1) if h.metadata else 1,
-                                "section": h.metadata.get("section", "") if h.metadata else "",
+                                "doc_filename": (h.metadata.get("file_name") or h.metadata.get("doc_filename") or "uploaded_document.pdf") if h.metadata else "uploaded_document.pdf",
+                                "page": h.metadata.get("page_number", h.metadata.get("page", 1)) if h.metadata else 1,
+                                "section": h.metadata.get("section_title", h.metadata.get("section", "")) if h.metadata else "",
                             } for h in qhits]
                 except Exception as fallback_err:
                     logger.warning(f"Direct Qdrant fallback failed: {fallback_err}")
@@ -150,6 +150,13 @@ class AdaptiveRetrievalService:
             # 8. Fetch document metadata for ranking & source prioritization
             doc_ids = {hit["document_id"] for hit in unique_hits}
             doc_metadata = KnowledgeSearchRepository.get_bulk_document_metadata(db, list(doc_ids))
+
+            # Populate doc_filename and kb_title on unique_hits
+            for hit in unique_hits:
+                dmeta = doc_metadata.get(hit["document_id"])
+                if dmeta:
+                    hit["doc_filename"] = dmeta.get("filename")
+                    hit["kb_title"] = dmeta.get("kb_title")
 
             # 9. Reranking
             ranked_hits = RankingService.rerank(

@@ -319,7 +319,7 @@ export default function AgentStudio() {
         {/* Header */}
         <div className="border-b border-zinc-800 px-5 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-lg shadow-indigo-900/30">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#018ABE] to-[#02457A] shadow-md shadow-blue-500/20">
               <Sparkles className="h-4 w-4 text-white" />
             </div>
             <div>
@@ -782,23 +782,23 @@ export default function AgentStudio() {
                 <div className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-emerald-500 border-2 border-zinc-900 animate-pulse" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">AI Decision Intelligence</h2>
-                <p className="mt-2 max-w-md text-sm text-zinc-500">
+                <h2 className="text-xl font-bold text-foreground">AI Decision Intelligence</h2>
+                <p className="mt-2 max-w-md text-sm text-muted-foreground">
                   Ask any business question. The{" "}
-                  <span className="font-semibold text-indigo-400">Manager Agent</span> will dynamically
+                  <span className="font-semibold text-indigo-500">Manager Agent</span> will dynamically
                   select the right combination of Analytics, ML, RAG, and Report agents to answer it.
                 </p>
               </div>
               {/* Architecture diagram */}
               <div className="flex items-center gap-2 flex-wrap justify-center max-w-lg">
-                <div className="rounded-lg border border-zinc-700 bg-zinc-800/60 px-3 py-2 text-xs text-zinc-300 font-semibold">
+                <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs text-foreground font-semibold shadow-sm">
                   👤 CEO Question
                 </div>
-                <ChevronRight className="h-4 w-4 text-zinc-600" />
-                <div className="rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-3 py-2 text-xs text-indigo-300 font-semibold">
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <div className="rounded-lg border border-indigo-500/40 bg-indigo-500/10 px-3 py-2 text-xs text-indigo-500 font-semibold">
                   ✦ Manager Agent
                 </div>
-                <ChevronRight className="h-4 w-4 text-zinc-600" />
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 <div className="flex flex-col gap-1">
                   {Object.entries(AGENT_META).map(([k, v]) => (
                     <div key={k} className={`flex items-center gap-1.5 rounded border px-2.5 py-1 text-[10px] font-semibold ${v.bg} ${v.color}`}>
@@ -806,16 +806,16 @@ export default function AgentStudio() {
                     </div>
                   ))}
                 </div>
-                <ChevronRight className="h-4 w-4 text-zinc-600" />
-                <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-300 font-semibold">
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-500 font-semibold">
                   ⭐ Final Answer
                 </div>
               </div>
-              <div className="flex items-start gap-2.5 max-w-sm rounded-xl border border-indigo-500/20 bg-indigo-500/5 px-4 py-3 text-left">
-                <Info className="mt-0.5 h-4 w-4 shrink-0 text-indigo-400" />
-                <p className="text-[11px] text-indigo-300">
+              <div className="flex items-start gap-2.5 max-w-sm rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-4 py-3 text-left shadow-sm">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-indigo-500" />
+                <p className="text-[11px] text-foreground">
                   Select a workspace and/or dataset on the left, type your question, and press{" "}
-                  <kbd className="rounded bg-indigo-900 px-1 py-0.5 font-mono text-[10px]">Enter</kbd> to
+                  <kbd className="rounded border border-indigo-500/30 bg-indigo-500/20 px-1.5 py-0.5 font-mono text-[10px] font-bold text-indigo-500">Enter</kbd> to
                   launch the agent pipeline.
                 </p>
               </div>

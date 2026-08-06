@@ -71,21 +71,21 @@ export default function AgentMetrics({ token, onBack }: AgentMetricsProps) {
 
   if (loading) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center bg-[#09090b]">
+      <div className="flex h-full w-full flex-col items-center justify-center bg-background">
         <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
-        <p className="mt-4 text-sm text-zinc-400">Loading Agent Analytics & Cost logs...</p>
+        <p className="mt-4 text-sm text-muted-foreground">Loading Agent Analytics & Cost logs...</p>
       </div>
     );
   }
 
   if (error || !metrics) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center bg-[#09090b] px-6 text-center">
+      <div className="flex h-full w-full flex-col items-center justify-center bg-background px-6 text-center">
         <AlertTriangle className="h-12 w-12 text-red-500" />
-        <h3 className="mt-4 text-lg font-bold text-white">Diagnostics Unavailable</h3>
-        <p className="mt-2 text-sm text-zinc-500 max-w-sm">{error || "No data captured yet. Run a few sessions in Agent Studio first."}</p>
+        <h3 className="mt-4 text-lg font-bold text-foreground">Diagnostics Unavailable</h3>
+        <p className="mt-2 text-sm text-muted-foreground max-w-sm">{error || "No data captured yet. Run a few sessions in Agent Studio first."}</p>
         <div className="mt-6 flex gap-3">
-          <button onClick={onBack} className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2 text-xs text-zinc-300 hover:bg-zinc-800">
+          <button onClick={onBack} className="rounded-lg border border-border bg-card px-4 py-2 text-xs text-foreground hover:bg-accent">
             Back to Studio
           </button>
           <button onClick={fetchMetrics} className="rounded-lg bg-indigo-600 px-4 py-2 text-xs text-white hover:bg-indigo-500">
@@ -97,7 +97,7 @@ export default function AgentMetrics({ token, onBack }: AgentMetricsProps) {
   }
 
   return (
-    <div className="flex h-full w-full flex-col bg-[#09090b] text-[#f4f4f5] overflow-y-auto">
+    <div className="flex h-full w-full flex-col bg-background text-foreground overflow-y-auto">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-4">
         <div className="flex items-center gap-3">

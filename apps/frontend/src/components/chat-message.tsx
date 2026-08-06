@@ -96,20 +96,14 @@ export default function ChatMessage({ message, previousMessage }: ChatMessagePro
         {isUser ? (
           <div className="rounded-2xl px-4 py-3 text-white text-sm leading-relaxed whitespace-pre-wrap"
             style={{
-              background: "linear-gradient(135deg,#4338ca,#6d28d9)",
-              border: "1px solid rgba(99,102,241,0.25)",
-              boxShadow: "0 4px 20px rgba(99,102,241,0.25)",
+              background: "linear-gradient(135deg, #018ABE 0%, #02457A 100%)",
+              border: "1px solid rgba(1, 138, 190, 0.4)",
+              boxShadow: "0 4px 20px rgba(1, 138, 190, 0.25)",
             }}>
             {message.content}
           </div>
         ) : (
-          <div className="rounded-2xl px-4 py-3"
-            style={{
-              background: "rgba(18,18,22,0.6)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              backdropFilter: "blur(12px)",
-              color: "#e4e4e7",
-            }}>
+          <div className="rounded-2xl px-4 py-3 bg-card border border-border text-foreground shadow-sm">
 
             <>
               {!message.content ? (
@@ -118,16 +112,16 @@ export default function ChatMessage({ message, previousMessage }: ChatMessagePro
                 <div className="prose prose-sm prose-zinc dark:prose-invert max-w-none
                   prose-headings:font-bold prose-headings:text-foreground prose-headings:mt-4 prose-headings:mb-2
                   prose-h1:text-lg prose-h2:text-base prose-h3:text-sm prose-h4:text-sm
-                  prose-p:text-sm prose-p:leading-relaxed prose-p:my-1.5 prose-p:text-zinc-300
-                  prose-li:text-sm prose-li:text-zinc-300 prose-li:my-0.5
+                  prose-p:text-sm prose-p:leading-relaxed prose-p:my-1.5 prose-p:text-foreground
+                  prose-li:text-sm prose-li:text-foreground prose-li:my-0.5
                   prose-ul:pl-5 prose-ul:my-2 prose-ol:pl-5 prose-ol:my-2
-                  prose-strong:text-zinc-100 prose-strong:font-semibold
-                  prose-em:text-zinc-300
-                  prose-code:text-indigo-300 prose-code:bg-zinc-900 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono
-                  prose-pre:bg-zinc-950 prose-pre:border prose-pre:border-zinc-800 prose-pre:rounded-lg prose-pre:p-4 prose-pre:overflow-x-auto
-                  prose-blockquote:border-l-indigo-500 prose-blockquote:text-zinc-400 prose-blockquote:italic
-                  prose-table:text-sm prose-th:text-zinc-300 prose-td:text-zinc-400
-                  prose-hr:border-zinc-800
+                  prose-strong:text-foreground prose-strong:font-semibold
+                  prose-em:text-foreground
+                  prose-code:text-indigo-500 prose-code:bg-background prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono
+                  prose-pre:bg-background prose-pre:border prose-pre:border-border prose-pre:rounded-lg prose-pre:p-4 prose-pre:overflow-x-auto
+                  prose-blockquote:border-l-indigo-500 prose-blockquote:text-muted-foreground prose-blockquote:italic
+                  prose-table:text-sm prose-th:text-foreground prose-td:text-muted-foreground
+                  prose-hr:border-border
                 ">
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
@@ -135,12 +129,12 @@ export default function ChatMessage({ message, previousMessage }: ChatMessagePro
                       // Custom code block with copy button
                       pre({ children, ...props }) {
                         return (
-                          <div className="relative my-4 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950">
-                            <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800 bg-zinc-900/60 text-[10px] uppercase font-bold tracking-wider text-zinc-500">
+                          <div className="relative my-4 overflow-hidden rounded-lg border border-border bg-background">
+                            <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card/60 text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
                               <span>code</span>
                               <CopyCodeButton content={String(children)} />
                             </div>
-                            <pre {...props} className="overflow-x-auto p-4 text-xs font-mono leading-relaxed text-zinc-200">
+                            <pre {...props} className="overflow-x-auto p-4 text-xs font-mono leading-relaxed text-foreground">
                               {children}
                             </pre>
                           </div>
@@ -150,7 +144,7 @@ export default function ChatMessage({ message, previousMessage }: ChatMessagePro
                       code({ inline, children, ...props }: any) {
                         if (inline) {
                           return (
-                            <code {...props} className="text-indigo-300 bg-zinc-900 px-1.5 py-0.5 rounded text-xs font-mono">
+                            <code {...props} className="text-indigo-500 bg-background px-1.5 py-0.5 rounded text-xs font-mono border border-border">
                               {children}
                             </code>
                           );
@@ -166,7 +160,7 @@ export default function ChatMessage({ message, previousMessage }: ChatMessagePro
 
               {/* RAG Citations */}
               {message.sources && message.sources.length > 0 && (
-                <div className="mt-4 pt-3.5 border-t border-zinc-800 space-y-2">
+                <div className="mt-4 pt-3.5 border-t border-border space-y-2">
                   <p className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 flex items-center gap-1.5">
                     <span>📚 Retrieved References</span>
                     <span className="text-zinc-700">•</span>

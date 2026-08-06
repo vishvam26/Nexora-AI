@@ -285,18 +285,18 @@ export default function PythonStudio() {
   const lineNumbers = Array.from({ length: Math.max(lineCount, 15) }, (_, i) => String(i + 1).padStart(2, "0"));
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden text-[#f4f4f5] bg-[#09090b]">
+    <div className="flex h-screen w-full flex-col overflow-hidden text-foreground bg-background">
       {/* ── Top Header Toolbar ────────────────────────────────────────── */}
-      <div className="border-b border-zinc-800/80 px-6 py-2.5 flex items-center justify-between bg-[#0d0d11] shrink-0">
+      <div className="border-b border-border px-6 py-2.5 flex items-center justify-between bg-card/60 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20 border border-indigo-500/30">
-            <Code className="h-4 w-4 text-indigo-400" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-gradient-to-br from-[#018ABE] to-[#02457A] shadow-md shadow-blue-500/20">
+            <Code className="h-4 w-4 text-white" />
           </div>
           <div>
-            <h2 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              Python Sandbox IDE <span className="text-[9px] font-normal px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">PRO COMPILER</span>
+            <h2 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+              Python Sandbox IDE <span className="text-[9px] font-normal px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">PRO COMPILER</span>
             </h2>
-            <p className="text-[10px] text-zinc-500">Pandas, Matplotlib & AI Data Analytics Studio</p>
+            <p className="text-[10px] text-muted-foreground">Pandas, Matplotlib & AI Data Analytics Studio</p>
           </div>
         </div>
 
@@ -306,7 +306,7 @@ export default function PythonStudio() {
             <select
               value={selectedDocId ?? ""}
               onChange={(e) => setSelectedDocId(Number(e.target.value) || null)}
-              className="appearance-none rounded-lg border border-zinc-700/80 bg-[#121217] px-3.5 py-1.5 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none pr-8 font-medium"
+              className="appearance-none rounded-lg border border-border bg-background px-3.5 py-1.5 text-xs text-foreground focus:border-indigo-500 focus:outline-none pr-8 font-medium"
             >
               <option value="">— Select Target Dataset —</option>
               {localDocs.map((doc) => (
@@ -315,13 +315,13 @@ export default function PythonStudio() {
                 </option>
               ))}
             </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-3.5 w-3.5 text-zinc-500" />
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
           </div>
 
           <button
             onClick={handleRunCode}
             disabled={running || !selectedDocId || !code.trim()}
-            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-1.5 text-xs font-bold text-white hover:from-indigo-500 hover:to-violet-500 disabled:opacity-40 transition shadow-md shadow-indigo-600/20"
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#018ABE] to-[#02457A] px-5 py-1.5 text-xs font-bold text-white hover:opacity-90 disabled:opacity-40 transition shadow-md shadow-blue-500/20"
           >
             {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5 fill-current" />}
             Execute →
@@ -332,21 +332,21 @@ export default function PythonStudio() {
       {/* ── Main Resizable IDE Split Body ─────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden relative">
         {/* ── Left Half: Code Editor (Dynamic Width) ────────────────── */}
-        <div className="flex flex-1 flex-col overflow-hidden bg-[#0d0d11]">
+        <div className="flex flex-1 flex-col overflow-hidden bg-background">
           {/* File Tab Header */}
-          <div className="border-b border-zinc-800 bg-[#09090c] px-4 py-2 flex items-center justify-between shrink-0">
+          <div className="border-b border-border bg-card/40 px-4 py-2 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-1 rounded bg-[#16161f] border border-zinc-800 text-[11px] font-mono text-indigo-400 flex items-center gap-1.5">
-                <Terminal className="h-3 w-3 text-indigo-400" /> main.py
+              <span className="px-2.5 py-1 rounded bg-indigo-500/10 border border-indigo-500/20 text-[11px] font-mono text-indigo-500 flex items-center gap-1.5 font-bold">
+                <Terminal className="h-3 w-3 text-indigo-500" /> main.py
               </span>
             </div>
             <span className="text-[10px] text-zinc-600 font-mono">Python 3.10 Kernel</span>
           </div>
 
           {/* Code Editor with Line Numbers */}
-          <div className="flex-1 flex overflow-hidden bg-[#08080a] relative">
+          <div className="flex-1 flex overflow-hidden bg-background relative">
             {/* Line Numbers */}
-            <div className="w-12 bg-[#0a0a0e] border-r border-zinc-800/60 py-4 select-none flex flex-col font-mono text-[11px] text-zinc-600 text-right pr-3 shrink-0 leading-[1.6]">
+            <div className="w-12 bg-card/60 border-r border-border py-4 select-none flex flex-col font-mono text-[11px] text-muted-foreground text-right pr-3 shrink-0 leading-[1.6]">
               {lineNumbers.map((num) => (
                 <div key={num}>{num}</div>
               ))}
@@ -356,7 +356,7 @@ export default function PythonStudio() {
             <textarea
               value={code}
               onChange={handleCodeChange}
-              className="flex-1 w-full bg-transparent p-4 font-mono text-xs text-indigo-200 placeholder:text-zinc-700 focus:outline-none overflow-y-auto leading-[1.6] select-text"
+              className="flex-1 w-full bg-transparent p-4 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:outline-none overflow-y-auto leading-[1.6] select-text"
               style={{ tabSize: 4 }}
             />
 
@@ -387,21 +387,21 @@ export default function PythonStudio() {
           </div>
 
           {/* AI Copilot Bar */}
-          <div className="border-t border-zinc-800 bg-[#0d0d11] p-3 shrink-0">
+          <div className="border-t border-border bg-card/60 p-3 shrink-0">
             <div className="flex items-center gap-2.5 rounded-xl border border-indigo-500/20 bg-indigo-500/5 px-4 py-2">
-              <Sparkles className="h-4 w-4 text-indigo-400 shrink-0" />
+              <Sparkles className="h-4 w-4 text-indigo-500 shrink-0" />
               <input
                 type="text"
                 value={naturalLanguage}
                 onChange={(e) => setNaturalLanguage(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleAICopilot(); }}
                 placeholder="Ask AI Copilot to generate Python code (e.g. 'Plot histogram of columns' or 'Filter rows where score > 80')"
-                className="flex-1 bg-transparent text-xs text-zinc-200 placeholder:text-zinc-500 focus:outline-none"
+                className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
               />
               <button
                 onClick={handleAICopilot}
                 disabled={generatingCode || !naturalLanguage.trim()}
-                className="rounded-lg p-1.5 text-indigo-400 hover:bg-indigo-500/20 disabled:opacity-30 transition"
+                className="rounded-lg p-1.5 text-indigo-500 hover:bg-indigo-500/20 disabled:opacity-30 transition"
               >
                 {generatingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               </button>
@@ -412,21 +412,21 @@ export default function PythonStudio() {
         {/* ── Resizing Handle Divider ────────────────────────────────── */}
         <div
           onMouseDown={startResizing}
-          className={`w-1.5 hover:w-2 cursor-col-resize bg-zinc-800 hover:bg-indigo-500 transition-all shrink-0 h-full z-20 flex items-center justify-center ${
+          className={`w-1.5 hover:w-2 cursor-col-resize bg-border hover:bg-indigo-500 transition-all shrink-0 h-full z-20 flex items-center justify-center ${
             isResizing ? "bg-indigo-600 w-2" : ""
           }`}
           title="Drag left/right to resize Editor and Output panels"
         >
-          <div className="h-8 w-0.5 bg-zinc-600 rounded-full" />
+          <div className="h-8 w-0.5 bg-muted-foreground/40 rounded-full" />
         </div>
 
         {/* ── Right Half: Resizable Output & Visualizations Panel ────── */}
         <div
           style={{ width: `${rightPanelWidth}px` }}
-          className="flex shrink-0 flex-col overflow-hidden bg-[#0c0c0f] border-l border-zinc-800"
+          className="flex shrink-0 flex-col overflow-hidden bg-card/60 border-l border-border"
         >
           {/* JDoodle Style Output Tabs Header */}
-          <div className="border-b border-zinc-800 bg-[#09090c] px-3 py-1.5 flex items-center justify-between shrink-0">
+          <div className="border-b border-border bg-card/80 px-3 py-1.5 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setOutputTab("console")}
@@ -456,7 +456,7 @@ export default function PythonStudio() {
           </div>
 
           {/* Output Content Body */}
-          <div className="flex-1 overflow-y-auto p-4 bg-[#070709]">
+          <div className="flex-1 overflow-y-auto p-4 bg-background">
             {errorMsg && (
               <div className="flex items-start gap-2.5 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 mb-4 text-red-300">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
@@ -466,19 +466,19 @@ export default function PythonStudio() {
 
             {/* TAB 1: Console STDOUT */}
             {outputTab === "console" && (
-              <div className="h-full flex flex-col rounded-xl border border-zinc-800 bg-[#050507] overflow-hidden">
-                <div className="border-b border-zinc-800/80 bg-zinc-950 px-4 py-2 flex items-center justify-between shrink-0">
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Subprocess STDOUT Stream</span>
-                  <span className="text-[9px] text-emerald-400 font-mono">Status: 200 OK</span>
+              <div className="h-full flex flex-col rounded-xl border border-border bg-card overflow-hidden">
+                <div className="border-b border-border bg-card/60 px-4 py-2 flex items-center justify-between shrink-0">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Subprocess STDOUT Stream</span>
+                  <span className="text-[9px] text-emerald-500 font-mono">Status: 200 OK</span>
                 </div>
-                <div className="flex-1 p-4 font-mono text-xs text-emerald-400 leading-relaxed overflow-y-auto whitespace-pre-wrap select-text">
+                <div className="flex-1 p-4 font-mono text-xs text-foreground leading-relaxed overflow-y-auto whitespace-pre-wrap select-text">
                   {result ? (
-                    result.stdout || <span className="text-zinc-600 italic">Script executed with no console output.</span>
+                    result.stdout || <span className="text-muted-foreground italic">Script executed with no console output.</span>
                   ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-zinc-600 text-center py-12">
-                      <Terminal className="h-8 w-8 text-zinc-700 mb-2 opacity-50" />
+                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground text-center py-12">
+                      <Terminal className="h-8 w-8 text-muted-foreground mb-2 opacity-50" />
                       <p className="text-xs">No execution output yet.</p>
-                      <p className="text-[10px] text-zinc-700 mt-1">Select a dataset and click "Execute →"</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">Select a dataset and click "Execute →"</p>
                     </div>
                   )}
                 </div>
@@ -487,20 +487,20 @@ export default function PythonStudio() {
 
             {/* TAB 2: Visualizations Matplotlib Chart */}
             {outputTab === "chart" && (
-              <div className="h-full flex flex-col rounded-xl border border-zinc-800 bg-[#050507] overflow-hidden">
-                <div className="border-b border-zinc-800/80 bg-zinc-950 px-4 py-2 flex items-center justify-between shrink-0">
-                  <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">Matplotlib Rendered Plot</span>
-                  <span className="text-[9px] text-zinc-500 font-mono">4K HD Chart Export</span>
+              <div className="h-full flex flex-col rounded-xl border border-border bg-card overflow-hidden">
+                <div className="border-b border-border bg-card/60 px-4 py-2 flex items-center justify-between shrink-0">
+                  <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">Matplotlib Rendered Plot</span>
+                  <span className="text-[9px] text-muted-foreground font-mono">4K HD Chart Export</span>
                 </div>
-                <div className="flex-1 p-4 flex items-center justify-center overflow-auto bg-black/40">
+                <div className="flex-1 p-4 flex items-center justify-center overflow-auto bg-background/50">
                   {chartBlobUrl ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={chartBlobUrl} alt="Generated Chart" className="max-h-full max-w-full object-contain rounded-lg shadow-2xl" />
                   ) : (
-                    <div className="flex flex-col items-center justify-center text-zinc-600 text-center py-12">
-                      <ImageIcon className="h-8 w-8 text-zinc-700 mb-2 opacity-50" />
+                    <div className="flex flex-col items-center justify-center text-muted-foreground text-center py-12">
+                      <ImageIcon className="h-8 w-8 text-muted-foreground mb-2 opacity-50" />
                       <p className="text-xs">No visual charts exported by Matplotlib.</p>
-                      <p className="text-[10px] text-zinc-700 mt-1">Call plt.show() in your script to generate charts.</p>
+                      <p className="text-[10px] text-muted-foreground mt-1">Call plt.show() in your script to generate charts.</p>
                     </div>
                   )}
                 </div>
@@ -510,9 +510,9 @@ export default function PythonStudio() {
             {/* TAB 3: Errors & Evaluation */}
             {outputTab === "eval" && (
               <div className="space-y-4">
-                <div className="rounded-xl border border-zinc-800 bg-[#0c0c10] p-4 space-y-2">
-                  <h4 className="text-xs font-bold text-zinc-300">Execution Performance</h4>
-                  <div className="text-[11px] font-mono text-zinc-400 space-y-1">
+                <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+                  <h4 className="text-xs font-bold text-foreground">Execution Performance</h4>
+                  <div className="text-[11px] font-mono text-muted-foreground space-y-1">
                     <div>Return Code: <span className="text-emerald-400">{result?.return_code ?? 0}</span></div>
                     <div>Status: <span className="text-indigo-400">{result ? "Completed" : "Idle"}</span></div>
                     <div>Kernel: Python 3.10 Data Engine</div>

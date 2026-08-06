@@ -189,7 +189,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col lg:flex-row items-center justify-center bg-[#09090b] text-[#f4f4f5] select-none overflow-hidden font-outfit">
+    <div className="dark login-page relative flex min-h-screen w-full flex-col lg:flex-row items-center justify-center bg-[#09090b] text-[#f4f4f5] select-none overflow-hidden font-outfit">
 
       {/* Floating Back to Home button */}
       <button 

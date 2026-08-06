@@ -6,40 +6,43 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap');
 
 :root {
-  --background: #f8f9fc;
-  --foreground: #0f172a;
-  --border: rgba(15, 23, 42, 0.08);
-  --card: rgba(255, 255, 255, 0.7);
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --sidebar-bg: rgba(241, 243, 249, 0.75);
-  --sidebar-active: rgba(228, 231, 242, 0.8);
+  /* Official 5-Color Royal Cyber Blue Palette (Extracted directly from User Palette Image)
+     Colors: #001B48, #02457A, #018ABE, #97CADB, #D6E8EE */
+  --background: #D6E8EE;
+  --foreground: #001B48;
+  --border: rgba(2, 69, 122, 0.18);
+  --card: rgba(255, 255, 255, 0.9);
+  --primary: #018ABE;
+  --primary-hover: #02457A;
+  --sidebar-bg: rgba(194, 222, 232, 0.92);
+  --sidebar-active: rgba(1, 138, 190, 0.18);
   
-  /* Nexora Light Design Tokens */
-  --glass-bg: rgba(255, 255, 255, 0.65);
-  --glass-border: rgba(15, 23, 42, 0.06);
-  --glass-border-glow: rgba(79, 70, 229, 0.25);
-  --indigo: #4f46e5;
-  --violet: #7c3aed;
-  --cyan: #06b6d4;
-  --glow-indigo: 0 0 30px rgba(79, 70, 229, 0.08);
-  --glow-indigo-strong: 0 0 50px rgba(79, 70, 229, 0.15);
-  --grid-line: rgba(15, 23, 42, 0.02);
-  --panel-bg: rgba(255, 255, 255, 0.45);
+  /* Royal Cyber Blue Tokens */
+  --glass-bg: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(2, 69, 122, 0.18);
+  --glass-border-glow: rgba(1, 138, 190, 0.35);
+  --indigo: #018ABE;
+  --violet: #02457A;
+  --cyan: #97CADB;
+  --glow-indigo: 0 8px 30px rgba(0, 27, 72, 0.08);
+  --glow-indigo-strong: 0 16px 45px rgba(1, 138, 190, 0.2);
+  --grid-line: rgba(2, 69, 122, 0.08);
+  --panel-bg: rgba(255, 255, 255, 0.9);
   
-  /* Text and input light tokens */
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --input-bg: rgba(255, 255, 255, 0.9);
-  --input-border: rgba(15, 23, 42, 0.12);
-  --glow-color: rgba(79, 70, 229, 0.3);
+  /* Text and input tokens for Light Theme */
+  --text-primary: #001B48;
+  --text-secondary: #02457A;
+  --text-muted: #3a688a;
+  --input-bg: #ffffff;
+  --input-border: rgba(2, 69, 122, 0.22);
+  --glow-color: rgba(1, 138, 190, 0.25);
 }
 
 .dark {
+  /* Restore Original Cyber Obsidian Dark Theme */
   --background: #09090b;
   --foreground: #f4f4f5;
-  --border: rgba(255, 255, 255, 0.05);
+  --border: rgba(255, 255, 255, 0.08);
   --card: rgba(20, 20, 25, 0.7);
   --primary: #6366f1;
   --primary-hover: #4f46e5;
@@ -67,73 +70,83 @@
   --glow-color: rgba(99, 102, 241, 0.6);
 }
 
-/* ── Theme Global Overrides (Light Mode overrides) ────────────────────── */
+/* ── Theme Global Overrides (Universal Light Mode Fixes) ────────────────── */
 html:not(.dark) body {
-  background-color: var(--background);
-  color: var(--foreground);
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
 }
 
-/* Sidebar and Left Panels */
+/* Universal Light Mode Selector Overrides for all Studios, Modals & Sidebars */
 html:not(.dark) aside,
+html:not(.dark) main,
+html:not(.dark) header,
+html:not(.dark) nav,
+html:not(.dark) footer,
+html:not(.dark) div[class*="bg-[#"],
+html:not(.dark) section[class*="bg-[#"],
+html:not(.dark) aside[class*="bg-[#"],
 html:not(.dark) .bg-zinc-950,
-html:not(.dark) .bg-zinc-900\/60,
-html:not(.dark) .bg-zinc-900\/90,
-html:not(.dark) .bg-zinc-900\/30,
-html:not(.dark) .bg-zinc-900\/10,
-html:not(.dark) .bg-zinc-900 {
+html:not(.dark) .bg-zinc-900/60,
+html:not(.dark) .bg-zinc-900/90,
+html:not(.dark) .bg-zinc-900/30,
+html:not(.dark) .bg-zinc-900/10,
+html:not(.dark) .bg-zinc-900,
+html:not(.dark) .bg-zinc-800/60,
+html:not(.dark) .bg-zinc-800,
+html:not(.dark) .bg-slate-900,
+html:not(.dark) .bg-slate-950,
+html:not(.dark) .bg-black {
+  background-color: var(--sidebar-bg) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+
+/* Universal Light Mode Cards and Glass Elements */
+html:not(.dark) .bg-card,
+html:not(.dark) .bg-zinc-900\/50,
+html:not(.dark) .bg-zinc-900\/40,
+html:not(.dark) .bg-zinc-900\/80,
+html:not(.dark) [class*="bg-zinc-900"] {
   background-color: var(--card) !important;
-  color: var(--text-secondary) !important;
+  color: var(--text-primary) !important;
   border-color: var(--border) !important;
 }
 
-/* Border overrides */
-html:not(.dark) .border-zinc-800,
-html:not(.dark) .border-zinc-900,
-html:not(.dark) .border-zinc-800\/60,
-html:not(.dark) .border-zinc-700 {
+/* Border Overrides */
+html:not(.dark) [class*="border-zinc-"],
+html:not(.dark) [class*="border-slate-"],
+html:not(.dark) .border-black {
   border-color: var(--border) !important;
 }
 
-/* Text overrides - Selective styling to avoid breaking button text contrast */
-html:not(.dark) h1,
-html:not(.dark) h2,
-html:not(.dark) h3,
-html:not(.dark) h4,
-html:not(.dark) h5,
-html:not(.dark) h6,
-html:not(.dark) .text-zinc-900,
-html:not(.dark) .text-zinc-800 {
+/* Typography Contrast Overrides for Light Mode (App Workspace only) */
+html:not(.dark):not(.landing-page):not(.login-page) h1,
+html:not(.dark):not(.landing-page):not(.login-page) h2,
+html:not(.dark):not(.landing-page):not(.login-page) h3,
+html:not(.dark):not(.landing-page):not(.login-page) h4,
+html:not(.dark):not(.landing-page):not(.login-page) h5,
+html:not(.dark):not(.landing-page):not(.login-page) h6,
+html:not(.dark):not(.landing-page):not(.login-page) .text-zinc-900,
+html:not(.dark):not(.landing-page):not(.login-page) .text-zinc-800,
+html:not(.dark):not(.landing-page):not(.login-page) .text-zinc-100,
+html:not(.dark):not(.landing-page):not(.login-page) .text-zinc-200 {
   color: var(--text-primary) !important;
 }
 
-html:not(.dark) p,
-html:not(.dark) .text-zinc-100,
-html:not(.dark) .text-zinc-200,
-html:not(.dark) .text-zinc-300,
-html:not(.dark) .text-zinc-400 {
+html:not(.dark):not(.landing-page):not(.login-page) p,
+html:not(.dark):not(.landing-page):not(.login-page) span:not(button *):not(.badge *),
+html:not(.dark):not(.landing-page):not(.login-page) .text-zinc-300,
+html:not(.dark):not(.landing-page):not(.login-page) .text-zinc-400 {
   color: var(--text-secondary) !important;
 }
 
-html:not(.dark) button .text-zinc-100,
-html:not(.dark) button .text-zinc-200,
-html:not(.dark) button .text-white,
-html:not(.dark) a .text-white,
-html:not(.dark) button.text-white,
-html:not(.dark) .bg-indigo-600 .text-white,
-html:not(.dark) .bg-gradient-to-br .text-white,
-html:not(.dark) .bg-gradient-to-r .text-white,
-html:not(.dark) .bg-indigo-600 .text-zinc-100 {
-  color: #ffffff !important;
-}
-
 html:not(.dark) .text-zinc-500,
-html:not(.dark) .text-zinc-650,
 html:not(.dark) .text-zinc-600,
 html:not(.dark) .text-zinc-700 {
   color: var(--text-muted) !important;
 }
 
-/* Inputs and interactive elements */
+/* Universal Input, Textarea and Select Fields */
 html:not(.dark) input,
 html:not(.dark) textarea,
 html:not(.dark) select {
@@ -143,7 +156,7 @@ html:not(.dark) select {
 }
 html:not(.dark) input::placeholder,
 html:not(.dark) textarea::placeholder {
-  color: #94a3b8 !important;
+  color: var(--text-muted) !important;
 }
 
 /* Chat container and bubble overrides */

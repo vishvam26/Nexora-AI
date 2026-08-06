@@ -248,14 +248,14 @@ export default function EmailStudio() {
         {/* Left Side: Manual Editor & AI Inputs (55% Width) */}
         <div className="w-[55%] flex flex-col border-r border-border overflow-hidden">
           {/* Top Workspace Header */}
-          <div className="border-b border-zinc-800/80 px-6 py-4 bg-[#0a0a0e] flex items-center justify-between shrink-0">
+          <div className="border-b border-border px-6 py-4 bg-card/60 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-400">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-500">
                 <Mail className="h-4 w-4" />
               </div>
               <div>
-                <h1 className="text-sm font-bold text-white tracking-tight">Email Composer Studio</h1>
-                <p className="text-[10px] text-zinc-500">Draft manually or generate via AI Copilot</p>
+                <h1 className="text-sm font-bold text-foreground tracking-tight">Email Composer Studio</h1>
+                <p className="text-[10px] text-muted-foreground">Draft manually or generate via AI Copilot</p>
               </div>
             </div>
 
@@ -287,13 +287,13 @@ export default function EmailStudio() {
 
             {/* Recipient To Email */}
             <div className="space-y-1">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">Recipient Email (To)</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Recipient Email (To)</label>
               <input
                 type="email"
                 value={toEmail}
                 onChange={e => setToEmail(e.target.value)}
                 placeholder="e.g. manager@company.com"
-                className="w-full rounded-xl border border-zinc-800 bg-[#121218] px-3.5 py-2 text-xs text-white placeholder-zinc-600 outline-none focus:border-indigo-500 font-mono"
+                className="w-full rounded-xl border border-border bg-background px-3.5 py-2 text-xs text-foreground placeholder-muted-foreground outline-none focus:border-indigo-500 font-mono shadow-sm"
               />
             </div>
 
@@ -333,33 +333,33 @@ export default function EmailStudio() {
 
             {/* Email Content Body Editor */}
             <div className="space-y-1 flex-1 flex flex-col">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">Email Body Content</label>
+              <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">Email Body Content</label>
               <textarea
                 rows={10}
                 value={body}
                 onChange={e => setBody(e.target.value)}
                 placeholder="Write your email here manually or ask AI Copilot below to generate..."
-                className="w-full rounded-xl border border-zinc-800 bg-[#0e0e14] p-3.5 text-xs text-zinc-200 outline-none focus:border-indigo-500 font-sans leading-relaxed resize-y select-text shadow-inner"
+                className="w-full rounded-xl border border-border bg-card p-3.5 text-xs text-foreground outline-none focus:border-indigo-500 font-sans leading-relaxed resize-y select-text shadow-sm"
               />
             </div>
           </div>
 
           {/* Bottom AI Copilot Drafter Bar */}
-          <div className="p-3.5 border-t border-zinc-800/80 bg-[#0a0a0e] flex items-center gap-3 shrink-0">
-            <div className="flex-1 flex items-center gap-3 bg-[#121218] border border-indigo-500/30 rounded-xl px-3.5 py-1.5 shadow-inner">
-              <Sparkles className="h-4 w-4 text-indigo-400 shrink-0" />
+          <div className="p-3.5 border-t border-border bg-card/60 flex items-center gap-3 shrink-0">
+            <div className="flex-1 flex items-center gap-3 bg-background border border-indigo-500/30 rounded-xl px-3.5 py-1.5 shadow-sm">
+              <Sparkles className="h-4 w-4 text-indigo-500 shrink-0" />
               <input
                 type="text"
                 value={naturalLanguage}
                 onChange={(e) => setNaturalLanguage(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") handleAIDrafter(); }}
                 placeholder="Ask AI Copilot to draft email..."
-                className="w-full bg-transparent text-xs text-white placeholder-zinc-500 focus:outline-none"
+                className="w-full bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
               />
               <button
                 onClick={handleAIDrafter}
                 disabled={drafting || !naturalLanguage.trim()}
-                className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-xs font-bold px-3 py-1 disabled:opacity-40 transition shrink-0"
+                className="rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-xs font-bold px-3 py-1 disabled:opacity-40 transition shrink-0 shadow-md"
               >
                 {drafting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Draft ✨"}
               </button>
@@ -368,47 +368,47 @@ export default function EmailStudio() {
         </div>
 
         {/* Right Side: Live HTML Render Preview Card (45% Width) */}
-        <div className="w-[45%] flex flex-col bg-[#050507] overflow-hidden">
-          <div className="border-b border-zinc-800/80 px-6 py-4 bg-[#0a0a0e] flex items-center justify-between shrink-0">
+        <div className="w-[45%] flex flex-col bg-card/40 overflow-hidden border-l border-border">
+          <div className="border-b border-border px-6 py-4 bg-card/60 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-bold text-white uppercase tracking-wider">LIVE EMAIL PREVIEW</span>
+              <span className="text-xs font-bold text-foreground uppercase tracking-wider">LIVE EMAIL PREVIEW</span>
             </div>
-            <span className="text-[10px] text-zinc-500 font-mono">Rendered Card</span>
+            <span className="text-[10px] text-muted-foreground font-mono">Rendered Card</span>
           </div>
 
           <div className="flex-1 overflow-y-auto p-6 flex flex-col justify-start">
-            <div className="w-full rounded-2xl border border-zinc-800 bg-[#0d0d12] p-6 shadow-2xl space-y-4 relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-indigo-600/10 text-indigo-400 text-[9px] font-mono font-bold px-3 py-1 rounded-bl-xl border-l border-b border-indigo-500/20">
+            <div className="w-full rounded-2xl border border-border bg-card p-6 shadow-xl space-y-4 relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-indigo-500/10 text-indigo-500 text-[9px] font-mono font-bold px-3 py-1 rounded-bl-xl border-l border-b border-indigo-500/20">
                 SMTP LIVE RENDER
               </div>
 
               {/* Subject */}
               <div>
-                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Subject</span>
-                <h3 className="text-sm font-bold text-white mt-0.5">{subject || "No Subject"}</h3>
+                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider block">Subject</span>
+                <h3 className="text-sm font-bold text-foreground mt-0.5">{subject || "No Subject"}</h3>
               </div>
 
               {/* Recipient */}
-              <div className="pt-2 border-t border-zinc-800/60 flex items-center justify-between">
+              <div className="pt-2 border-t border-border flex items-center justify-between">
                 <div>
-                  <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Recipient</span>
-                  <span className="text-xs font-mono text-indigo-300">{toEmail || "recipient@company.com"}</span>
+                  <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider block">Recipient</span>
+                  <span className="text-xs font-mono text-indigo-500">{toEmail || "recipient@company.com"}</span>
                 </div>
-                <div className="text-[10px] text-zinc-500 font-mono">Today, Just now</div>
+                <div className="text-[10px] text-muted-foreground font-mono">Today, Just now</div>
               </div>
 
               {/* Body Render */}
-              <div className="pt-4 border-t border-zinc-800/60 space-y-2">
-                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider block">Message Preview</span>
-                <div className="text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed font-sans bg-[#07070a] p-4 rounded-xl border border-zinc-800/80 min-h-[160px]">
+              <div className="pt-4 border-t border-border space-y-2">
+                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider block">Message Preview</span>
+                <div className="text-xs text-foreground whitespace-pre-wrap leading-relaxed font-sans bg-background p-4 rounded-xl border border-border min-h-[160px]">
                   {body || "No message body written yet."}
                 </div>
               </div>
 
               {/* Attachment Badge */}
               {selectedReportId && (
-                <div className="pt-3 border-t border-zinc-800/60 flex items-center gap-2 text-xs text-indigo-400 bg-indigo-500/10 p-3 rounded-xl border border-indigo-500/20">
+                <div className="pt-3 border-t border-border flex items-center gap-2 text-xs text-indigo-500 bg-indigo-500/10 p-3 rounded-xl border border-indigo-500/20">
                   <Paperclip className="h-4 w-4 shrink-0" />
                   <span className="font-mono text-[11px] truncate">Attached: Analytics_Report_{selectedReportId.slice(0, 8)}.pdf</span>
                 </div>

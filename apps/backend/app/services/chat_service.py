@@ -72,6 +72,9 @@ class ChatService:
             try:
                 from app.config import settings
                 from app.services.adaptive_retrieval_service import AdaptiveRetrievalService
+                from app.models.document_chunk import DocumentChunk
+                from app.models.knowledge_document import KnowledgeDocument
+                from app.models.knowledge_base import KnowledgeBase
                 
                 rag_context = AdaptiveRetrievalService.retrieve_context(
                     db=db,
@@ -85,19 +88,72 @@ class ChatService:
                     user_id=user_id,
                 )
 
-                # Fallback: if 0 chunks found with strict threshold, retry with low threshold to ensure PDF text reaches LLM
-                if not rag_context.has_knowledge:
+                # Fallback 1: if 0 chunks found with specific KB ID filter, retry across ALL workspace KBs
+                if not rag_context.has_knowledge and kb_ids:
+                    print(">>> [SYNC CHAT] KB ID filter returned 0 hits — retrying search across ALL workspace KBs <<<")
                     rag_context = AdaptiveRetrievalService.retrieve_context(
                         db=db,
                         user_query=request.message,
                         workspace_id=request.workspace_id,
-                        knowledge_base_id=kb_ids,
+                        knowledge_base_id=None,
                         top_k=settings.RAG_TOP_K,
-                        similarity_threshold=0.01,
+                        similarity_threshold=0.0,
                         max_context_tokens=settings.MAX_CONTEXT_TOKENS,
                         enable_reranking=False,
                         user_id=user_id,
                     )
+
+                # Fallback 2: Direct raw DB document_chunks injection from LATEST document if RAG returned empty
+                if not rag_context.has_knowledge:
+                    doc_query = (
+                        db.query(KnowledgeDocument)
+                        .join(KnowledgeBase, KnowledgeDocument.knowledge_base_id == KnowledgeBase.id)
+                        .filter(
+                            KnowledgeBase.workspace_id == request.workspace_id,
+                            KnowledgeDocument.deleted_at.is_(None),
+                            KnowledgeBase.deleted_at.is_(None)
+                        )
+                    )
+                    if kb_ids:
+                        doc_query = doc_query.filter(KnowledgeBase.id.in_(kb_ids))
+
+                    latest_doc = doc_query.order_by(KnowledgeDocument.created_at.desc(), KnowledgeDocument.id.desc()).first()
+
+                    if not latest_doc and kb_ids:
+                        latest_doc = (
+                            db.query(KnowledgeDocument)
+                            .join(KnowledgeBase, KnowledgeDocument.knowledge_base_id == KnowledgeBase.id)
+                            .filter(
+                                KnowledgeBase.workspace_id == request.workspace_id,
+                                KnowledgeDocument.deleted_at.is_(None),
+                                KnowledgeBase.deleted_at.is_(None)
+                            )
+                            .order_by(KnowledgeDocument.created_at.desc(), KnowledgeDocument.id.desc())
+                            .first()
+                        )
+
+                    if latest_doc:
+                        raw_chunks = (
+                            db.query(DocumentChunk)
+                            .filter(DocumentChunk.document_id == latest_doc.id)
+                            .order_by(DocumentChunk.chunk_index.asc())
+                            .limit(10)
+                            .all()
+                        )
+                        if raw_chunks:
+                            print(f">>> [SYNC CHAT] Emergency Fallback: Directly injecting {len(raw_chunks)} raw DB chunks from latest document '{latest_doc.filename}' (id={latest_doc.id}) <<<")
+                            retrieved_knowledge = "\n\n".join([
+                                f"--- Document Excerpt ({latest_doc.filename}, Page {c.page or 1}) ---\n{c.text}"
+                                for c in raw_chunks
+                            ])
+                            for c in raw_chunks:
+                                sources_list.append({
+                                    "filename": latest_doc.filename or "uploaded_document.pdf",
+                                    "page": c.page or 1,
+                                    "section": c.section or "",
+                                    "score": 1.0,
+                                    "confidence": 100
+                                })
 
                 print(f">>> [SYNC CHAT] RAG retrieved {len(rag_context.chunks_used)} chunks. Has knowledge: {rag_context.has_knowledge} <<<")
                 if rag_context.has_knowledge:
@@ -236,24 +292,61 @@ class ChatService:
                         user_id=user_id,
                     )
 
-                # Fallback 2: Direct raw DB document_chunks injection if RAG pipeline returned empty
+                # Fallback 2: Direct raw DB document_chunks injection from LATEST document if RAG pipeline returned empty
                 if not rag_context.has_knowledge:
                     from app.models.document_chunk import DocumentChunk
                     from app.models.knowledge_document import KnowledgeDocument
                     from app.models.knowledge_base import KnowledgeBase
-                    raw_chunks = (
-                        db.query(DocumentChunk)
-                        .join(KnowledgeDocument, DocumentChunk.document_id == KnowledgeDocument.id)
+                    
+                    doc_query = (
+                        db.query(KnowledgeDocument)
                         .join(KnowledgeBase, KnowledgeDocument.knowledge_base_id == KnowledgeBase.id)
-                        .filter(KnowledgeBase.workspace_id == request.workspace_id)
-                        .limit(10)
-                        .all()
+                        .filter(
+                            KnowledgeBase.workspace_id == request.workspace_id,
+                            KnowledgeDocument.deleted_at.is_(None),
+                            KnowledgeBase.deleted_at.is_(None)
+                        )
                     )
-                    if raw_chunks:
-                        print(f">>> [STREAM CHAT] Emergency Fallback: Directly injecting {len(raw_chunks)} raw DB chunks <<<")
-                        retrieved_knowledge = "\n\n".join([f"--- Document Excerpt (Page {c.page}) ---\n{c.text}" for c in raw_chunks])
-                        for c in raw_chunks:
-                            sources_list.append({"filename": "uploaded_document.pdf", "page": c.page or 1, "score": 1.0, "confidence": 100})
+                    if kb_ids:
+                        doc_query = doc_query.filter(KnowledgeBase.id.in_(kb_ids))
+
+                    latest_doc = doc_query.order_by(KnowledgeDocument.created_at.desc(), KnowledgeDocument.id.desc()).first()
+
+                    if not latest_doc and kb_ids:
+                        latest_doc = (
+                            db.query(KnowledgeDocument)
+                            .join(KnowledgeBase, KnowledgeDocument.knowledge_base_id == KnowledgeBase.id)
+                            .filter(
+                                KnowledgeBase.workspace_id == request.workspace_id,
+                                KnowledgeDocument.deleted_at.is_(None),
+                                KnowledgeBase.deleted_at.is_(None)
+                            )
+                            .order_by(KnowledgeDocument.created_at.desc(), KnowledgeDocument.id.desc())
+                            .first()
+                        )
+
+                    if latest_doc:
+                        raw_chunks = (
+                            db.query(DocumentChunk)
+                            .filter(DocumentChunk.document_id == latest_doc.id)
+                            .order_by(DocumentChunk.chunk_index.asc())
+                            .limit(10)
+                            .all()
+                        )
+                        if raw_chunks:
+                            print(f">>> [STREAM CHAT] Emergency Fallback: Directly injecting {len(raw_chunks)} raw DB chunks from latest document '{latest_doc.filename}' (id={latest_doc.id}) <<<")
+                            retrieved_knowledge = "\n\n".join([
+                                f"--- Document Excerpt ({latest_doc.filename}, Page {c.page or 1}) ---\n{c.text}"
+                                for c in raw_chunks
+                            ])
+                            for c in raw_chunks:
+                                sources_list.append({
+                                    "filename": latest_doc.filename or "uploaded_document.pdf",
+                                    "page": c.page or 1,
+                                    "section": c.section or "",
+                                    "score": 1.0,
+                                    "confidence": 100
+                                })
 
                 print(f">>> [STREAM CHAT] RAG retrieved {len(rag_context.chunks_used)} chunks. Has knowledge: {rag_context.has_knowledge} <<<")
                 if rag_context.has_knowledge:

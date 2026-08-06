@@ -122,7 +122,7 @@ export default function ChatSidebar() {
         <div className="absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-indigo-600/30 to-transparent" />
  
         {/* Nexora Hex-Nexus Glowing Logo */}
-        <div className="group relative flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900/60 border border-zinc-800 hover:border-indigo-500/30 hover:bg-zinc-900/90 shadow-lg transition-all duration-300 mb-2 shrink-0 cursor-pointer overflow-hidden">
+        <div className="group relative flex h-10 w-10 items-center justify-center rounded-xl bg-card border border-border shadow-md transition-all duration-300 mb-2 shrink-0 cursor-pointer overflow-hidden">
           {/* Background interactive gradient glow */}
           <div className="absolute inset-0 bg-gradient-to-tr from-indigo-600/10 via-purple-600/10 to-pink-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           
@@ -198,9 +198,9 @@ export default function ChatSidebar() {
         <button
           onClick={logout}
           title={`Logout (${user?.email || ''})`}
-          className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-800/60 border border-zinc-700/40 text-zinc-400 hover:bg-red-500/15 hover:text-red-400 hover:border-red-500/20 transition-all"
+          className="flex h-9 w-9 items-center justify-center rounded-xl bg-card border border-border text-foreground hover:bg-red-500/15 hover:text-red-500 hover:border-red-500/30 shadow-sm transition-all"
         >
-          <User className="h-4 w-4" />
+          <User className="h-4 w-4 text-foreground" />
         </button>
       </aside>
 
@@ -214,42 +214,42 @@ export default function ChatSidebar() {
           {convPanelOpen && (
             <>
               {/* Workspace Selector */}
-              <div className="relative border-b border-zinc-900 p-3">
+              <div className="relative border-b border-border p-3">
                 <button
                   onClick={() => setShowWorkspaceMenu(!showWorkspaceMenu)}
-                  className="flex w-full items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/60 px-3.5 py-2.5 text-xs font-semibold shadow-sm transition hover:bg-zinc-900"
+                  className="flex w-full items-center justify-between rounded-xl border border-border bg-card px-3.5 py-2.5 text-xs font-semibold shadow-sm transition hover:bg-accent"
                 >
                   <span className="truncate">{activeWorkspace?.name || "Select Workspace"}</span>
-                  <ChevronDown className="h-3.5 w-3.5 text-zinc-500 shrink-0 ml-1" />
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0 ml-1" />
                 </button>
 
                 {showWorkspaceMenu && (
-                  <div className="absolute top-[calc(100%-6px)] left-3 right-3 z-30 rounded-xl border border-zinc-800 bg-zinc-950 p-2 shadow-2xl animate-fade-in-up">
+                  <div className="absolute top-[calc(100%-6px)] left-3 right-3 z-30 rounded-xl border border-border bg-card p-2 shadow-2xl animate-fade-in-up">
                     <div className="max-h-[140px] overflow-y-auto space-y-1">
                       {workspaces.map(w => (
                         <button key={w.id}
                           onClick={() => { setActiveWorkspace(w); setShowWorkspaceMenu(false); }}
                           className={`w-full rounded-lg px-3 py-2 text-left text-xs font-semibold transition ${
                             activeWorkspace?.id === w.id
-                              ? "bg-indigo-500/10 text-indigo-400 font-semibold"
-                              : "hover:bg-zinc-900 text-zinc-400"
+                              ? "bg-indigo-500/15 text-indigo-500 font-semibold"
+                              : "hover:bg-accent text-muted-foreground"
                           }`}
                         >{w.name}</button>
                       ))}
                     </div>
-                    <div className="border-t border-zinc-850 mt-2 pt-2">
+                    <div className="border-t border-border mt-2 pt-2">
                       {isCreatingWorkspace ? (
                         <form onSubmit={handleCreateWorkspace} className="flex gap-1.5">
                           <input type="text" value={newWorkspaceName}
                             onChange={e => setNewWorkspaceName(e.target.value)}
                             placeholder="Workspace name"
-                            className="w-full rounded-lg border border-zinc-800 bg-[#09090b] px-2.5 py-1.5 text-xs text-white placeholder-zinc-700 outline-none focus:border-indigo-500/40"
+                            className="w-full rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder-muted-foreground outline-none focus:border-indigo-500/40"
                           />
-                          <button type="submit" className="rounded-lg bg-indigo-650 px-3 py-1.5 text-xs font-bold text-white">+</button>
+                          <button type="submit" className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white">+</button>
                         </form>
                       ) : (
                         <button onClick={() => setIsCreatingWorkspace(true)}
-                          className="flex w-full items-center gap-2 px-2 py-1.5 text-xs font-semibold text-indigo-450 hover:text-indigo-400">
+                          className="flex w-full items-center gap-2 px-2 py-1.5 text-xs font-semibold text-indigo-500 hover:text-indigo-400">
                           <Plus className="h-3 w-3" /> New Workspace
                         </button>
                       )}
@@ -259,7 +259,7 @@ export default function ChatSidebar() {
               </div>
 
               {/* New Chat Button + Search */}
-              <div className="space-y-2.5 p-3 border-b border-zinc-900">
+              <div className="space-y-2.5 p-3 border-b border-border">
                 <button
                   onClick={handleNewChat}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 px-4 py-2.5 text-xs font-bold tracking-wider text-white shadow-lg shadow-indigo-900/30 transition hover:from-indigo-550 hover:to-indigo-650 active:scale-[0.98]"
@@ -269,12 +269,11 @@ export default function ChatSidebar() {
                 </button>
 
                 <div className="relative">
-                  <Search className="absolute top-3 left-3 h-3.5 w-3.5 text-zinc-550" />
+                  <Search className="absolute top-3 left-3 h-3.5 w-3.5 text-muted-foreground" />
                   <input type="text" value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                     placeholder="Search sessions..."
-                    className="w-full rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-zinc-650 outline-none transition"
-                    style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+                    className="w-full rounded-xl pl-9 pr-3 py-2 text-xs text-foreground placeholder-muted-foreground border border-border bg-card focus:outline-none transition"
                   />
                 </div>
               </div>
@@ -361,19 +360,21 @@ export default function ChatSidebar() {
               </div>
 
               {/* User footer */}
-              <div className="border-t border-zinc-900 bg-zinc-950/20 p-3.5 z-10">
+              <div className="border-t border-border bg-card/40 p-3.5 z-10">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5 truncate">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-750 text-white font-bold text-[10px]">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#018ABE] to-[#02457A] text-white font-black text-xs shadow-md shadow-blue-500/20 border border-white/20">
                       {user?.full_name ? user.full_name[0].toUpperCase() : "U"}
                     </div>
                     <div className="truncate text-left">
-                      <div className="truncate text-[11px] font-semibold text-white">{user?.full_name || "User"}</div>
-                      <div className="truncate text-[9px] text-zinc-500">{user?.email}</div>
+                      <div className="truncate text-[11px] font-semibold text-foreground">{user?.full_name || "User"}</div>
+                      <div className="truncate text-[9px] text-muted-foreground">{user?.email || ""}</div>
                     </div>
                   </div>
-                  <button onClick={logout} className="hover:text-red-500 transition shrink-0" title="Logout">
-                    <LogOut className="h-3.5 w-3.5 text-zinc-500" />
+                  <button onClick={logout} title="Logout"
+                    className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground transition shrink-0"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
                   </button>
                 </div>
                 <div className="mt-2 pt-2 border-t border-zinc-900/60 text-center">
@@ -418,32 +419,31 @@ function NavIcon({ item, activeView, setActiveView, hovered, setHovered }: any) 
   // Custom premium glassmorphic styling for active state
   const activeStyle = isActive 
     ? {
-        background: "linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.15) 100%)",
-        borderColor: "rgba(99, 102, 241, 0.35)",
-        boxShadow: "0 0 15px rgba(99, 102, 241, 0.25), inset 0 0 10px rgba(99, 102, 241, 0.1)",
-        backdropFilter: "blur(4px)"
+        background: "linear-gradient(135deg, #018ABE 0%, #02457A 100%)",
+        borderColor: "#97CADB",
+        boxShadow: "0 0 15px rgba(1, 138, 190, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.2)"
       }
     : {};
 
   return (
     <div className="relative group/nav" onMouseEnter={() => setHovered(item.view)} onMouseLeave={() => setHovered(null)}>
-      {/* Glowing vertical line indicator with Indigo -> Purple -> Pink gradient */}
-      <div className={`absolute left-[-12px] top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-r bg-gradient-to-b from-indigo-400 via-purple-500 to-pink-500 transition-all duration-300 ${
+      {/* Glowing vertical line indicator */}
+      <div className={`absolute left-[-12px] top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-r bg-[#018ABE] transition-all duration-300 ${
         isActive ? "opacity-100 scale-y-100" : "opacity-0 scale-y-50 group-hover/nav:opacity-40 group-hover/nav:scale-y-75"
-      }`} style={{ boxShadow: "0 0 10px rgba(168, 85, 247, 0.8)" }} />
+      }`} style={{ boxShadow: "0 0 10px rgba(1, 138, 190, 0.8)" }} />
 
       <button
         onClick={() => setActiveView(item.view)}
         style={activeStyle}
         className={`relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 border ${
           isActive
-            ? "text-white"
-            : "text-zinc-500 border-transparent hover:border-zinc-800/80 hover:bg-indigo-500/5 hover:text-indigo-400"
+            ? "text-white font-bold shadow-lg"
+            : "text-muted-foreground border-transparent hover:border-border hover:bg-card hover:text-foreground"
         }`}
       >
         <Icon className={`h-4.5 w-4.5 transition-all duration-300 ${
           isActive 
-            ? "scale-110 text-indigo-300 filter drop-shadow-[0_0_4px_rgba(99,102,241,0.7)]" 
+            ? "scale-110 text-white filter drop-shadow-[0_0_6px_rgba(255,255,255,0.8)] font-bold" 
             : "group-hover/nav:scale-110 group-hover/nav:rotate-[5deg]"
         }`} />
         {item.badge && (
@@ -452,11 +452,11 @@ function NavIcon({ item, activeView, setActiveView, hovered, setHovered }: any) 
           </span>
         )}
       </button>
-      {/* Tooltip with blurred glass container (ignores pointer events to allow clicks to pass through) */}
+      {/* High-Contrast Hover Tooltip Popup */}
       {hovered === item.view && (
-        <div className="absolute left-[60px] top-1/2 -translate-y-1/2 z-50 pointer-events-none whitespace-nowrap rounded-lg bg-zinc-950/90 border border-zinc-800 px-3 py-1.5 text-[9px] font-black tracking-wider uppercase text-zinc-350 shadow-2xl animate-fade-in backdrop-blur-md">
+        <div className="absolute left-[65px] top-1/2 -translate-y-1/2 z-[100] pointer-events-none whitespace-nowrap rounded-xl bg-[#001B48] dark:bg-[#6366f1] text-white font-bold text-xs px-3.5 py-2 shadow-2xl border border-white/20 animate-fade-in">
           {item.label}
-          <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 border-4 border-transparent border-r-zinc-950" />
+          <div className="absolute left-[-5px] top-1/2 -translate-y-1/2 border-4 border-transparent border-r-[#001B48] dark:border-r-[#6366f1]" />
         </div>
       )}
     </div>

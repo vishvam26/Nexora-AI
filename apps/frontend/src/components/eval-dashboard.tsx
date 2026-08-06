@@ -145,9 +145,9 @@ export default function EvalDashboard() {
 
   if (loading && !kpis) {
     return (
-      <div className="flex h-full w-full flex-col items-center justify-center bg-[#09090b]">
+      <div className="flex h-full w-full flex-col items-center justify-center bg-background">
         <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
-        <p className="mt-4 text-sm text-zinc-400">Loading AI Judge dashboard...</p>
+        <p className="mt-4 text-sm text-muted-foreground">Loading AI Judge dashboard...</p>
       </div>
     );
   }
@@ -244,25 +244,25 @@ export default function EvalDashboard() {
         )}
 
         {/* Dataset Exporter Tools */}
-        <div className="flex gap-4 items-center justify-between rounded-xl border border-indigo-500/15 bg-indigo-500/5 px-6 py-4">
+        <div className="flex gap-4 items-center justify-between rounded-xl border border-indigo-500/20 bg-indigo-500/10 px-6 py-4 shadow-sm">
           <div className="flex items-center gap-2">
-            <Database className="h-5 w-5 text-indigo-400" />
+            <Database className="h-5 w-5 text-indigo-500" />
             <div>
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider">Dataset Export Workspace</h4>
-              <p className="text-[10px] text-zinc-500">Download clean conversational datasets approved by reviews</p>
+              <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">Dataset Export Workspace</h4>
+              <p className="text-[10px] text-muted-foreground">Download clean conversational datasets approved by reviews</p>
             </div>
           </div>
           <div className="flex gap-3">
             <button
               onClick={() => handleExport("jsonl")}
-              className="flex items-center gap-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 px-4 py-2 text-xs font-bold text-zinc-200 transition"
+              className="flex items-center gap-1.5 rounded-lg bg-card hover:bg-accent border border-border px-4 py-2 text-xs font-bold text-foreground transition shadow-sm"
             >
-              <Download className="h-4 w-4" />
+              <Download className="h-4 w-4 text-indigo-500" />
               Export JSONL (QLoRA)
             </button>
             <button
               onClick={() => handleExport("csv")}
-              className="flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-xs font-bold text-white transition"
+              className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 px-4 py-2 text-xs font-bold text-white transition shadow-md"
             >
               <Download className="h-4 w-4" />
               Export CSV Format
@@ -339,16 +339,16 @@ export default function EvalDashboard() {
       {/* ── AI Replay Sandbox Modal ────────────────────────────────── */}
       {activeReplayCandidate && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-          <div className="bg-[#09090b] border border-zinc-800 rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+          <div className="bg-card border border-border rounded-2xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
             {/* Modal Header */}
-            <div className="border-b border-zinc-800 px-6 py-4 flex items-center justify-between bg-zinc-900/40">
+            <div className="border-b border-border px-6 py-4 flex items-center justify-between bg-card/60">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-indigo-400" />
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider">AI Replay Debugger Sandbox</h3>
+                <Sparkles className="h-5 w-5 text-indigo-500" />
+                <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">AI Replay Debugger Sandbox</h3>
               </div>
               <button
                 onClick={() => { setActiveReplayCandidate(null); setReplayResult(null); }}
-                className="rounded-lg p-1 hover:bg-zinc-800 text-zinc-500 hover:text-white transition"
+                className="rounded-lg p-1 hover:bg-accent text-muted-foreground hover:text-foreground transition"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -356,7 +356,7 @@ export default function EvalDashboard() {
 
             {/* Modal Content */}
             <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
-              <div className="rounded-xl border border-zinc-800 bg-[#0d0d0e] p-4 text-xs">
+              <div className="rounded-xl border border-border bg-background p-4 text-xs">
                 <span className="text-[9px] font-semibold text-zinc-500 uppercase tracking-wider block">Failed Prompt query</span>
                 <p className="mt-1 text-zinc-300 font-mono text-[11px]">{activeReplayCandidate.query}</p>
               </div>

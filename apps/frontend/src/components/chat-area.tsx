@@ -42,6 +42,86 @@ export default function ChatArea() {
   const [displayText, setDisplayText] = useState("");
   const fullText = "How can Nexora AI help you?";
 
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // ── 60 FPS Floating Constellation Particle Engine ──
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animId: number;
+    let width = (canvas.width = canvas.parentElement?.clientWidth || window.innerWidth);
+    let height = (canvas.height = canvas.parentElement?.clientHeight || window.innerHeight);
+
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = canvas.parentElement?.clientWidth || window.innerWidth;
+      height = canvas.height = canvas.parentElement?.clientHeight || window.innerHeight;
+    };
+    window.addEventListener("resize", handleResize);
+
+    // Create 70 floating particles using official 5-color palette (#001B48, #02457A, #018ABE, #97CADB, #D6E8EE)
+    const particleCount = 70;
+    const particles = Array.from({ length: particleCount }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.8,
+      vy: (Math.random() - 0.5) * 0.8,
+      radius: Math.random() * 2 + 1.5,
+      color: ["#001B48", "#02457A", "#018ABE", "#97CADB", "#D6E8EE"][Math.floor(Math.random() * 5)]
+    }));
+
+    const render = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      // Draw particle connections
+      for (let i = 0; i < particleCount; i++) {
+        for (let j = i + 1; j < particleCount; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 140) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(94, 139, 126, ${0.35 * (1 - dist / 140)})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw and move particles
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+
+      animId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(animId);
+    };
+  }, []);
+
   useEffect(() => {
     let index = 0;
     setDisplayText("");
@@ -118,46 +198,60 @@ export default function ChatArea() {
   const isEmptyState = !activeConversation && messages.length === 0;
 
   return (
-    <main className="relative flex h-full flex-col" style={{ background: "transparent" }}>
+    <main className="relative flex h-full flex-col overflow-hidden bg-background">
+      {/* ── 60 FPS Interactive Dynamic Floating Particle Physics Canvas Engine ── */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+        {/* Glowing Grid Background Pattern */}
+        <div className="absolute inset-0 opacity-[0.22] dark:opacity-20"
+          style={{
+            backgroundImage: `linear-gradient(to right, rgba(27, 117, 136, 0.3) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(27, 117, 136, 0.3) 1px, transparent 1px)`,
+            backgroundSize: "36px 36px"
+          }}
+        />
+
+        {/* Rich Nordic Oceanic Glowing Blobs */}
+        <div className="absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-teal-600/30 blur-[100px] animate-pulse" />
+        <div className="absolute top-1/3 -right-32 h-96 w-96 rounded-full bg-emerald-500/25 blur-[120px] animate-pulse" style={{ animationDelay: "1s" }} />
+        <div className="absolute -bottom-32 left-1/3 h-96 w-96 rounded-full bg-cyan-700/20 blur-[120px] animate-pulse" style={{ animationDelay: "2s" }} />
+
+        {/* Live Interactive 60FPS Floating Canvas */}
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-75 dark:opacity-60" />
+      </div>
 
       {/* ── Top Header ── */}
-      <header className="flex h-14 shrink-0 items-center justify-between px-6 z-10"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(9,9,11,0.5)", backdropFilter: "blur(16px)" }}>
+      <header className="flex h-14 shrink-0 items-center justify-between px-6 z-10 border-b border-border bg-card/60 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           {!sidebarOpen && (
             <button onClick={toggleSidebar}
-              className="rounded-lg p-1.5 text-zinc-500 hover:text-white transition-all hover:bg-white/5"
-              style={{ border: "1px solid rgba(255,255,255,0.06)" }}>
+              className="rounded-lg p-1.5 text-muted-foreground hover:text-foreground transition-all hover:bg-accent border border-border">
               <ChevronLeft className="h-4 w-4 rotate-180" />
             </button>
           )}
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md border"
-              style={{ background: "linear-gradient(135deg,rgba(34,211,238,0.15),rgba(99,102,241,0.08))", borderColor: "rgba(34,211,238,0.25)" }}>
-              {/* Original Skyblue Bird Logo ^ */}
+            <div className="flex h-6 w-6 items-center justify-center rounded-md border border-indigo-500/30 bg-indigo-500/10">
               <svg viewBox="0 0 100 100" fill="none" className="h-4.5 w-4.5 filter drop-shadow-[0_0_4px_rgba(34,211,238,0.4)]">
                 <path d="M 50 10 L 60 40 L 55 70 L 45 70 L 40 40 Z" fill="url(#header-bird-grad)" />
                 <path d="M 50 40 Q 20 20 10 40 Q 30 45 50 50 Z" fill="url(#header-bird-grad)" />
                 <path d="M 50 40 Q 80 20 90 40 Q 70 45 50 50 Z" fill="url(#header-bird-grad)" />
                 <defs>
                   <linearGradient id="header-bird-grad" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="#22d3ee" />
-                    <stop offset="100%" stopColor="#6366f1" />
+                    <stop offset="0%" stopColor="#2563eb" />
+                    <stop offset="100%" stopColor="#7c3aed" />
                   </linearGradient>
                 </defs>
               </svg>
             </div>
-            <h1 className="text-sm font-semibold text-zinc-200 tracking-tight">
+            <h1 className="text-sm font-bold text-foreground tracking-tight">
               {activeWorkspace?.name || "Workspace"}
-              <span className="mx-1.5 text-zinc-700">·</span>
-              <span className="text-zinc-400 font-normal">{activeConversation ? activeConversation.title : "New Chat"}</span>
+              <span className="mx-1.5 text-muted-foreground">·</span>
+              <span className="text-muted-foreground font-normal">{activeConversation ? activeConversation.title : "New Chat"}</span>
             </h1>
           </div>
         </div>
 
         {activeConversation && (
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold tracking-widest uppercase"
-            style={{ padding: "3px 10px", borderRadius: 8, background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.18)", color: "#a5b4fc" }}>
+          <div className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase px-3 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-500">
             <Zap className="h-2.5 w-2.5" />
             Local Qwen LoRA
           </div>
@@ -172,14 +266,9 @@ export default function ChatArea() {
 
             {/* Animated badge */}
             <div className="relative mt-4">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl border"
-                style={{
-                  background: "linear-gradient(135deg,rgba(34,211,238,0.15),rgba(99,102,241,0.08))",
-                  borderColor: "rgba(34,211,238,0.25)",
-                  boxShadow: "0 0 40px rgba(34,211,238,0.15), 0 0 80px rgba(99,102,241,0.05)",
-                }}>
-                {/* Original Skyblue Bird Logo ^ */}
-                <svg viewBox="0 0 100 100" fill="none" className="h-12 w-12 animate-pulse filter drop-shadow-[0_0_12px_rgba(34,211,238,0.4)]">
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-teal-500/40 bg-card shadow-xl shadow-teal-900/10">
+                {/* Vibrant High-Contrast Nexora Bird Logo */}
+                <svg viewBox="0 0 100 100" fill="none" className="h-12 w-12 filter drop-shadow-[0_0_15px_rgba(27,117,136,0.6)]">
                   <path d="M 50 10 L 60 40 L 55 70 L 45 70 L 40 40 Z" fill="url(#chat-bird-grad)" />
                   <path d="M 50 40 Q 20 20 10 40 Q 30 45 50 50 Z" fill="url(#chat-bird-grad)" />
                   <path d="M 50 40 Q 80 20 90 40 Q 70 45 50 50 Z" fill="url(#chat-bird-grad)" />
@@ -227,13 +316,13 @@ export default function ChatArea() {
                   );
                 }
                 return (
-                  <h2 className="text-3xl font-bold tracking-tight text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  <h2 className="text-3xl font-bold tracking-tight text-foreground" style={{ fontFamily: "'Playfair Display', serif" }}>
                     {content}
                     {!isDone && <span className="animate-pulse text-indigo-400 ml-1">|</span>}
                   </h2>
                 );
               })()}
-              <p className="text-sm text-zinc-500 max-w-md mx-auto leading-relaxed">
+              <p className="text-sm font-medium text-foreground/80 max-w-md mx-auto leading-relaxed">
                 Running a fine-tuned Qwen model locally. Ground answers in custom files, train ML classifiers, or trigger background agents.
               </p>
             </div>
@@ -241,8 +330,7 @@ export default function ChatArea() {
             {/* Capability badges */}
             <div className="flex flex-wrap justify-center gap-2">
               {["RAG Grounding", "QLoRA Fine-tuned", "Streaming", "Local Inference"].map(tag => (
-                <span key={tag} className="text-[10px] font-semibold tracking-wider uppercase px-2.5 py-1 rounded-full"
-                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", color: "#71717a" }}>
+                <span key={tag} className="text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded-full border border-border bg-card shadow-sm text-foreground/80">
                   {tag}
                 </span>
               ))}
@@ -256,16 +344,16 @@ export default function ChatArea() {
                 return (
                   <button key={card.label}
                     onClick={() => { setInputVal(card.prompt); textareaRef.current?.focus(); }}
-                    className={`group rounded-xl p-4 text-left transition-all duration-300 ${c.border} ${c.bg} ${c.glow} hover:translate-y-[-2px]`}
-                    style={{ border: `1px solid`, background: "rgba(255,255,255,0.02)", backdropFilter: "blur(8px)" }}>
+                    className={`group rounded-xl p-4 text-left transition-all duration-300 border border-border bg-card shadow-sm hover:translate-y-[-2px] hover:border-indigo-500/40`}
+                  >
                     <div className="flex items-start gap-3">
-                      <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${c.bg} ${c.border}`}
-                        style={{ border: "1px solid" }}>
-                        <Icon className={`h-3.5 w-3.5 ${c.icon}`} />
+                      <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 border border-indigo-500/20`}
+                      >
+                        <Icon className={`h-3.5 w-3.5 text-indigo-500`} />
                       </div>
                       <div>
-                        <div className={`text-xs font-semibold text-zinc-300 group-hover:${c.icon} transition-colors`}>{card.label}</div>
-                        <div className="text-[10px] text-zinc-600 mt-0.5">{card.desc}</div>
+                        <div className={`text-xs font-semibold text-foreground group-hover:text-indigo-500 transition-colors`}>{card.label}</div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5">{card.desc}</div>
                       </div>
                     </div>
                   </button>
@@ -274,8 +362,8 @@ export default function ChatArea() {
             </div>
 
             {/* Sparkle hint */}
-            <div className="flex items-center gap-2 text-[11px] text-zinc-600">
-              <Sparkles className="h-3 w-3 text-indigo-500/50" />
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <Sparkles className="h-3 w-3 text-indigo-500" />
               <span>Click a card or type below to begin</span>
             </div>
           </div>
@@ -303,8 +391,7 @@ export default function ChatArea() {
       </div>
 
       {/* ── Bottom Input Panel ── */}
-      <div className="shrink-0 px-6 pb-4 pt-3 z-10"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(9,9,11,0.6)", backdropFilter: "blur(20px)" }}>
+      <div className="shrink-0 px-6 pb-4 pt-3 z-10 border-t border-border bg-card/60 backdrop-blur-xl">
         <div className="max-w-[760px] mx-auto space-y-2.5">
 
           {/* Grounding / KB bar */}
