@@ -133,12 +133,13 @@ export default function MLArea() {
 
         // Pre-select recommended target
         const rec = cols.find(c => c.recommended_target);
+        const nonIdCols = cols.filter(c => !c.is_id && c.name.toLowerCase() !== "id");
         if (rec) {
           setTargetCol(rec.name);
-          setFeatureCols(cols.filter(c => c.name !== rec.name).map(c => c.name));
+          setFeatureCols((nonIdCols.length > 0 ? nonIdCols : cols).filter(c => c.name !== rec.name).map(c => c.name));
         } else if (cols.length > 0) {
           setTargetCol(cols[cols.length - 1].name);
-          setFeatureCols(cols.slice(0, cols.length - 1).map(c => c.name));
+          setFeatureCols((nonIdCols.length > 0 ? nonIdCols : cols).filter(c => c.name !== cols[cols.length - 1].name).map(c => c.name));
         }
       })
       .catch(err => {

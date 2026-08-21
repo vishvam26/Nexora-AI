@@ -73,13 +73,19 @@ class MLService:
                 non_null_cnt = int(df[col].dropna().count())
                 is_numeric = np.issubdtype(df[col].dtype, np.number)
                 
+                col_lower = col.lower().strip()
+                is_id = (
+                    col_lower in ["id", "uuid", "guid", "index", "sr_no", "row_num", "sl_no"] or
+                    ((col_lower.endswith("_id") or col_lower.endswith("id")) and unique_cnt > (len(df) * 0.4)) or
+                    (unique_cnt > (len(df) * 0.85) and len(df) > 10)
+                )
+
                 rec_target = False
-                col_lower = col.lower()
-                # Do not recommend empty or near-empty columns
-                if non_null_cnt > 0 and any(x in col_lower for x in ["winner", "result", "target", "label", "class", "status", "price", "revenue", "churn", "sales"]):
+                # Do not recommend empty or ID columns
+                if non_null_cnt > 0 and not is_id and any(x in col_lower for x in ["winner", "result", "target", "label", "class", "status", "price", "revenue", "churn", "sales"]):
                     rec_target = True
 
-                if non_null_cnt > best_non_null and 1 < unique_cnt < (len(df) * 0.9):
+                if not is_id and non_null_cnt > best_non_null and 1 < unique_cnt < (len(df) * 0.9):
                     best_target_cand = col
                     best_non_null = non_null_cnt
 
@@ -88,6 +94,7 @@ class MLService:
                     "type": "numeric" if is_numeric else "categorical",
                     "unique_count": unique_cnt,
                     "non_null_count": non_null_cnt,
+                    "is_id": is_id,
                     "recommended_target": rec_target
                 })
 
@@ -134,6 +141,26 @@ class MLService:
                     df = pd.read_csv(file_path, sep=None, engine="python")
                 except Exception:
                     df = pd.read_csv(file_path)
+
+            # Auto-exclude ID columns from predictor features to prevent overfitting / ID leakage
+            clean_feature_cols = []
+            for col in feature_cols:
+                if col == target_col or col not in df.columns:
+                    continue
+                col_lower = col.lower().strip()
+                unique_cnt = df[col].nunique()
+                is_id = (
+                    col_lower in ["id", "uuid", "guid", "index", "sr_no", "row_num", "sl_no"] or
+                    ((col_lower.endswith("_id") or col_lower.endswith("id")) and unique_cnt > (len(df) * 0.4)) or
+                    (unique_cnt > (len(df) * 0.85) and len(df) > 10)
+                )
+                if not is_id:
+                    clean_feature_cols.append(col)
+
+            if not clean_feature_cols:
+                clean_feature_cols = [c for c in feature_cols if c != target_col and c in df.columns]
+
+            feature_cols = clean_feature_cols
 
             # Assert columns exist
             all_cols = feature_cols + [target_col]
