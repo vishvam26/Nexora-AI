@@ -606,20 +606,50 @@ export default function MLArea() {
                 </form>
 
                 {/* Inference Results output */}
-                {prediction && (
-                  <div className="p-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">Model Inference Output</p>
-                      <h3 className="text-2xl font-bold text-white mt-1.5 tracking-tight font-mono">{prediction.prediction}</h3>
-                    </div>
-                    {prediction.task_type === "classification" && (
-                      <div className="text-right">
-                        <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider block">Predict Confidence</span>
-                        <span className="text-emerald-400 font-mono font-bold text-lg">{(prediction.confidence * 100).toFixed(1)}% Prob</span>
+                {prediction && (() => {
+                  const rawPred = String(prediction.prediction).trim().toUpperCase();
+                  let displayLabel = String(prediction.prediction);
+                  let isNegative = false;
+
+                  if (rawPred === "N" || rawPred === "NO" || rawPred === "0" || rawPred === "REJECTED") {
+                    displayLabel = "REJECTED (N)";
+                    isNegative = true;
+                  } else if (rawPred === "Y" || rawPred === "YES" || rawPred === "1" || rawPred === "APPROVED") {
+                    displayLabel = "APPROVED (Y)";
+                    isNegative = false;
+                  }
+
+                  return (
+                    <div className={`p-5 rounded-2xl border relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all ${
+                      isNegative 
+                        ? "border-red-500/40 bg-red-500/10 shadow-lg shadow-red-950/20" 
+                        : "border-emerald-500/40 bg-emerald-500/10 shadow-lg shadow-emerald-950/20"
+                    }`}>
+                      <div>
+                        <p className={`text-[10px] uppercase font-bold tracking-wider ${
+                          isNegative ? "text-red-400" : "text-emerald-400"
+                        }`}>
+                          Model Inference Output
+                        </p>
+                        <h3 className={`text-2xl font-bold mt-1.5 tracking-tight font-mono ${
+                          isNegative ? "text-red-400" : "text-emerald-400"
+                        }`}>
+                          {displayLabel}
+                        </h3>
                       </div>
-                    )}
-                  </div>
-                )}
+                      {prediction.task_type === "classification" && (
+                        <div className="text-right">
+                          <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider block">Predict Confidence</span>
+                          <span className={`font-mono font-bold text-lg ${
+                            isNegative ? "text-red-400" : "text-emerald-400"
+                          }`}>
+                            {(prediction.confidence * 100).toFixed(1)}% Prob
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
               </div>
             )}
