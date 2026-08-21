@@ -65,22 +65,38 @@ class MLService:
                     df = pd.read_csv(file_path)
 
             columns = []
+            best_target_cand = None
+            best_non_null = -1
+
             for col in df.columns:
-                unique_cnt = df[col].nunique()
+                unique_cnt = int(df[col].nunique())
+                non_null_cnt = int(df[col].dropna().count())
                 is_numeric = np.issubdtype(df[col].dtype, np.number)
                 
-                # Recommend target if cardinality is reasonable and name matches concepts
                 rec_target = False
                 col_lower = col.lower()
-                if any(x in col_lower for x in ["price", "revenue", "churn", "target", "label", "class", "status", "sales", "sold", "purchased"]):
+                # Do not recommend empty or near-empty columns
+                if non_null_cnt > 0 and any(x in col_lower for x in ["winner", "result", "target", "label", "class", "status", "price", "revenue", "churn", "sales"]):
                     rec_target = True
+
+                if non_null_cnt > best_non_null and 1 < unique_cnt < (len(df) * 0.9):
+                    best_target_cand = col
+                    best_non_null = non_null_cnt
 
                 columns.append({
                     "name": col,
                     "type": "numeric" if is_numeric else "categorical",
                     "unique_count": unique_cnt,
+                    "non_null_count": non_null_cnt,
                     "recommended_target": rec_target
                 })
+
+            # If no keyword matched, recommend the best candidate with valid rows
+            if not any(c["recommended_target"] for c in columns) and best_target_cand:
+                for c in columns:
+                    if c["name"] == best_target_cand:
+                        c["recommended_target"] = True
+                        break
 
             return {
                 "columns": columns,
@@ -127,6 +143,11 @@ class MLService:
 
             # Drop rows where target is missing
             df = df.dropna(subset=[target_col])
+            
+            if len(df) == 0:
+                return {"error": f"Selected target column '{target_col}' contains no valid data (all rows are empty/null). Please select a target column with data (e.g. 'winner' or 'result_margin')."}
+            if len(df) < 5:
+                return {"error": f"Selected target column '{target_col}' has only {len(df)} non-null rows, which is too small for machine learning training."}
             
             X = df[feature_cols]
             y = df[target_col]
