@@ -6,37 +6,41 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap');
 
 :root {
-  /* Official SaaS Dashboard Color Palette (Extracted directly from User Palette Image)
-     Colors: #fcfdfd (Brilliance), #edeff3 (Springtime Rain), #c6d1d7 (Wind Weaver),
-             #9fa0b5 (Wild Thistle), #2f7eda (Soothing Sapphire), #555663 (Blackwater) */
+  /* Exact SaaS Dashboard Color Palette (Extracted from User Palette Image)
+     #fcfdfd ("Brilliance") -> Main background / Light canvas
+     #edeff3 ("Springtime Rain") -> Card & Sidebar background
+     #c6d1d7 ("Wind Weaver") -> Subtle borders
+     #9fa0b5 ("Wild Thistle") -> Muted text & secondary icons
+     #2f7eda ("Soothing Sapphire") -> Primary accent blue & buttons
+     #555663 ("Blackwater") -> Primary dark text & headings */
   --background: #fcfdfd;
-  --foreground: #1e1e24;
+  --foreground: #555663;
   --border: #c6d1d7;
   --card: #ffffff;
   --primary: #2f7eda;
-  --primary-hover: #2566b3;
+  --primary-hover: #2369bd;
   --sidebar-bg: #edeff3;
-  --sidebar-active: rgba(47, 126, 218, 0.14);
+  --sidebar-active: rgba(47, 126, 218, 0.12);
   
-  /* SaaS Design Tokens */
-  --glass-bg: #ffffff;
+  /* SaaS Palette Design Tokens */
+  --glass-bg: rgba(255, 255, 255, 0.95);
   --glass-border: #c6d1d7;
-  --glass-border-glow: rgba(47, 126, 218, 0.35);
+  --glass-border-glow: rgba(47, 126, 218, 0.3);
   --indigo: #2f7eda;
   --violet: #2f7eda;
   --cyan: #9fa0b5;
-  --glow-indigo: 0 4px 20px rgba(47, 126, 218, 0.12);
-  --glow-indigo-strong: 0 10px 30px rgba(47, 126, 218, 0.22);
-  --grid-line: rgba(198, 209, 215, 0.35);
-  --panel-bg: #fcfdfd;
+  --glow-indigo: 0 8px 30px rgba(47, 126, 218, 0.08);
+  --glow-indigo-strong: 0 16px 45px rgba(47, 126, 218, 0.18);
+  --grid-line: rgba(198, 209, 215, 0.3);
+  --panel-bg: #edeff3;
   
   /* Text and input tokens for Light Theme */
-  --text-primary: #1e1e24;
+  --text-primary: #555663;
   --text-secondary: #555663;
   --text-muted: #9fa0b5;
   --input-bg: #ffffff;
   --input-border: #c6d1d7;
-  --glow-color: rgba(47, 126, 218, 0.25);
+  --glow-color: rgba(47, 126, 218, 0.2);
 }
 
 .dark {
