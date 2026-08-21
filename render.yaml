@@ -18,6 +18,8 @@ services:
         value: p.vishvam@2685
       - key: SECRET_KEY
         value: "nexora_production_secured_token_key_987654321"
+      - key: HF_TOKEN
+        value: ""
       - key: DATABASE_URL
         value: ""
       - key: QDRANT_URL
