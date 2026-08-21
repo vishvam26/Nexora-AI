@@ -571,7 +571,6 @@ export default function MLArea() {
                         <input
                           type={colOpt?.type === "numeric" ? "number" : "text"}
                           step="any"
-                          required
                           value={predictInputs[col] || ""}
                           onChange={(e) => setPredictInputs({ ...predictInputs, [col]: e.target.value })}
                           placeholder={colOpt?.type === "numeric" ? "Input number (e.g. 14.5)" : "Input text category"}
