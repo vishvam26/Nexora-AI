@@ -25,7 +25,7 @@ const NAV_ITEMS = [
   { view: "email",     icon: Mail,          label: "Email",          group: "studio" },
   { view: "calendar",  icon: Calendar,      label: "Calendar",       group: "studio" },
   { view: "ml",        icon: Brain,         label: "ML Studio",      group: "ai" },
-  { view: "eval",      icon: Activity,      label: "AI Eval",        group: "ai" },
+  { view: "eval",      icon: Activity,      label: "AI Eval (Admin)", group: "ai", badge: "ADMIN", adminOnly: true },
   { view: "report",    icon: FileText,      label: "Reports",        group: "ai" },
 ];
 
@@ -103,10 +103,14 @@ export default function ChatSidebar() {
   const toggleFolder = (folderId: number) =>
     setExpandedFolders(prev => ({ ...prev, [folderId]: !prev[folderId] }));
 
+  const isWorkspaceAdmin = !user || !activeWorkspace || user.id === activeWorkspace.owner_id || user.email?.toLowerCase().includes("admin");
+
+  const visibleNavItems = NAV_ITEMS.filter(item => !item.adminOnly || isWorkspaceAdmin);
+
   const groupedNav = {
-    main:   NAV_ITEMS.filter(n => n.group === "main"),
-    studio: NAV_ITEMS.filter(n => n.group === "studio"),
-    ai:     NAV_ITEMS.filter(n => n.group === "ai"),
+    main:   visibleNavItems.filter(n => n.group === "main"),
+    studio: visibleNavItems.filter(n => n.group === "studio"),
+    ai:     visibleNavItems.filter(n => n.group === "ai"),
   };
 
   if (!sidebarOpen) return null;
