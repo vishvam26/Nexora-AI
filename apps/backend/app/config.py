@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     ADMIN_PASSWORD: str = "admin123"
 
     # AI Service Configuration
-    AI_PROVIDER: str = "openai"
+    AI_PROVIDER: str = "mock"
     OPENAI_API_KEY: str = "CHANGE_THIS_LATER_IN_ENV"
     OPENAI_API_BASE: str = "https://api.openai.com/v1"
     OPENAI_MODEL: str = "gpt-3.5-turbo"
