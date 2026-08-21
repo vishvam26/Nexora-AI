@@ -22,6 +22,7 @@ export interface Folder {
 
 export interface Conversation {
   id: number;
+  uuid?: string;
   workspace_id: number;
   user_id: number;
   folder_id: number | null;
