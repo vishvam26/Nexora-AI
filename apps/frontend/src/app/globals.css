@@ -87,17 +87,13 @@ html:not(.dark) main,
 html:not(.dark) header,
 html:not(.dark) nav,
 html:not(.dark) footer,
-html:not(.dark) div[class*="bg-[#"],
-html:not(.dark) section[class*="bg-[#"],
-html:not(.dark) aside[class*="bg-[#"],
+html:not(.dark) [class*="bg-[#"],
+html:not(.dark) [class*="section-[#"],
 html:not(.dark) .bg-zinc-950,
-html:not(.dark) .bg-zinc-900/60,
-html:not(.dark) .bg-zinc-900/90,
-html:not(.dark) .bg-zinc-900/30,
-html:not(.dark) .bg-zinc-900/10,
 html:not(.dark) .bg-zinc-900,
-html:not(.dark) .bg-zinc-800/60,
+html:not(.dark) [class*="bg-zinc-900"],
 html:not(.dark) .bg-zinc-800,
+html:not(.dark) [class*="bg-zinc-800"],
 html:not(.dark) .bg-slate-900,
 html:not(.dark) .bg-slate-950,
 html:not(.dark) .bg-black {
@@ -107,11 +103,7 @@ html:not(.dark) .bg-black {
 }
 
 /* Universal Light Mode Cards and Glass Elements */
-html:not(.dark) .bg-card,
-html:not(.dark) .bg-zinc-900\/50,
-html:not(.dark) .bg-zinc-900\/40,
-html:not(.dark) .bg-zinc-900\/80,
-html:not(.dark) [class*="bg-zinc-900"] {
+html:not(.dark) .bg-card {
   background-color: var(--card) !important;
   color: var(--text-primary) !important;
   border-color: var(--border) !important;
@@ -165,11 +157,11 @@ html:not(.dark) textarea::placeholder {
 }
 
 /* Chat container and bubble overrides */
-html:not(.dark) .bg-zinc-900\/50 {
+html:not(.dark) [class*="bg-zinc-900"] {
   background-color: rgba(255, 255, 255, 0.8) !important;
   border-color: var(--border) !important;
 }
-html:not(.dark) .bg-indigo-600\/10 {
+html:not(.dark) [class*="bg-indigo-600"] {
   background-color: rgba(79, 70, 229, 0.08) !important;
 }
 
