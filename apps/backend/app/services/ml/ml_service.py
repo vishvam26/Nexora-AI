@@ -190,7 +190,7 @@ class MLService:
             ])
 
             # Train / Test split
-            X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_ratio_test=0.2, random_state=42)
+            X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.2, random_state=42)
 
             # Fit Model
             clf.fit(X_train, y_train)
@@ -630,7 +630,7 @@ class MLService:
         return session
 
 
-def _fallback_train_test_split(X, y, test_ratio_test=0.2, random_state=42):
+def _fallback_train_test_split(X, y, test_size=0.2, random_state=42):
     # Standard fallback split implementation if sklearn import somehow breaks
     from sklearn.model_selection import train_test_split as sk_split
-    return sk_split(X, y, test_size=test_ratio_test, random_state=random_state)
+    return sk_split(X, y, test_size=test_size, random_state=random_state)
