@@ -4,10 +4,12 @@ services:
     env: python
     rootDir: apps/backend
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.12
+      - key: PYTHONPATH
+        value: .
       - key: APP_MODE
         value: PERSONAL
       - key: ADMIN_EMAIL
