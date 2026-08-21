@@ -14,7 +14,7 @@ __pycache__/
 .ipynb_checkpoints/
 tsconfig.tsbuildinfo
 
-# Node / Next.js builds
+# Node & Next.js build cache
 node_modules/
 .next/
 out/
@@ -28,7 +28,7 @@ dist/
 .env.*
 *.env
 !.env.example
-!versions/**/.env.example
+!.env.production.example
 *.private.key
 *.pem
 *.key
@@ -57,6 +57,8 @@ apps/backend/qdrant_db/
 apps/backend/uploads/
 apps/backend/storage/
 apps/backend/nexora_ai.db
+storage/
+uploads/
 
 # ─────────────────────────────────────────────────
 # HuggingFace & ML Cache
@@ -65,14 +67,12 @@ apps/backend/nexora_ai.db
 *.cache/
 
 # ─────────────────────────────────────────────────
-# Scratch & one-off helper scripts
+# Scratch & temporary helper scripts
 # ─────────────────────────────────────────────────
 scratch/
 cleanup_agent.py
 temp_readme.md
 apps/backend/temp_readme.md
-apps/backend/migrate_v2.py
-apps/backend/update_readme.py
 
 # ─────────────────────────────────────────────────
 # Logs
@@ -82,7 +82,7 @@ apps/backend/backend.log
 logs/
 
 # ─────────────────────────────────────────────────
-# IDE & Editor files
+# IDE & System OS files
 # ─────────────────────────────────────────────────
 .vscode/
 .idea/
