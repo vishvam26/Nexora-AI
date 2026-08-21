@@ -25,11 +25,11 @@
 
 ## 1. Executive Summary & Project Vision
 
-### 1.1 Overview
+### 1.1 Overview & Vision Statement
 Nexora AI is an enterprise-grade, full-stack AI development platform designed to bridge the gap between model fine-tuning, retrieval-augmented generation (RAG), and collaborative workspace management. It unifies operations that typically require fragmented systems (such as Jupyter notebooks, Power BI, custom RAG vector-stores, and model training pipelines) into a single, cohesive developer-first application.
 
 ### 1.2 Core Mission
-To democratize enterprise AI by making advanced analytics, machine learning, and generative AI accessible through a single, easy-to-use platform that organizations can deploy locally or in cloud-native environments. 
+To democratize enterprise AI by making advanced analytics, machine learning, and generative AI accessible through a single, easy-to-use platform that organizations can deploy locally or in cloud-native environments.
 
 ### 1.3 Core Engineering Philosophy
 1. **Explainable AI:** Every response generated should have clear source attribution, showing where the data came from and what queries retrieval nodes executed.
@@ -39,7 +39,16 @@ To democratize enterprise AI by making advanced analytics, machine learning, and
 
 ---
 
-## 2. Global Architecture & Repository Layout
+## 2. Global Architecture & Mode Classification
+
+Nexora AI is designed as a unified codebase supporting two primary modes via `APP_MODE`:
+
+| `APP_MODE` | Core Features | Team Workspace Module |
+|---|---|---|
+| `PERSONAL` | ✅ | ❌ |
+| `TEAM` | ✅ | ✅ |
+
+### 2.1 Repository Layout
 
 The repository is structured to cleanly separate the runtime services from synthetic dataset generation facilities. Below is the comprehensive file tree.
 
