@@ -16,6 +16,7 @@ interface ColumnOption {
   type: "numeric" | "categorical";
   unique_count: number;
   recommended_target: boolean;
+  is_id?: boolean;
 }
 
 interface TrainResult {
