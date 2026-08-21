@@ -29,6 +29,8 @@ export default function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [loginMode, setLoginMode] = useState<"normal" | "admin">("normal");
 
   const handleModeSwitch = (mode: "normal" | "admin") => {
