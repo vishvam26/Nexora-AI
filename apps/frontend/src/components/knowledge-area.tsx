@@ -8,7 +8,7 @@ import {
   UploadCloud, FileText, Trash2, Plus, Database, 
   CheckCircle2, XCircle, Loader2, RefreshCw, File, 
   ArrowLeft, Search, SlidersHorizontal, Calendar, 
-  ChevronLeft, ChevronRight, HelpCircle
+  ChevronLeft, ChevronRight, HelpCircle, Pencil, Check, X
 } from "lucide-react";
 
 interface UploadQueueItem {
@@ -35,10 +35,12 @@ export default function KnowledgeArea() {
   const [activeTab, setActiveTab] = useState<"files" | "search">("files");
   const [panelOpen, setPanelOpen] = useState(true);
 
-  // KB creation forms
+  // KB creation & editing forms
   const [kbTitle, setKbTitle] = useState("");
   const [kbDesc, setKbDesc] = useState("");
   const [isCreatingKB, setIsCreatingKB] = useState(false);
+  const [editingKbId, setEditingKbId] = useState<number | null>(null);
+  const [editingKbTitle, setEditingKbTitle] = useState("");
 
   // File Upload Queue State
   const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
@@ -122,6 +124,31 @@ export default function KnowledgeArea() {
       }
     } catch (err) {
       console.error("Failed to create knowledge base:", err);
+    }
+  };
+
+  const handleStartEditKB = (kb: KnowledgeBase, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingKbId(kb.id);
+    setEditingKbTitle(kb.title);
+  };
+
+  const handleSaveEditKB = async (kb: KnowledgeBase, e?: React.FormEvent | React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (e && 'preventDefault' in e) e.preventDefault();
+    if (!activeWorkspace || !editingKbTitle.trim()) return;
+    try {
+      const updated = await apiService.updateKnowledgeBase(
+        activeWorkspace.id,
+        kb.id,
+        editingKbTitle.trim()
+      );
+      setEditingKbId(null);
+      if (activeKnowledgeBase?.id === kb.id && updated) {
+        setActiveKnowledgeBase({ ...activeKnowledgeBase, title: updated.title });
+      }
+    } catch (err) {
+      console.error("Failed to update knowledge base name:", err);
     }
   };
 
@@ -364,21 +391,63 @@ export default function KnowledgeArea() {
                       : "border-zinc-900 bg-zinc-950/20 hover:bg-zinc-900/20 text-zinc-450 hover:text-zinc-200"
                   }`}
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-lg shrink-0">{kb.icon || "📚"}</span>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold truncate leading-tight">{kb.title}</p>
-                      {kb.description && (
-                        <p className="text-[10px] text-zinc-550 truncate mt-0.5">{kb.description}</p>
-                      )}
+                  {editingKbId === kb.id ? (
+                    <div className="flex items-center gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
+                      <input 
+                        type="text"
+                        value={editingKbTitle}
+                        onChange={(e) => setEditingKbTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleSaveEditKB(kb, e);
+                          if (e.key === "Escape") setEditingKbId(null);
+                        }}
+                        autoFocus
+                        className="flex-1 rounded-lg border border-indigo-500/50 bg-zinc-950 px-2.5 py-1 text-xs text-white outline-none"
+                      />
+                      <button 
+                        onClick={(e) => handleSaveEditKB(kb, e)}
+                        className="p-1 rounded bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 transition shrink-0"
+                        title="Save name"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </button>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setEditingKbId(null); }}
+                        className="p-1 rounded bg-zinc-800 text-zinc-400 hover:bg-zinc-700 transition shrink-0"
+                        title="Cancel"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
                     </div>
-                  </div>
-                  <button 
-                    onClick={(e) => handleDeleteKB(kb.id, e)}
-                    className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/15 text-zinc-550 hover:text-red-400 transition"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <span className="text-lg shrink-0">{kb.icon || "📚"}</span>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold truncate leading-tight">{kb.title}</p>
+                          {kb.description && (
+                            <p className="text-[10px] text-zinc-550 truncate mt-0.5">{kb.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition shrink-0">
+                        <button 
+                          onClick={(e) => handleStartEditKB(kb, e)}
+                          className="p-1 rounded hover:bg-indigo-500/15 text-zinc-450 hover:text-indigo-300 transition"
+                          title="Rename Knowledge Base"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button 
+                          onClick={(e) => handleDeleteKB(kb.id, e)}
+                          className="p-1 rounded hover:bg-red-500/15 text-zinc-550 hover:text-red-400 transition"
+                          title="Delete Knowledge Base"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))
             )}
@@ -422,6 +491,13 @@ export default function KnowledgeArea() {
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">{activeKnowledgeBase.icon || "📚"}</span>
                   <h1 className="text-2xl font-bold text-white tracking-tight font-playfair">{activeKnowledgeBase.title}</h1>
+                  <button 
+                    onClick={(e) => handleStartEditKB(activeKnowledgeBase, e)}
+                    className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-indigo-400 transition ml-1"
+                    title="Rename Knowledge Base"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
                 </div>
                 {activeKnowledgeBase.description && (
                   <p className="text-zinc-500 text-xs mt-1.5 leading-relaxed">{activeKnowledgeBase.description}</p>

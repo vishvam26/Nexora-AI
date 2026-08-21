@@ -259,6 +259,15 @@ export const apiService = {
     return response.data;
   },
 
+  async updateKnowledgeBase(workspaceId: number, kbId: number, title: string, description?: string): Promise<KnowledgeBase> {
+    const response = await apiClient.patch<KnowledgeBase>(`/knowledge/bases/${kbId}`, {
+      title,
+      description,
+    });
+    await this.fetchKnowledgeBases(workspaceId);
+    return response.data;
+  },
+
   async deleteKnowledgeBase(workspaceId: number, kbId: number): Promise<void> {
     await apiClient.delete(`/knowledge/bases/${kbId}`);
     await this.fetchKnowledgeBases(workspaceId);
