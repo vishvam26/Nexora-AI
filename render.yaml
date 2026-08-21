@@ -3,7 +3,7 @@ services:
     name: nexora-api
     env: python
     rootDir: apps/backend
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt || pip install -r apps/backend/requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
