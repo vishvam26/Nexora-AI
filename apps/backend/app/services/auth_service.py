@@ -32,8 +32,8 @@ class AuthService:
 
     @staticmethod
     def login(db: Session, email: str, password: str):
-        admin_email = getattr(settings, "ADMIN_EMAIL", "p.vishu2685@gmail.com").strip().lower()
-        admin_pass = getattr(settings, "ADMIN_PASSWORD", "p.vishvam@2685")
+        admin_email = getattr(settings, "ADMIN_EMAIL", "admin@nexora.ai").strip().lower()
+        admin_pass = getattr(settings, "ADMIN_PASSWORD", "admin123")
         input_email = email.strip().lower()
 
         # Handle Master Admin login auto-creation / verification

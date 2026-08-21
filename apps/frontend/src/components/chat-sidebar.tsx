@@ -103,7 +103,7 @@ export default function ChatSidebar() {
   const toggleFolder = (folderId: number) =>
     setExpandedFolders(prev => ({ ...prev, [folderId]: !prev[folderId] }));
 
-  const isMasterAdmin = user?.email?.toLowerCase() === "p.vishu2685@gmail.com";
+  const isMasterAdmin = user?.company_role === "OWNER" || user?.company_role === "ADMIN" || user?.email?.toLowerCase() === (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "p.vishu2685@gmail.com").toLowerCase();
 
   const visibleNavItems = NAV_ITEMS.filter(item => !item.adminOnly || isMasterAdmin);
 

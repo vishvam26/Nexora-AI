@@ -27,9 +27,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
-    # Master Admin Credentials (Loaded from .env securely)
-    ADMIN_EMAIL: str = "p.vishu2685@gmail.com"
-    ADMIN_PASSWORD: str = "p.vishvam@2685"
+    # Master Admin Credentials (Loaded from .env or Environment Variables securely)
+    ADMIN_EMAIL: str = "admin@nexora.ai"
+    ADMIN_PASSWORD: str = "admin123"
 
     # AI Service Configuration
     AI_PROVIDER: str = "openai"
