@@ -29,8 +29,15 @@ export default function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loginMode, setLoginMode] = useState<"normal" | "admin">("normal");
+
+  const handleModeSwitch = (mode: "normal" | "admin") => {
+    setLoginMode(mode);
+    setError(null);
+    if (mode === "admin") {
+      setIsRegister(false);
+    }
+  };
 
   useEffect(() => {
     const localToken = localStorage.getItem("nexora_token");
@@ -280,13 +287,43 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="px-8 py-10 pt-12 md:px-10">
+          <div className="px-8 py-10 pt-10 md:px-10">
+            {/* 2-Part Mode Switcher Tabs */}
+            <div className="flex bg-zinc-950 border border-zinc-850 p-1 rounded-xl mb-6 shadow-inner">
+              <button
+                type="button"
+                onClick={() => handleModeSwitch("normal")}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
+                  loginMode === "normal"
+                    ? "bg-indigo-600 text-white shadow-md font-bold"
+                    : "text-zinc-400 hover:text-white hover:bg-zinc-900/50"
+                }`}
+              >
+                <User className="h-3.5 w-3.5" />
+                <span>User Login</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleModeSwitch("admin")}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
+                  loginMode === "admin"
+                    ? "bg-gradient-to-r from-amber-500 to-indigo-600 text-white shadow-md font-bold"
+                    : "text-zinc-400 hover:text-amber-400 hover:bg-zinc-900/50"
+                }`}
+              >
+                <ShieldAlert className="h-3.5 w-3.5 text-amber-400" />
+                <span>Master Admin</span>
+              </button>
+            </div>
+
             <div className="mb-6">
               <h2 className="text-xl font-bold tracking-tight text-white font-playfair md:text-2xl" style={{ fontFamily: "'Playfair Display', serif" }}>
-                {isRegister ? "Sign Up" : "Sign In"}
+                {loginMode === "admin" ? "Master Admin Portal" : isRegister ? "Sign Up" : "Sign In"}
               </h2>
               <p className="mt-1.5 text-xs text-zinc-500">
-                {isRegister ? "Create a new Nexora AI account to get started." : "Welcome back! Please enter your details."}
+                {loginMode === "admin" 
+                  ? "Restricted Access · Enter Master Admin Credentials."
+                  : isRegister ? "Create a new Nexora AI account to get started." : "Welcome back! Please enter your details."}
               </p>
             </div>
 

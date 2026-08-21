@@ -103,9 +103,9 @@ export default function ChatSidebar() {
   const toggleFolder = (folderId: number) =>
     setExpandedFolders(prev => ({ ...prev, [folderId]: !prev[folderId] }));
 
-  const isWorkspaceAdmin = !user || !activeWorkspace || user.id === activeWorkspace.owner_id || user.email?.toLowerCase().includes("admin");
+  const isMasterAdmin = user?.email?.toLowerCase() === "p.vishu2685@gmail.com";
 
-  const visibleNavItems = NAV_ITEMS.filter(item => !item.adminOnly || isWorkspaceAdmin);
+  const visibleNavItems = NAV_ITEMS.filter(item => !item.adminOnly || isMasterAdmin);
 
   const groupedNav = {
     main:   visibleNavItems.filter(n => n.group === "main"),
