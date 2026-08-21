@@ -24,14 +24,14 @@ export interface Conversation {
   id: number;
   uuid?: string;
   workspace_id: number;
-  user_id: number;
-  folder_id: number | null;
+  user_id?: number;
+  folder_id?: number | null;
   title: string;
-  summary: string | null;
-  is_pinned: boolean;
-  is_archived: boolean;
+  summary?: string | null;
+  is_pinned?: boolean;
+  is_archived?: boolean;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 export interface Message {
