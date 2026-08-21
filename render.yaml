@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: nexora-api
+    env: python
+    rootDir: apps/backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: APP_MODE
+        value: PERSONAL
+      - key: ADMIN_EMAIL
+        value: p.vishu2685@gmail.com
+      - key: ADMIN_PASSWORD
+        value: p.vishvam@2685
