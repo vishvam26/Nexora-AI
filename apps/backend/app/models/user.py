@@ -8,7 +8,6 @@ from app.db.database import Base
 if TYPE_CHECKING:
     from app.models.conversation import Conversation
     from app.models.workspace import Workspace
-    from app.models.company import Company
 
 
 class User(Base):
@@ -26,12 +25,6 @@ class User(Base):
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
-    company_id: Mapped[Optional[int]] = mapped_column(
-        Integer, ForeignKey("companies.id", ondelete="SET NULL"), nullable=True
-    )
-    company_role: Mapped[Optional[str]] = mapped_column(
-        String(20), nullable=True, default="EMPLOYEE"
-    )
     manager_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
@@ -43,7 +36,6 @@ class User(Base):
     )
 
     # Relationships
-    company: Mapped[Optional["Company"]] = relationship("Company", back_populates="users")
     manager: Mapped[Optional["User"]] = relationship("User", remote_side=[id])
 
     conversations: Mapped[List["Conversation"]] = relationship(
