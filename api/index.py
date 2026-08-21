@@ -1,12 +1,15 @@
-import os
-import sys
+from http.server import BaseHTTPRequestHandler
+import json
 
-# Ensure backend directory is in Python path for Vercel Serverless Runtime
-backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "apps", "backend"))
-if backend_path not in sys.path:
-    sys.path.insert(0, backend_path)
-
-from main import app
-
-# Vercel Serverless handler
-handler = app
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        response_data = {
+            "status": "online",
+            "message": "Nexora AI Edge Node Ready",
+            "frontend_root": "apps/frontend"
+        }
+        self.wfile.write(json.dumps(response_data).encode('utf-8'))
+        return
