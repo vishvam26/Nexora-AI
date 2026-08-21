@@ -423,18 +423,18 @@ function NavIcon({ item, activeView, setActiveView, hovered, setHovered }: any) 
   // Custom premium glassmorphic styling for active state
   const activeStyle = isActive 
     ? {
-        background: "linear-gradient(135deg, #018ABE 0%, #02457A 100%)",
-        borderColor: "#97CADB",
-        boxShadow: "0 0 15px rgba(1, 138, 190, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.2)"
+        background: "linear-gradient(135deg, #2f7eda 0%, #1e5bb8 100%)",
+        borderColor: "#9fa0b5",
+        boxShadow: "0 0 15px rgba(47, 126, 218, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.2)"
       }
     : {};
 
   return (
     <div className="relative group/nav" onMouseEnter={() => setHovered(item.view)} onMouseLeave={() => setHovered(null)}>
       {/* Glowing vertical line indicator */}
-      <div className={`absolute left-[-12px] top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-r bg-[#018ABE] transition-all duration-300 ${
+      <div className={`absolute left-[-12px] top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-r bg-[#2f7eda] transition-all duration-300 ${
         isActive ? "opacity-100 scale-y-100" : "opacity-0 scale-y-50 group-hover/nav:opacity-40 group-hover/nav:scale-y-75"
-      }`} style={{ boxShadow: "0 0 10px rgba(1, 138, 190, 0.8)" }} />
+      }`} style={{ boxShadow: "0 0 10px rgba(47, 126, 218, 0.8)" }} />
 
       <button
         onClick={() => setActiveView(item.view)}

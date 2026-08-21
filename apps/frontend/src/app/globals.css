@@ -6,36 +6,37 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap');
 
 :root {
-  /* Official 5-Color Royal Cyber Blue Palette (Extracted directly from User Palette Image)
-     Colors: #001B48, #02457A, #018ABE, #97CADB, #D6E8EE */
-  --background: #D6E8EE;
-  --foreground: #001B48;
-  --border: rgba(2, 69, 122, 0.18);
-  --card: rgba(255, 255, 255, 0.9);
-  --primary: #018ABE;
-  --primary-hover: #02457A;
-  --sidebar-bg: rgba(194, 222, 232, 0.92);
-  --sidebar-active: rgba(1, 138, 190, 0.18);
+  /* Official SaaS Dashboard Color Palette (Extracted directly from User Palette Image)
+     Colors: #fcfdfd (Brilliance), #edeff3 (Springtime Rain), #c6d1d7 (Wind Weaver),
+             #9fa0b5 (Wild Thistle), #2f7eda (Soothing Sapphire), #555663 (Blackwater) */
+  --background: #fcfdfd;
+  --foreground: #1e1e24;
+  --border: #c6d1d7;
+  --card: #ffffff;
+  --primary: #2f7eda;
+  --primary-hover: #2566b3;
+  --sidebar-bg: #edeff3;
+  --sidebar-active: rgba(47, 126, 218, 0.14);
   
-  /* Royal Cyber Blue Tokens */
-  --glass-bg: rgba(255, 255, 255, 0.9);
-  --glass-border: rgba(2, 69, 122, 0.18);
-  --glass-border-glow: rgba(1, 138, 190, 0.35);
-  --indigo: #018ABE;
-  --violet: #02457A;
-  --cyan: #97CADB;
-  --glow-indigo: 0 8px 30px rgba(0, 27, 72, 0.08);
-  --glow-indigo-strong: 0 16px 45px rgba(1, 138, 190, 0.2);
-  --grid-line: rgba(2, 69, 122, 0.08);
-  --panel-bg: rgba(255, 255, 255, 0.9);
+  /* SaaS Design Tokens */
+  --glass-bg: #ffffff;
+  --glass-border: #c6d1d7;
+  --glass-border-glow: rgba(47, 126, 218, 0.35);
+  --indigo: #2f7eda;
+  --violet: #2f7eda;
+  --cyan: #9fa0b5;
+  --glow-indigo: 0 4px 20px rgba(47, 126, 218, 0.12);
+  --glow-indigo-strong: 0 10px 30px rgba(47, 126, 218, 0.22);
+  --grid-line: rgba(198, 209, 215, 0.35);
+  --panel-bg: #fcfdfd;
   
   /* Text and input tokens for Light Theme */
-  --text-primary: #001B48;
-  --text-secondary: #02457A;
-  --text-muted: #3a688a;
+  --text-primary: #1e1e24;
+  --text-secondary: #555663;
+  --text-muted: #9fa0b5;
   --input-bg: #ffffff;
-  --input-border: rgba(2, 69, 122, 0.22);
-  --glow-color: rgba(1, 138, 190, 0.25);
+  --input-border: #c6d1d7;
+  --glow-color: rgba(47, 126, 218, 0.25);
 }
 
 .dark {
