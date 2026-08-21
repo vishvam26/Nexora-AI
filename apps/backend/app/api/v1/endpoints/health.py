@@ -7,7 +7,13 @@ Exposes standard API hooks:
   - GET /live    - Liveness check
 """
 import os
-import torch
+try:
+    import torch
+    _torch_available = True
+except ImportError:
+    torch = None
+    _torch_available = False
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -59,7 +65,7 @@ def get_system_health(db: Session = Depends(get_db)):
         health_status["status"] = "degraded"
 
     # 3. GPU/CUDA status check
-    if torch.cuda.is_available():
+    if _torch_available and torch and torch.cuda.is_available():
         health_status["gpu"] = "available"
         health_status["cuda"] = "true"
         health_status["model_loaded"] = True
