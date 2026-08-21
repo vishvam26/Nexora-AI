@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     # ENTERPRISE → Full company hierarchy (CEO, admin, audit logs)
     # ─────────────────────────────────────────────
     APP_MODE: str = "PERSONAL"  # "PERSONAL" | "TEAM" | "ENTERPRISE"
-    DATABASE_URL: str = "postgresql://nexora:nexora123@localhost:5432/nexora_ai"
+    DATABASE_URL: str = "sqlite:///./nexora_ai.db"
     SECRET_KEY: str = "CHANGE_THIS_LATER_IN_ENV"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60

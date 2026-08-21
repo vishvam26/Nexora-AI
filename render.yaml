@@ -16,6 +16,8 @@ services:
         value: p.vishu2685@gmail.com
       - key: ADMIN_PASSWORD
         value: p.vishvam@2685
+      - key: DATABASE_URL
+        value: ""
       - key: QDRANT_URL
         value: "YOUR_QDRANT_CLUSTER_URL"
       - key: QDRANT_API_KEY
