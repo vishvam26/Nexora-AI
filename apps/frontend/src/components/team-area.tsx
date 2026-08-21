@@ -9,6 +9,16 @@ import {
   Search, ArrowRight, RefreshCw, BarChart2, Mail, Layers
 } from "lucide-react";
 
+interface TaskItem {
+  id: number;
+  workspace_id: number;
+  title: string;
+  description?: string;
+  status: string;
+  priority: string;
+  created_at: string;
+}
+
 export default function TeamArea() {
   const { activeWorkspace } = useChatStore();
   const [activeTab, setActiveTab] = useState<"tasks" | "members" | "activity">("tasks");
