@@ -45,24 +45,18 @@ class HybridSearchService:
             kb_filter = None
 
         # Resolve manager/owner status for tenancy routing
-        company_id = 1
         is_manager = False
         if user_id:
             user = db.query(User).filter(User.id == user_id).first()
             if user:
-                if user.company_id:
-                    company_id = user.company_id
-                if user.company_role in ["OWNER", "ADMIN"]:
+                from app.models.workspace_member import WorkspaceMember
+                member = db.query(WorkspaceMember).filter(
+                    WorkspaceMember.workspace_id == workspace_id,
+                    WorkspaceMember.user_id == user_id,
+                    WorkspaceMember.is_active == True
+                ).first()
+                if member and member.workspace_role == "MANAGER":
                     is_manager = True
-                else:
-                    from app.models.workspace_member import WorkspaceMember
-                    member = db.query(WorkspaceMember).filter(
-                        WorkspaceMember.workspace_id == workspace_id,
-                        WorkspaceMember.user_id == user_id,
-                        WorkspaceMember.is_active == True
-                    ).first()
-                    if member and member.workspace_role == "MANAGER":
-                        is_manager = True
 
         # 1. Lexical Keyword Search
         keyword_results = KeywordService.search(
@@ -90,7 +84,6 @@ class HybridSearchService:
         query_embedding = _embedder.generate_query_embedding(query)
         filters = {
             "workspace_id": workspace_id,
-            "company_id": company_id,
             "user_id": user_id,
             "is_manager": is_manager,
         }

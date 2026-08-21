@@ -18,6 +18,7 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  config.headers["ngrok-skip-browser-warning"] = "69420";
   return config;
 });
 
@@ -287,6 +288,7 @@ export const apiService = {
     const response = await apiClient.post<KnowledgeDocument>("/knowledge/upload", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
+        "ngrok-skip-browser-warning": "69420",
       },
       onUploadProgress: (progressEvent) => {
         const total = progressEvent.total || file.size;

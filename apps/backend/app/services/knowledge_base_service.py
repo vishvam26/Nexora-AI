@@ -85,16 +85,15 @@ class KnowledgeBaseService:
         if not kb:
             raise HTTPException(status_code=404, detail="Knowledge base not found.")
 
-        # Resolve tenancy context
+        # Resolve workspace context
         user = db.query(User).filter(User.id == user_id).first()
-        company_id = user.company_id if (user and user.company_id) else 1
         workspace_id = kb.workspace_id
 
         # Partitioned path logic
         if visibility == "PRIVATE":
-            subfolder = f"company_{company_id}/workspace_{workspace_id}/user_{user_id}"
+            subfolder = f"workspace_{workspace_id}/user_{user_id}"
         else:
-            subfolder = f"company_{company_id}/workspace_{workspace_id}/shared"
+            subfolder = f"workspace_{workspace_id}/shared"
 
         # Save file to storage
         safe_filename = f"{uuid.uuid4().hex}_{filename}"
@@ -150,7 +149,6 @@ class KnowledgeBaseService:
                     chunk_id=chunk.id,
                     embedding=emb,
                     metadata={
-                        "company_id": company_id,
                         "workspace_id": kb.workspace_id,
                         "knowledge_base_id": kb_id,
                         "document_id": doc.id,

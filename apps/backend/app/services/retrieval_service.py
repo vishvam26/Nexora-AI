@@ -44,26 +44,20 @@ class RetrievalService:
         """
         start_time = time.perf_counter()
 
-        # Resolve company_id and manager status
-        company_id = 1
+        # Resolve manager status
         is_manager = False
         if user_id:
             from app.models.user import User
+            from app.models.workspace_member import WorkspaceMember
             user = db.query(User).filter(User.id == user_id).first()
             if user:
-                if user.company_id:
-                    company_id = user.company_id
-                if user.company_role in ["OWNER", "ADMIN"]:
+                member = db.query(WorkspaceMember).filter(
+                    WorkspaceMember.workspace_id == workspace_id,
+                    WorkspaceMember.user_id == user_id,
+                    WorkspaceMember.is_active == True
+                ).first()
+                if member and member.workspace_role == "MANAGER":
                     is_manager = True
-                else:
-                    from app.models.workspace_member import WorkspaceMember
-                    member = db.query(WorkspaceMember).filter(
-                        WorkspaceMember.workspace_id == workspace_id,
-                        WorkspaceMember.user_id == user_id,
-                        WorkspaceMember.is_active == True
-                    ).first()
-                    if member and member.workspace_role == "MANAGER":
-                        is_manager = True
 
         # 1. Embed query
         query_embedding = _embedder.generate_query_embedding(query)
@@ -71,7 +65,6 @@ class RetrievalService:
         # 2. Build metadata filters
         filters: Dict[str, Any] = {
             "workspace_id": workspace_id,
-            "company_id": company_id,
             "user_id": user_id,
             "is_manager": is_manager,
         }

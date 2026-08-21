@@ -91,18 +91,6 @@ class PermissionService:
                 detail="User or Workspace not found"
             )
             
-        # 1. Company Tenant Isolation Check (Enterprise Mode Only)
-        if settings.APP_MODE == "ENTERPRISE":
-            if user.company_id != workspace.company_id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Access denied: tenant isolation mismatch"
-                )
-            
-        # 2. CEO/Owner/Admin Check
-        if user.company_role in ["OWNER", "ADMIN"]:
-            return
-            
         # 3. Workspace Membership Check
         member = db.query(WorkspaceMember).filter(
             WorkspaceMember.workspace_id == workspace_id,
