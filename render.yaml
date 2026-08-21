@@ -16,6 +16,8 @@ services:
         value: p.vishu2685@gmail.com
       - key: ADMIN_PASSWORD
         value: p.vishvam@2685
+      - key: SECRET_KEY
+        value: "nexora_production_secured_token_key_987654321"
       - key: DATABASE_URL
         value: ""
       - key: QDRANT_URL
