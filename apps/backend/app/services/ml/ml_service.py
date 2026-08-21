@@ -379,21 +379,29 @@ class MLService:
             feature_cols = model_payload["feature_columns"]
             _classes = model_payload["classes"]  # available for future label mapping
 
+            numeric_cols = set(model_payload.get("numeric_features", []))
+
             # Map inputs into Pandas DataFrame row
             row_data = {}
             for col in feature_cols:
                 val = inputs.get(col)
-                # Try parsing numeric types
-                if val is not None:
-                    try:
-                        if "." in str(val):
-                            row_data[col] = [float(val)]
-                        else:
-                            row_data[col] = [int(val)]
-                    except ValueError:
-                        row_data[col] = [val]
+                if val is None or str(val).strip() == "":
+                    row_data[col] = [np.nan if col in numeric_cols else None]
                 else:
-                    row_data[col] = [None]
+                    s_val = str(val).strip()
+                    if col in numeric_cols:
+                        try:
+                            row_data[col] = [float(s_val)]
+                        except ValueError:
+                            row_data[col] = [np.nan]
+                    else:
+                        try:
+                            if s_val.replace('.', '', 1).replace('-', '', 1).isdigit():
+                                row_data[col] = [float(s_val) if '.' in s_val else int(s_val)]
+                            else:
+                                row_data[col] = [s_val]
+                        except ValueError:
+                            row_data[col] = [s_val]
 
             input_df = pd.DataFrame.from_dict(row_data)
 
