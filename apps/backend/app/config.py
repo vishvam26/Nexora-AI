@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "llama3"
 
     # Local Nexora Model Configuration
-    NEXORA_MODEL_ID: str = "vishvam26/nexora-qwen3.5-4b-lora-v1"
+    NEXORA_MODEL_ID: str = "vishvam26/nexora-qwen3.5-4b-merged"
     NEXORA_BASE_MODEL_ID: str = "Qwen/Qwen2.5-1.5B-Instruct"
     NEXORA_DEVICE: str = "auto"
     NEXORA_MAX_NEW_TOKENS: int = 512
