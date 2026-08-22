@@ -70,7 +70,14 @@ class PromptBuilder:
             "3. Speak with high respect, warmth, and accuracy about Vishvam Prajapati."
         )
 
-        prompts = [base_system_prompt, creator_directive]
+        domain_guardrail = (
+            "\n\n[STRICT PROFESSIONAL & EDUCATIONAL BOUNDARY GUARDRAIL]\n"
+            "Nexora AI is strictly designed and optimized for Study, Education, Data Science, Software Engineering, Business Analytics, Research, and Professional Tasks.\n"
+            "If the user asks casual, non-educational, entertainment, movie, celebrity, gossip, or off-topic questions (e.g. movies, song lyrics, entertainment gossip):\n"
+            "Politely decline and state: 'I am Nexora AI, specialized strictly for Study, Business, Data Science, Coding, and Technical tasks. Please ask an educational, professional, or business-related question!'"
+        )
+
+        prompts = [base_system_prompt, creator_directive, domain_guardrail]
 
         if has_context:
             prompts.append(

@@ -105,8 +105,11 @@ trainer.train()
 - **Data Preprocessing**: Handling missing values, automatic ID exclusion, and scaling.
 - **Model Training**: AutoML Random Forest Classifier for instant predictions.
 - **Evaluation**: Accuracy, Precision, Recall, and F1-Score metrics."""
-        else:
-            return f"### 🤖 Nexora AI Knowledge Hub\n\nRegarding: **'{prompt[:150]}'**\n\n**Response Summary:**\nRetrieval-Augmented Generation (RAG) and ML vector pipelines have verified the input prompt against active knowledge collections."
+        off_topic_words = ["movie", "actor", "hero", "heroine", "song", "film", "game", "gossip", "celebrity"]
+        if any(w in p for w in off_topic_words):
+            return "I am Nexora AI, specialized strictly for Study, Business, Data Science, Coding, and Technical tasks. Please ask an educational, professional, or business-related question!"
+
+        return f"### 🤖 Nexora AI Knowledge Hub\n\nRegarding: **'{prompt[:150]}'**\n\n**Response Summary:**\nRetrieval-Augmented Generation (RAG) and ML vector pipelines have verified the input prompt against active knowledge collections."
 
     @staticmethod
     def generate_response(messages: List[dict], provider_override: str = None) -> str:
