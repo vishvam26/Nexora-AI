@@ -55,7 +55,7 @@ class SQLTool:
         name="db_query_executor",
         description="Executes a raw read-only SQL query against the database and returns rows."
     )
-    def execute_query(db: Session, sql_query: str) -> Dict[str, Any]:
+    def execute_query(db: Session, sql_query: str, is_admin: bool = False) -> Dict[str, Any]:
         """
         Runs read-only SELECT queries with keyword filtering safeguards.
         """
@@ -80,13 +80,19 @@ class SQLTool:
                     "error": f"Security Block: Forbidden write operation keywords found in query: {word}"
                 }
 
-        # 3. Block sensitive credential queries
+        # 3. Block sensitive credential & admin tables for normal users
         forbidden_sensitive = [r"\bcompany_secrets\b", r"\bsecrets\b"]
+        if not is_admin:
+            forbidden_sensitive.extend([
+                r"\busers\b", r"\bcompanies\b", r"\bcompany_settings\b", 
+                r"\bdataset_projects\b", r"\bevaluations\b", r"\bprompts\b"
+            ])
+
         for word in forbidden_sensitive:
             if re.search(word, clean_query, re.IGNORECASE):
                 return {
                     "success": False,
-                    "error": "Security Access Denied: Accessing system credentials or sensitive secret tables is restricted."
+                    "error": "Security Access Denied: Accessing system metadata or admin tables is restricted to Master Admin."
                 }
 
         try:

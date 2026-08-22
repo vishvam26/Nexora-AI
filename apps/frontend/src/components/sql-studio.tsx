@@ -25,7 +25,7 @@ interface QueryResult {
 }
 
 export default function SQLStudio() {
-  const { token } = useChatStore();
+  const { token, user } = useChatStore();
   const [panelOpen, setPanelOpen] = useState(true);
 
   // Schema state
@@ -43,6 +43,8 @@ export default function SQLStudio() {
   const [naturalLanguage, setNaturalLanguage] = useState("");
   const [generatingQuery, setGeneratingQuery] = useState(false);
 
+  const isMasterAdmin = user?.company_role === "OWNER" || user?.company_role === "ADMIN" || user?.email?.toLowerCase() === (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "p.vishu2685@gmail.com").toLowerCase();
+
   const headers = useCallback(() => ({
     "Content-Type": "application/json",
     "ngrok-skip-browser-warning": "69420",
@@ -57,12 +59,18 @@ export default function SQLStudio() {
         const data = await res.json();
         const rawSchema = data.schema || {};
         
-        // Filter out internal system tables (users, companies, secrets) for clean user experience
-        const cleanSchema: Record<string, TableColumn[]> = {};
-        const hiddenInternalTables = ["users", "companies", "company_secrets", "company_settings"];
+        // System / Admin-only tables hidden from normal users
+        const systemAdminTables = [
+          "users", "companies", "company_secrets", "company_settings", 
+          "dataset_projects", "dataset_versions", "dataset_review_items", 
+          "document_comments", "conversation_versions", "conversation_comments",
+          "model_evaluations", "evaluations", "prompts", "activity_logs"
+        ];
         
+        const cleanSchema: Record<string, TableColumn[]> = {};
         for (const [tableName, columns] of Object.entries(rawSchema)) {
-          if (!hiddenInternalTables.includes(tableName.toLowerCase())) {
+          // Master Admin sees ALL tables; Normal users see only user-facing tables
+          if (isMasterAdmin || !systemAdminTables.includes(tableName.toLowerCase())) {
             cleanSchema[tableName] = columns as TableColumn[];
           }
         }
@@ -75,7 +83,7 @@ export default function SQLStudio() {
       }
     } catch { /* ignore */ }
     setLoadingSchema(false);
-  }, [headers]);
+  }, [headers, isMasterAdmin]);
 
   useEffect(() => {
     fetchSchema();

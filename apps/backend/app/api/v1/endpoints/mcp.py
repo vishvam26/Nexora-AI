@@ -61,9 +61,16 @@ def execute_sql_query(
     Executes SELECT queries against current user's isolated tenant database only.
     """
     from app.db.tenant_session import get_tenant_session
+    from app.config import settings
+    
+    is_admin = (
+        current_user.email.strip().lower() == getattr(settings, "ADMIN_EMAIL", "").strip().lower() or
+        getattr(current_user, "company_role", "") in ["OWNER", "ADMIN"]
+    )
+
     tenant_db = get_tenant_session(current_user.id)
     try:
-        res = SQLTool.execute_query(tenant_db, payload.query)
+        res = SQLTool.execute_query(tenant_db, payload.query, is_admin=is_admin)
         if not res.get("success"):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
