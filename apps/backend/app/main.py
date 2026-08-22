@@ -66,13 +66,6 @@ app.add_middleware(
 
 
 
-print("====================================")
-print(Base.metadata.tables)
-print("====================================")
-
-Base.metadata.create_all(bind=engine)
-
-
 app.include_router(api_router)
 
 

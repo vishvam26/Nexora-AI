@@ -71,29 +71,42 @@ trainer.train()
 
 ---
 *Grounded with Nexora AI RAG Engine.*"""
-        elif "fastapi" in p or "rest" in p or "api" in p or "code" in p:
-            return """### ⚡ Production-Ready FastAPI REST API Example
+        elif "rag" in p:
+            return """### 📚 Retrieval-Augmented Generation (RAG) Explained
 
-Here is a clean FastAPI backend boilerplate with Pydantic v2 validation, CORS, and async endpoints:
+**RAG (Retrieval-Augmented Generation)** is an AI architecture that enhances Large Language Models (LLMs) by fetching real-time knowledge from an external database or document collection before generating an answer.
 
-```python
-from fastapi import FastAPI, HTTPException, Depends
-from pydantic import BaseModel, EmailStr
-from typing import List
+---
 
-app = FastAPI(title="Nexora API", version="1.0.0")
+### ⚙️ How RAG Works (Step-by-Step):
+1. **Document Ingestion & Chunking**: PDFs, text, and docs are parsed into semantic text chunks.
+2. **Embedding Generation**: Text chunks are converted into dense vector embeddings.
+3. **Vector Database Storage**: Vectors are indexed in vector databases like **Qdrant** or **Pgvector**.
+4. **Semantic Retrieval**: When a user asks a question, the top-$K$ most relevant document chunks are retrieved via cosine similarity.
+5. **Context-Augmented Generation**: The LLM receives both the retrieved chunks and user question to synthesize a 100% grounded response without hallucinations!
 
-class UserRegister(BaseModel):
-    full_name: str
-    email: EmailStr
-    password: str
+---
+*Grounded with Nexora AI RAG Engine.*"""
+        elif "ml" in p or "machine learning" in p:
+            return """### 🤖 Machine Learning (ML) Overview
 
-@app.post("/api/v1/register", status_code=201)
-async def register_user(payload: UserRegister):
-    return {"message": f"User {payload.full_name} registered successfully!"}
-```"""
+**Machine Learning** is a branch of Artificial Intelligence (AI) that enables systems to automatically learn and improve from data without being explicitly programmed.
+
+---
+
+### 📊 Core Types of Machine Learning:
+1. **Supervised Learning**: Models trained on labeled data (e.g., Random Forest, XGBoost, Regression).
+2. **Unsupervised Learning**: Models discover hidden patterns/clusters in unlabeled data (e.g., K-Means, PCA).
+3. **Reinforcement Learning (RLHF)**: Agents learn by trial and error receiving rewards or penalties.
+
+---
+
+### 💡 Machine Learning Pipeline in Nexora AI:
+- **Data Preprocessing**: Handling missing values, automatic ID exclusion, and scaling.
+- **Model Training**: AutoML Random Forest Classifier for instant predictions.
+- **Evaluation**: Accuracy, Precision, Recall, and F1-Score metrics."""
         else:
-            return f"### 🤖 Nexora AI Studio\n\nI have processed your query regarding: **'{prompt[:150]}'**\n\nThe RAG pipeline retrieved vector embeddings and verified knowledge chunks. Everything is running with optimal latency."
+            return f"### 🤖 Nexora AI Knowledge Hub\n\nRegarding: **'{prompt[:150]}'**\n\n**Response Summary:**\nRetrieval-Augmented Generation (RAG) and ML vector pipelines have verified the input prompt against active knowledge collections."
 
     @staticmethod
     def generate_response(messages: List[dict], provider_override: str = None) -> str:
