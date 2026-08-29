@@ -19,6 +19,7 @@ import EvalDashboard from "../../components/eval-dashboard";
 import NexoraLoader from "../../components/nexora-loader";
 import AdminArea from "../../components/admin-area";
 import TeamArea from "../../components/team-area";
+import ComingSoon from "../../components/coming-soon";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -196,7 +197,7 @@ export default function ChatPage() {
         <ChatSidebar />
       </div>
 
-      {/* Main panel */}
+      {/* Main panel — Personal only: Team/Admin/Eval = Coming Soon (DB kept, UI hidden for college simple) */}
       <div className="relative z-10 flex flex-1 flex-col min-w-0 overflow-hidden">
         {activeView === "chat" ? <ChatArea /> :
           activeView === "knowledge" ? <KnowledgeArea /> :
@@ -207,9 +208,9 @@ export default function ChatPage() {
           activeView === "python" ? <PythonStudio /> :
           activeView === "email" ? <EmailStudio /> :
           activeView === "calendar" ? <CalendarStudio /> :
-          activeView === "team" ? <TeamArea /> :
-          activeView === "eval" ? <EvalDashboard /> :
-          activeView === "admin" ? <AdminArea /> :
+          activeView === "team" ? <ComingSoon title="Team Hub — Coming Soon" desc="Team collaboration (V2) is reserved for future release. Personal mode only in this college project. DB tables (workspace_members, tasks) are ready but hidden." /> :
+          activeView === "eval" ? <ComingSoon title="AI Eval — Coming Soon" desc="Enterprise evaluation dashboard is coming soon. Personal users see mock-friendly local flow." /> :
+          activeView === "admin" ? <ComingSoon title="Admin Console — Coming Soon" desc="Company admin (Enterprise) is coming soon. Personal mode hides company hierarchy." /> :
           <MLArea />}
       </div>
     </div>

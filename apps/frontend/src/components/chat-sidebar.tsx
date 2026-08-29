@@ -15,7 +15,7 @@ import {
 // LEFT ICON NAV BAR — Feature Navigation
 // ─────────────────────────────────────────────
 const NAV_ITEMS = [
-  { view: "team",      icon: Users,         label: "Team Hub (V2)",  group: "main", badge: "V2" },
+  { view: "team",      icon: Users,         label: "Team Hub",       group: "main", badge: "SOON", comingSoon: true },
   { view: "chat",      icon: MessageSquare, label: "Chat",           group: "main" },
   { view: "knowledge", icon: Database,      label: "Knowledge Base", group: "main" },
   { view: "analytics", icon: BarChart3,     label: "Analytics",      group: "main" },
@@ -25,7 +25,7 @@ const NAV_ITEMS = [
   { view: "email",     icon: Mail,          label: "Email",          group: "studio" },
   { view: "calendar",  icon: Calendar,      label: "Calendar",       group: "studio" },
   { view: "ml",        icon: Brain,         label: "ML Studio",      group: "ai" },
-  { view: "eval",      icon: Activity,      label: "AI Eval (Admin)", group: "ai", badge: "ADMIN", adminOnly: true },
+  { view: "eval",      icon: Activity,      label: "AI Eval",        group: "ai", badge: "SOON", comingSoon: true },
   { view: "report",    icon: FileText,      label: "Reports",        group: "ai" },
 ];
 
@@ -105,7 +105,7 @@ export default function ChatSidebar() {
 
   const isMasterAdmin = user?.company_role === "OWNER" || user?.company_role === "ADMIN" || user?.email?.toLowerCase() === (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "p.vishu2685@gmail.com").toLowerCase();
 
-  const visibleNavItems = NAV_ITEMS.filter(item => !item.adminOnly || isMasterAdmin);
+  const visibleNavItems = NAV_ITEMS.filter(item => !(item as any).adminOnly || isMasterAdmin);
 
   const groupedNav = {
     main:   visibleNavItems.filter(n => n.group === "main"),
@@ -174,20 +174,15 @@ export default function ChatSidebar() {
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Admin Console (Visible to Owners & Admins only) */}
-        {(user?.company_role === "OWNER" || user?.company_role === "ADMIN") && (
-          <button
-            onClick={() => setActiveView("admin")}
-            className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 border mb-2 shrink-0 ${
-              activeView === "admin"
-                ? "bg-indigo-500/15 border-indigo-500/30 text-white"
-                : "text-zinc-550 border-transparent hover:border-zinc-800 hover:bg-indigo-500/5 hover:text-indigo-400"
-            }`}
-            title="Admin Console"
-          >
-            <ShieldCheck className="h-4.5 w-4.5" />
-          </button>
-        )}
+        {/* Admin Console — Personal mode: Coming Soon (keep DB but hide) */}
+        <button
+          onClick={() => {}}
+          disabled
+          className="flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 border mb-2 shrink-0 opacity-50 cursor-not-allowed text-zinc-550 border-transparent"
+          title="Admin Console — Coming Soon (Personal only)"
+        >
+          <ShieldCheck className="h-4.5 w-4.5" />
+        </button>
 
         {/* Theme toggle */}
         <button
@@ -419,9 +414,10 @@ export default function ChatSidebar() {
 function NavIcon({ item, activeView, setActiveView, hovered, setHovered }: any) {
   const Icon = item.icon;
   const isActive = activeView === item.view;
+  const isComingSoon = !!item.comingSoon;
 
   // Custom premium glassmorphic styling for active state
-  const activeStyle = isActive 
+  const activeStyle = isActive && !isComingSoon
     ? {
         background: "linear-gradient(135deg, #2f7eda 0%, #1f64b8 100%)",
         borderColor: "#9fa0b5",
@@ -433,25 +429,28 @@ function NavIcon({ item, activeView, setActiveView, hovered, setHovered }: any) 
     <div className="relative group/nav" onMouseEnter={() => setHovered(item.view)} onMouseLeave={() => setHovered(null)}>
       {/* Glowing vertical line indicator */}
       <div className={`absolute left-[-12px] top-1/2 -translate-y-1/2 w-1.5 h-6 rounded-r bg-[#2f7eda] transition-all duration-300 ${
-        isActive ? "opacity-100 scale-y-100" : "opacity-0 scale-y-50 group-hover/nav:opacity-40 group-hover/nav:scale-y-75"
+        isActive && !isComingSoon ? "opacity-100 scale-y-100" : "opacity-0 scale-y-50 group-hover/nav:opacity-40 group-hover/nav:scale-y-75"
       }`} style={{ boxShadow: "0 0 10px rgba(1, 138, 190, 0.8)" }} />
 
       <button
-        onClick={() => setActiveView(item.view)}
+        onClick={() => { if (isComingSoon) return; setActiveView(item.view); }}
         style={activeStyle}
+        disabled={isComingSoon}
+        title={isComingSoon ? `${item.label} — Coming Soon (Personal only)` : item.label}
         className={`relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 border ${
+          isComingSoon ? "opacity-50 cursor-not-allowed text-muted-foreground border-transparent" :
           isActive
             ? "text-white font-bold shadow-lg"
             : "text-muted-foreground border-transparent hover:border-border hover:bg-card hover:text-foreground"
         }`}
       >
         <Icon className={`h-4.5 w-4.5 transition-all duration-300 ${
-          isActive 
+          isActive && !isComingSoon
             ? "scale-110 text-white filter drop-shadow-[0_0_6px_rgba(255,255,255,0.8)] font-bold" 
             : "group-hover/nav:scale-110 group-hover/nav:rotate-[5deg]"
         }`} />
         {item.badge && (
-          <span className="absolute -top-1 -right-1 rounded-full bg-cyan-500 px-1 py-0.5 text-[5px] font-black text-[#09090b] tracking-wider uppercase animate-pulse shadow-md shadow-cyan-500/30">
+          <span className={`absolute -top-1 -right-1 rounded-full px-1 py-0.5 text-[5px] font-black tracking-wider uppercase shadow-md ${isComingSoon ? "bg-amber-500 text-white" : "bg-cyan-500 text-[#09090b] animate-pulse shadow-cyan-500/30"}`}>
             {item.badge}
           </span>
         )}
@@ -459,7 +458,7 @@ function NavIcon({ item, activeView, setActiveView, hovered, setHovered }: any) 
       {/* High-Contrast Hover Tooltip Popup */}
       {hovered === item.view && (
         <div className="absolute left-[65px] top-1/2 -translate-y-1/2 z-[100] pointer-events-none whitespace-nowrap rounded-xl bg-[#001B48] dark:bg-[#6366f1] text-white font-bold text-xs px-3.5 py-2 shadow-2xl border border-white/20 animate-fade-in">
-          {item.label}
+          {item.label}{isComingSoon ? " — Coming Soon" : ""}
           <div className="absolute left-[-5px] top-1/2 -translate-y-1/2 border-4 border-transparent border-r-[#001B48] dark:border-r-[#6366f1]" />
         </div>
       )}
