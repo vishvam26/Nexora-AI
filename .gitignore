@@ -22,13 +22,12 @@ build/
 dist/
 
 # ─────────────────────────────────────────────────
-# Env & Secrets — NEVER push to GitHub
+# Env & Secrets — NEVER push to GitHub (Option 1: single .env.example)
 # ─────────────────────────────────────────────────
 .env
 .env.*
 *.env
 !.env.example
-!.env.production.example
 *.private.key
 *.pem
 *.key

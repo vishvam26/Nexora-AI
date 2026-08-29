@@ -4,7 +4,7 @@ services:
     env: python
     rootDir: apps/backend
     buildCommand: pip install -r requirements.txt || pip install -r apps/backend/requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.12
@@ -25,4 +25,14 @@ services:
       - key: QDRANT_URL
         sync: false
       - key: QDRANT_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-1.5-flash
+      - key: AI_PROVIDER
+        value: huggingface
+      - key: NEXORA_MODEL_ID
+        value: vishvam26/nexora-qwen3.5-4b-merged
+      - key: NEXT_PUBLIC_API_URL
         sync: false

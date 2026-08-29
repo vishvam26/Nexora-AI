@@ -18,6 +18,6 @@ COPY . .
 # Bootstrap storage hierarchy subdirectories
 RUN mkdir -p storage/uploads storage/ml_models storage/reports storage/agent_sessions storage/ml_shap storage/ml_registry
 
-# Run server
+# Run server — workers 1 for Render free 512MB (HF remote, no local model)
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

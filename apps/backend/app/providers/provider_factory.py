@@ -1,27 +1,22 @@
 from fastapi import HTTPException, status
 from app.config import settings
 from app.providers.provider_interface import AIProviderInterface
-from app.providers.openai_provider import OpenAIProvider
-from app.providers.openrouter_provider import OpenRouterProvider
 from app.providers.gemini_provider import GeminiProvider
-from app.providers.ollama_provider import OllamaProvider
-from app.providers.nexora_provider import NexoraProvider
 from app.providers.huggingface_provider import HuggingFaceProvider
 
 
 class ProviderFactory:
     """
-    Factory for instantiating selected LLM providers dynamically based on configuration.
+    Factory — Option 1: only 2 active providers (HF for chat, Gemini for copilot)
+    Legacy providers kept as files but unregistered for Render free 512MB.
+    To re-enable: add import + registry entry.
     """
 
     _registry = {
-        "openai": OpenAIProvider,
-        "openrouter": OpenRouterProvider,
         "gemini": GeminiProvider,
-        "ollama": OllamaProvider,
-        "nexora": NexoraProvider,
         "huggingface": HuggingFaceProvider,
-        "hf": HuggingFaceProvider
+        "hf": HuggingFaceProvider,
+        # disabled for free tier: "openai", "openrouter", "ollama", "nexora"
     }
 
     @classmethod

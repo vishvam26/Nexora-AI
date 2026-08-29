@@ -8,9 +8,11 @@ logger = logging.getLogger("app.db.tenant_session")
 
 TENANTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "storage", "tenants"))
 
-# Cache of tenant engines to avoid re-creating SQLite engine connections per query
+# LRU cache of tenant engines to avoid unbounded memory (max 50 tenants)
+MAX_TENANT_CACHE = 50
 _tenant_engines = {}
 _tenant_sessionmakers = {}
+_tenant_lru = []  # least recent first
 
 
 def get_tenant_db_path(user_id: int) -> str:
@@ -25,9 +27,25 @@ def get_tenant_db_path(user_id: int) -> str:
 def get_tenant_engine(user_id: int):
     """
     Retrieves or creates a thread-safe SQLAlchemy engine bound to user_{id}/tenant.db.
+    LRU eviction prevents unbounded FD/memory growth (max 50).
     """
     if user_id in _tenant_engines:
+        # refresh LRU
+        if user_id in _tenant_lru:
+            _tenant_lru.remove(user_id)
+        _tenant_lru.append(user_id)
         return _tenant_engines[user_id]
+
+    # evict oldest if over limit
+    if len(_tenant_engines) >= MAX_TENANT_CACHE:
+        oldest = _tenant_lru.pop(0)
+        try:
+            _tenant_engines[oldest].dispose()
+        except Exception:
+            pass
+        _tenant_engines.pop(oldest, None)
+        _tenant_sessionmakers.pop(oldest, None)
+        logger.info(f"Evicted tenant DB cache for user_id={oldest}")
 
     db_path = get_tenant_db_path(user_id)
     sqlite_url = f"sqlite:///{db_path}"
@@ -43,6 +61,7 @@ def get_tenant_engine(user_id: int):
     
     _tenant_engines[user_id] = engine
     _tenant_sessionmakers[user_id] = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    _tenant_lru.append(user_id)
     logger.info(f"Initialized isolated tenant DB for user_id={user_id} at: {db_path}")
     return engine
 

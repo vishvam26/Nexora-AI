@@ -96,7 +96,6 @@ api_router.include_router(calendar_agent_router)
 api_router.include_router(eval_router)
 api_router.include_router(tasks_router)
 api_router.include_router(activity_router)
-api_router.include_router(health_router)
 
 
 

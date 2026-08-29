@@ -56,21 +56,21 @@ class ManagerAgent:
 
     def plan(self, context: AgentContext) -> List[Dict[str, Any]]:
         """
-        Uses OpenAI function-calling to determine which agents to invoke.
-
-        Returns a list of plan steps:
-        [
-            {"agent": "analytics_agent", "task": "analyze churn distribution"},
-            {"agent": "ml_agent",        "task": "explain feature importances"},
-            {"agent": "rag_agent",       "task": "find churn reduction policies"},
-        ]
-
-        Falls back to a safe default plan if LLM unavailable.
+        Uses Gemini (GOOGLE_API_KEY) or HF (AI_PROVIDER) function-calling to determine which agents to invoke.
+        Free tier: prefers Gemini for reasoning, falls back to rule-based if no key.
         """
-        api_key = os.environ.get("OPENAI_API_KEY", "")
-        if not api_key:
-            logger.warning("[ManagerAgent] OPENAI_API_KEY not set — using fallback plan")
+        from app.config import settings
+        gemini_key = os.environ.get("GOOGLE_API_KEY", "") or settings.GOOGLE_API_KEY
+        # Prefer Gemini for planning; if not set, try HF/OpenAI via AIService fallback
+        if not gemini_key and settings.AI_PROVIDER.lower().strip() not in ("huggingface", "hf", "gemini", "mock"):
+            logger.warning("[ManagerAgent] No GOOGLE_API_KEY and AI_PROVIDER not HF/mock — using fallback plan")
             return self._fallback_plan(context)
+        # If Gemini missing but provider is huggingface/mock, still use fallback plan (rule-based) to avoid HF 503 loop
+        if not gemini_key:
+            logger.info("[ManagerAgent] GOOGLE_API_KEY not set — using fallback plan (HF chat will still work)")
+            return self._fallback_plan(context)
+
+        api_key = gemini_key
 
         try:
             import openai
@@ -291,9 +291,10 @@ class ManagerAgent:
                 "confidence": confidence,
             }
 
-        # LLM Synthesis
+        # LLM Synthesis — prefer Gemini copilot if GOOGLE_API_KEY set, else HF via AIService
         try:
-            if settings.AI_PROVIDER.lower().strip() == "openai" or api_key:
+            gemini_key = os.environ.get("GOOGLE_API_KEY", "") or settings.GOOGLE_API_KEY
+            if gemini_key:
                 system_prompt = (
                     "You are the Nexora AI final synthesis engine. "
                     "You receive structured outputs from multiple specialized AI agents and synthesize them "
@@ -315,19 +316,30 @@ class ManagerAgent:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ]
-                import openai
-                client = openai.OpenAI(api_key=api_key)
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=messages,
-                    max_tokens=2048,
-                    temperature=0.2,
+                final_answer = AIService.generate_response(messages, provider_override="gemini")
+                tokens_in = len(full_context) // 4
+                tokens_out = len(final_answer) // 4
+                cost_usd = 0.0
+            elif settings.AI_PROVIDER.lower().strip() in ("huggingface", "hf", "gemini"):
+                system_prompt = (
+                    "You are the Nexora AI final synthesis engine. "
+                    "Synthesize the outputs from the AI agents below to answer the user's question. "
+                    "Be direct, concise, and professional."
                 )
-                final_answer = response.choices[0].message.content or ""
-                usage = getattr(response, "usage", None)
-                tokens_in = usage.prompt_tokens if usage else 0
-                tokens_out = usage.completion_tokens if usage else 0
-                cost_usd = (tokens_in * 0.00000015) + (tokens_out * 0.00000060)
+                user_prompt = (
+                    f"CEO Question: **{question}**\n\n"
+                    f"=== AGENT OUTPUTS ===\n{full_context}\n\n"
+                    "Generate the final synthesized answer."
+                )
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ]
+                # Use configured provider (huggingface) via AIService
+                final_answer = AIService.generate_response(messages)
+                tokens_in = len(full_context) // 4
+                tokens_out = len(final_answer) // 4
+                cost_usd = 0.0
             else:
                 system_prompt = (
                     "You are a helpful AI assistant. "
@@ -342,7 +354,7 @@ class ManagerAgent:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ]
-                final_answer = AIService.generate_response(messages)
+                final_answer = AIService.generate_response(messages, provider_override="gemini" if gemini_key else None)
                 tokens_in = len(full_context) // 4
                 tokens_out = len(final_answer) // 4
                 cost_usd = 0.0

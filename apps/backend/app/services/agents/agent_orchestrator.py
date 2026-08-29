@@ -79,7 +79,7 @@ class AgentOrchestrator:
 
 
         self.manager = ManagerAgent(agents=self.all_agents)
-        logger.info("[AgentOrchestrator] Initialized with 4 agents.")
+        logger.info(f"[AgentOrchestrator] Initialized with {len(self.all_agents)} agents.")
 
     def ask(
         self,
@@ -143,7 +143,6 @@ class AgentOrchestrator:
             agent_name = step.get("agent", "")
             task = step.get("task", question)
 
-            agent = self.all_agents.__class__  # default None
             agent = next(
                 (a for a in self.all_agents if a.name == agent_name), None
             )

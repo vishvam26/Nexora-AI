@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useChatStore } from "../../stores/chat-store";
 import { apiService } from "../../services/api-service";
-import { LogIn, UserPlus, ShieldAlert, Eye, EyeOff, Lock, Mail, User, Cpu, ChevronRight, Activity, Globe, Compass, ArrowLeft } from "lucide-react";
+import { LogIn, UserPlus, ShieldAlert, Eye, EyeOff, Lock, Mail, User, ChevronRight, Activity, Globe, Compass, ArrowLeft } from "lucide-react";
 
 // ── Boid interface for 3D bird animation ────────────────────────────
 interface Boid {

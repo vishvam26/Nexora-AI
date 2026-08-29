@@ -22,6 +22,116 @@ class ChatService:
     """
 
     @staticmethod
+    def _retrieve_grounded_context(db: Session, user_id: int, request: ChatRequest):
+        """Shared grounded RAG retrieval with fallback to workspace-wide and raw DB chunks."""
+        retrieved_knowledge = ""
+        graph_knowledge = ""
+        sources_list = []
+        if not (request.grounded and request.workspace_id):
+            return retrieved_knowledge, graph_knowledge, sources_list
+
+        kb_ids = request.knowledge_base_ids or (
+            [request.knowledge_base_id] if request.knowledge_base_id else None
+        )
+        try:
+            from app.config import settings
+            from app.services.adaptive_retrieval_service import AdaptiveRetrievalService
+            from app.models.document_chunk import DocumentChunk
+            from app.models.knowledge_document import KnowledgeDocument
+            from app.models.knowledge_base import KnowledgeBase
+
+            rag_context = AdaptiveRetrievalService.retrieve_context(
+                db=db,
+                user_query=request.message,
+                workspace_id=request.workspace_id,
+                knowledge_base_id=kb_ids,
+                top_k=settings.RAG_TOP_K,
+                similarity_threshold=settings.SIMILARITY_THRESHOLD,
+                max_context_tokens=settings.MAX_CONTEXT_TOKENS,
+                enable_reranking=settings.ENABLE_RERANKING,
+                user_id=user_id,
+            )
+
+            if not rag_context.has_knowledge and kb_ids:
+                rag_context = AdaptiveRetrievalService.retrieve_context(
+                    db=db,
+                    user_query=request.message,
+                    workspace_id=request.workspace_id,
+                    knowledge_base_id=None,
+                    top_k=settings.RAG_TOP_K,
+                    similarity_threshold=0.0,
+                    max_context_tokens=settings.MAX_CONTEXT_TOKENS,
+                    enable_reranking=False,
+                    user_id=user_id,
+                )
+
+            if not rag_context.has_knowledge:
+                doc_query = (
+                    db.query(KnowledgeDocument)
+                    .join(KnowledgeBase, KnowledgeDocument.knowledge_base_id == KnowledgeBase.id)
+                    .filter(
+                        KnowledgeBase.workspace_id == request.workspace_id,
+                        KnowledgeDocument.deleted_at.is_(None),
+                        KnowledgeBase.deleted_at.is_(None)
+                    )
+                )
+                if kb_ids:
+                    doc_query = doc_query.filter(KnowledgeBase.id.in_(kb_ids))
+                latest_doc = doc_query.order_by(KnowledgeDocument.created_at.desc(), KnowledgeDocument.id.desc()).first()
+                if not latest_doc and kb_ids:
+                    latest_doc = (
+                        db.query(KnowledgeDocument)
+                        .join(KnowledgeBase, KnowledgeDocument.knowledge_base_id == KnowledgeBase.id)
+                        .filter(
+                            KnowledgeBase.workspace_id == request.workspace_id,
+                            KnowledgeDocument.deleted_at.is_(None),
+                            KnowledgeBase.deleted_at.is_(None)
+                        )
+                        .order_by(KnowledgeDocument.created_at.desc(), KnowledgeDocument.id.desc())
+                        .first()
+                    )
+                if latest_doc:
+                    raw_chunks = (
+                        db.query(DocumentChunk)
+                        .filter(DocumentChunk.document_id == latest_doc.id)
+                        .order_by(DocumentChunk.chunk_index.asc())
+                        .limit(10)
+                        .all()
+                    )
+                    if raw_chunks:
+                        retrieved_knowledge = "\n\n".join([
+                            f"--- Document Excerpt ({latest_doc.filename}, Page {c.page or 1}) ---\n{c.text}"
+                            for c in raw_chunks
+                        ])
+                        for c in raw_chunks:
+                            sources_list.append({
+                                "filename": latest_doc.filename or "uploaded_document.pdf",
+                                "page": c.page or 1,
+                                "section": c.section or "",
+                                "score": 1.0,
+                                "confidence": 100
+                            })
+
+            if rag_context.has_knowledge:
+                retrieved_knowledge = rag_context.formatted_context
+                graph_knowledge = rag_context.graph_context or ""
+                for chunk in rag_context.chunks_used:
+                    sources_list.append({
+                        "filename": chunk.doc_filename or "document",
+                        "page": chunk.page or 1,
+                        "section": chunk.section or "",
+                        "score": round(chunk.score, 4),
+                        "confidence": int(chunk.score * 100)
+                    })
+                logger.info(f"RAG injected {len(sources_list)} chunks | latency={rag_context.metrics.latency_ms:.1f}ms")
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            logger.error(f"RAG retrieval failed — continuing without knowledge: {e}")
+
+        return retrieved_knowledge, graph_knowledge, sources_list
+
+    @staticmethod
     def handle_chat(db: Session, user_id: int, request: ChatRequest) -> ChatResponse:
         """
         Full chat pipeline:
@@ -59,126 +169,9 @@ class ChatService:
         )
         MessageRepository.create(db, user_message_obj)
 
-        # 3. Grounded retrieval
-        retrieved_knowledge = ""
-        graph_knowledge = ""
-        sources_list = []
-
-        if request.grounded and request.workspace_id:
-            kb_ids = request.knowledge_base_ids or (
-                [request.knowledge_base_id] if request.knowledge_base_id else None
-            )
-            print(f"\n>>> [SYNC CHAT] QUERY: '{request.message}' | Grounded: {request.grounded} | Workspace: {request.workspace_id} | KBs: {kb_ids} <<<")
-            try:
-                from app.config import settings
-                from app.services.adaptive_retrieval_service import AdaptiveRetrievalService
-                from app.models.document_chunk import DocumentChunk
-                from app.models.knowledge_document import KnowledgeDocument
-                from app.models.knowledge_base import KnowledgeBase
-                
-                rag_context = AdaptiveRetrievalService.retrieve_context(
-                    db=db,
-                    user_query=request.message,
-                    workspace_id=request.workspace_id,
-                    knowledge_base_id=kb_ids,
-                    top_k=settings.RAG_TOP_K,
-                    similarity_threshold=settings.SIMILARITY_THRESHOLD,
-                    max_context_tokens=settings.MAX_CONTEXT_TOKENS,
-                    enable_reranking=settings.ENABLE_RERANKING,
-                    user_id=user_id,
-                )
-
-                # Fallback 1: if 0 chunks found with specific KB ID filter, retry across ALL workspace KBs
-                if not rag_context.has_knowledge and kb_ids:
-                    print(">>> [SYNC CHAT] KB ID filter returned 0 hits — retrying search across ALL workspace KBs <<<")
-                    rag_context = AdaptiveRetrievalService.retrieve_context(
-                        db=db,
-                        user_query=request.message,
-                        workspace_id=request.workspace_id,
-                        knowledge_base_id=None,
-                        top_k=settings.RAG_TOP_K,
-                        similarity_threshold=0.0,
-                        max_context_tokens=settings.MAX_CONTEXT_TOKENS,
-                        enable_reranking=False,
-                        user_id=user_id,
-                    )
-
-                # Fallback 2: Direct raw DB document_chunks injection from LATEST document if RAG returned empty
-                if not rag_context.has_knowledge:
-                    doc_query = (
-                        db.query(KnowledgeDocument)
-                        .join(KnowledgeBase, KnowledgeDocument.knowledge_base_id == KnowledgeBase.id)
-                        .filter(
-                            KnowledgeBase.workspace_id == request.workspace_id,
-                            KnowledgeDocument.deleted_at.is_(None),
-                            KnowledgeBase.deleted_at.is_(None)
-                        )
-                    )
-                    if kb_ids:
-                        doc_query = doc_query.filter(KnowledgeBase.id.in_(kb_ids))
-
-                    latest_doc = doc_query.order_by(KnowledgeDocument.created_at.desc(), KnowledgeDocument.id.desc()).first()
-
-                    if not latest_doc and kb_ids:
-                        latest_doc = (
-                            db.query(KnowledgeDocument)
-                            .join(KnowledgeBase, KnowledgeDocument.knowledge_base_id == KnowledgeBase.id)
-                            .filter(
-                                KnowledgeBase.workspace_id == request.workspace_id,
-                                KnowledgeDocument.deleted_at.is_(None),
-                                KnowledgeBase.deleted_at.is_(None)
-                            )
-                            .order_by(KnowledgeDocument.created_at.desc(), KnowledgeDocument.id.desc())
-                            .first()
-                        )
-
-                    if latest_doc:
-                        raw_chunks = (
-                            db.query(DocumentChunk)
-                            .filter(DocumentChunk.document_id == latest_doc.id)
-                            .order_by(DocumentChunk.chunk_index.asc())
-                            .limit(10)
-                            .all()
-                        )
-                        if raw_chunks:
-                            print(f">>> [SYNC CHAT] Emergency Fallback: Directly injecting {len(raw_chunks)} raw DB chunks from latest document '{latest_doc.filename}' (id={latest_doc.id}) <<<")
-                            retrieved_knowledge = "\n\n".join([
-                                f"--- Document Excerpt ({latest_doc.filename}, Page {c.page or 1}) ---\n{c.text}"
-                                for c in raw_chunks
-                            ])
-                            for c in raw_chunks:
-                                sources_list.append({
-                                    "filename": latest_doc.filename or "uploaded_document.pdf",
-                                    "page": c.page or 1,
-                                    "section": c.section or "",
-                                    "score": 1.0,
-                                    "confidence": 100
-                                })
-
-                print(f">>> [SYNC CHAT] RAG retrieved {len(rag_context.chunks_used)} chunks. Has knowledge: {rag_context.has_knowledge} <<<")
-                if rag_context.has_knowledge:
-                    retrieved_knowledge = rag_context.formatted_context
-                    graph_knowledge = rag_context.graph_context or ""
-                    
-                    # Extract sources and confidence metrics
-                    for chunk in rag_context.chunks_used:
-                        sources_list.append({
-                            "filename": chunk.doc_filename or "document",
-                            "page": chunk.page or 1,
-                            "section": chunk.section or "",
-                            "score": round(chunk.score, 4),
-                            "confidence": int(chunk.score * 100)
-                        })
-
-                    logger.info(
-                        f"RAG sync injected {len(sources_list)} chunks | "
-                        f"latency={rag_context.metrics.latency_ms:.1f}ms"
-                    )
-            except Exception as e:
-                print(f">>> [SYNC CHAT] RAG ERROR: {e} <<<")
-                import traceback
-                traceback.print_exc()
-                logger.error(f"RAG retrieval failed — continuing without knowledge: {e}")
+        # 3. Grounded retrieval (shared)
+        print(f"\n>>> [SYNC CHAT] QUERY: '{request.message}' | Grounded: {request.grounded} | Workspace: {request.workspace_id} <<<")
+        retrieved_knowledge, graph_knowledge, sources_list = ChatService._retrieve_grounded_context(db, user_id, request)
 
         # 4. Build prompt using PromptService + PromptBuilder
         recent_history = MemoryService.get_recent_history(db, request.conversation_id)
@@ -251,127 +244,9 @@ class ChatService:
         )
         MessageRepository.create(db, user_message_obj)
 
-        # 3. Grounded retrieval
-        retrieved_knowledge = ""
-        graph_knowledge = ""
-        sources_list = []
-
-        if request.grounded and request.workspace_id:
-            kb_ids = request.knowledge_base_ids or (
-                [request.knowledge_base_id] if request.knowledge_base_id else None
-            )
-            print(f"\n>>> [STREAM CHAT] QUERY: '{request.message}' | Grounded: {request.grounded} | Workspace: {request.workspace_id} | KBs: {kb_ids} <<<")
-            try:
-                from app.config import settings
-                from app.services.adaptive_retrieval_service import AdaptiveRetrievalService
-
-                rag_context = AdaptiveRetrievalService.retrieve_context(
-                    db=db,
-                    user_query=request.message,
-                    workspace_id=request.workspace_id,
-                    knowledge_base_id=kb_ids,
-                    top_k=settings.RAG_TOP_K,
-                    similarity_threshold=settings.SIMILARITY_THRESHOLD,
-                    max_context_tokens=settings.MAX_CONTEXT_TOKENS,
-                    enable_reranking=settings.ENABLE_RERANKING,
-                    user_id=user_id,
-                )
-
-                # Fallback 1: if 0 chunks found with specific KB ID filter, retry across ALL workspace KBs
-                if not rag_context.has_knowledge and kb_ids:
-                    print(">>> [STREAM CHAT] KB ID filter returned 0 hits — retrying search across ALL workspace KBs <<<")
-                    rag_context = AdaptiveRetrievalService.retrieve_context(
-                        db=db,
-                        user_query=request.message,
-                        workspace_id=request.workspace_id,
-                        knowledge_base_id=None,
-                        top_k=settings.RAG_TOP_K,
-                        similarity_threshold=0.0,
-                        max_context_tokens=settings.MAX_CONTEXT_TOKENS,
-                        enable_reranking=False,
-                        user_id=user_id,
-                    )
-
-                # Fallback 2: Direct raw DB document_chunks injection from LATEST document if RAG pipeline returned empty
-                if not rag_context.has_knowledge:
-                    from app.models.document_chunk import DocumentChunk
-                    from app.models.knowledge_document import KnowledgeDocument
-                    from app.models.knowledge_base import KnowledgeBase
-                    
-                    doc_query = (
-                        db.query(KnowledgeDocument)
-                        .join(KnowledgeBase, KnowledgeDocument.knowledge_base_id == KnowledgeBase.id)
-                        .filter(
-                            KnowledgeBase.workspace_id == request.workspace_id,
-                            KnowledgeDocument.deleted_at.is_(None),
-                            KnowledgeBase.deleted_at.is_(None)
-                        )
-                    )
-                    if kb_ids:
-                        doc_query = doc_query.filter(KnowledgeBase.id.in_(kb_ids))
-
-                    latest_doc = doc_query.order_by(KnowledgeDocument.created_at.desc(), KnowledgeDocument.id.desc()).first()
-
-                    if not latest_doc and kb_ids:
-                        latest_doc = (
-                            db.query(KnowledgeDocument)
-                            .join(KnowledgeBase, KnowledgeDocument.knowledge_base_id == KnowledgeBase.id)
-                            .filter(
-                                KnowledgeBase.workspace_id == request.workspace_id,
-                                KnowledgeDocument.deleted_at.is_(None),
-                                KnowledgeBase.deleted_at.is_(None)
-                            )
-                            .order_by(KnowledgeDocument.created_at.desc(), KnowledgeDocument.id.desc())
-                            .first()
-                        )
-
-                    if latest_doc:
-                        raw_chunks = (
-                            db.query(DocumentChunk)
-                            .filter(DocumentChunk.document_id == latest_doc.id)
-                            .order_by(DocumentChunk.chunk_index.asc())
-                            .limit(10)
-                            .all()
-                        )
-                        if raw_chunks:
-                            print(f">>> [STREAM CHAT] Emergency Fallback: Directly injecting {len(raw_chunks)} raw DB chunks from latest document '{latest_doc.filename}' (id={latest_doc.id}) <<<")
-                            retrieved_knowledge = "\n\n".join([
-                                f"--- Document Excerpt ({latest_doc.filename}, Page {c.page or 1}) ---\n{c.text}"
-                                for c in raw_chunks
-                            ])
-                            for c in raw_chunks:
-                                sources_list.append({
-                                    "filename": latest_doc.filename or "uploaded_document.pdf",
-                                    "page": c.page or 1,
-                                    "section": c.section or "",
-                                    "score": 1.0,
-                                    "confidence": 100
-                                })
-
-                print(f">>> [STREAM CHAT] RAG retrieved {len(rag_context.chunks_used)} chunks. Has knowledge: {rag_context.has_knowledge} <<<")
-                if rag_context.has_knowledge:
-                    retrieved_knowledge = rag_context.formatted_context
-                    graph_knowledge = rag_context.graph_context or ""
-
-                    # Extract sources
-                    for chunk in rag_context.chunks_used:
-                        sources_list.append({
-                            "filename": chunk.doc_filename or "document",
-                            "page": chunk.page or 1,
-                            "section": chunk.section or "",
-                            "score": round(chunk.score, 4),
-                            "confidence": int(chunk.score * 100)
-                        })
-
-                    logger.info(
-                        f"RAG stream injected {len(sources_list)} chunks | "
-                        f"latency={rag_context.metrics.latency_ms:.1f}ms"
-                    )
-            except Exception as e:
-                print(f">>> [STREAM CHAT] RAG ERROR: {e} <<<")
-                import traceback
-                traceback.print_exc()
-                logger.error(f"RAG retrieval failed in stream — continuing: {e}")
+        # 3. Grounded retrieval (shared)
+        print(f"\n>>> [STREAM CHAT] QUERY: '{request.message}' | Grounded: {request.grounded} | Workspace: {request.workspace_id} <<<")
+        retrieved_knowledge, graph_knowledge, sources_list = ChatService._retrieve_grounded_context(db, user_id, request)
 
         # 4. Build prompt
         recent_history = MemoryService.get_recent_history(db, request.conversation_id)
