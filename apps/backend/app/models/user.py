@@ -30,7 +30,7 @@ class User(Base):
     )
 
     company_id: Mapped[Optional[int]] = mapped_column(
-        Integer, ForeignKey("companies.id", ondelete="SET NULL"), nullable=True, default=1
+        Integer, nullable=True, default=1
     )
 
     company_role: Mapped[str] = mapped_column(String(20), nullable=False, default="EMPLOYEE")
