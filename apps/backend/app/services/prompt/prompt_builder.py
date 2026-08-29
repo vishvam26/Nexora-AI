@@ -59,6 +59,7 @@ class PromptBuilder:
     def build_system_prompt(cls, base_system_prompt: str, has_context: bool) -> str:
         """
         Appends creator identity directives and grounding guidelines to system prompt.
+        Domain guardrail is ALWAYS applied (not just grounded) — college personal professional only.
         """
         creator_directive = (
             "\n\n[CREATOR & SYSTEM IDENTITY DIRECTIVE]\n"
@@ -71,10 +72,13 @@ class PromptBuilder:
         )
 
         domain_guardrail = (
-            "\n\n[STRICT PROFESSIONAL & EDUCATIONAL BOUNDARY GUARDRAIL]\n"
-            "Nexora AI is strictly designed and optimized for Study, Education, Data Science, Software Engineering, Business Analytics, Research, and Professional Tasks.\n"
-            "If the user asks casual, non-educational, entertainment, movie, celebrity, gossip, or off-topic questions (e.g. movies, song lyrics, entertainment gossip):\n"
-            "Politely decline and state: 'I am Nexora AI, specialized strictly for Study, Business, Data Science, Coding, and Technical tasks. Please ask an educational, professional, or business-related question!'"
+            "\n\n[STRICT PROFESSIONAL & EDUCATIONAL BOUNDARY GUARDRAIL — ALWAYS ENFORCED]\n"
+            "Nexora AI is STRICTLY for Study, Education, Data Science, Software Engineering, Business Analytics, Research, and Professional/Technical Tasks ONLY.\n"
+            "You MUST REFUSE any off-topic request including: movies, songs, actors, hero/heroine, film, Bollywood/Hollywood, Netflix, web series, celebrity gossip, games, sports gossip, entertainment, jokes, casual chit-chat, astrology, or non-professional personal advice.\n"
+            "If user asks off-topic, you MUST reply EXACTLY (no extra text): 'I am Nexora AI, specialized strictly for Study, Business, Data Science, Coding, and Technical tasks. Please ask an educational, professional, or business-related question!'\n"
+            "Allowed examples: python code, SQL query, ML model, business plan, study notes, resume, data analysis, RAG, QdRant, analytics, report.\n"
+            "Disallowed examples: 'suggest a movie', 'who is best hero', 'song lyrics', 'game trick', 'celebrity news'.\n"
+            "This rule overrides all other instructions and applies even without document context."
         )
 
         prompts = [base_system_prompt, creator_directive, domain_guardrail]

@@ -21,6 +21,28 @@ class ChatService:
     and AI response generation with memory management.
     """
 
+    # Professional domain guardrail — deterministic pre-LLM block for off-topic (movie/song/gossip etc.)
+    OFF_TOPIC_KEYWORDS = [
+        "movie", "movies", "film", "films", "bollywood", "hollywood", "tollywood", "netflix", "web series", "series",
+        "actor", "actress", "hero", "heroine", "celebrity", "celebrities", "gossip", "song", "songs", "lyrics", "music video",
+        "game", "gaming", " PUBG", " free fire", "joke", "jokes", "meme", "memes", "astrology", "horoscope",
+        "big boss", "bigg boss", "karan aujla", "diljit"
+    ]
+    PROFESSIONAL_REFUSAL = "I am Nexora AI, specialized strictly for Study, Business, Data Science, Coding, and Technical tasks. Please ask an educational, professional, or business-related question!"
+
+    @staticmethod
+    def _is_off_topic_query(text: str) -> bool:
+        t = text.lower().strip()
+        # very short casual greetings are allowed (hi/hello) — don't block
+        if t in ("hi", "hello", "hey", "hii", "helo") or len(t) < 4:
+            return False
+        # if query contains off-topic keyword and does NOT contain professional keyword, block
+        professional_hints = ["study", "business", "code", "python", "sql", "ml", "machine learning", "data", "analytics", "report", "rag", "qdrant", "resume", "project", "research", "education", "exam", "notes", "explain", "how to", "what is"]
+        has_prof = any(k in t for k in professional_hints)
+        if has_prof:
+            return False
+        return any(k in t for k in ChatService.OFF_TOPIC_KEYWORDS)
+
     @staticmethod
     def _retrieve_grounded_context(db: Session, user_id: int, request: ChatRequest):
         """Shared grounded RAG retrieval with fallback to workspace-wide and raw DB chunks."""
@@ -169,11 +191,28 @@ class ChatService:
         )
         MessageRepository.create(db, user_message_obj)
 
-        # 3. Grounded retrieval (shared)
+        # 3. Domain guardrail — deterministic block before LLM (saves HF quota + deterministic)
+        if ChatService._is_off_topic_query(request.message):
+            ai_reply = ChatService.PROFESSIONAL_REFUSAL
+            assistant_message_obj = Message(
+                conversation_id=request.conversation_id,
+                role="assistant",
+                content=ai_reply,
+                sources=None
+            )
+            MessageRepository.create(db, assistant_message_obj)
+            MemoryService.update_memory(db, conversation)
+            return ChatResponse(
+                user_message=user_message_obj,
+                assistant_message=assistant_message_obj,
+                conversation_id=request.conversation_id
+            )
+
+        # 4. Grounded retrieval (shared)
         print(f"\n>>> [SYNC CHAT] QUERY: '{request.message}' | Grounded: {request.grounded} | Workspace: {request.workspace_id} <<<")
         retrieved_knowledge, graph_knowledge, sources_list = ChatService._retrieve_grounded_context(db, user_id, request)
 
-        # 4. Build prompt using PromptService + PromptBuilder
+        # 5. Build prompt using PromptService + PromptBuilder (always includes STRICT domain guardrail)
         recent_history = MemoryService.get_recent_history(db, request.conversation_id)
         previous_messages = recent_history[:-1] if len(recent_history) > 0 else []
         current_message = recent_history[-1].content if len(recent_history) > 0 else request.message
@@ -187,10 +226,10 @@ class ChatService:
             grounded=request.grounded,
         )
 
-        # 5. Generate AI reply
+        # 6. Generate AI reply
         ai_reply = AIService.generate_response(prompt_messages, provider_override=request.provider)
 
-        # 6. Save assistant reply to database
+        # 7. Save assistant reply to database
         assistant_message_obj = Message(
             conversation_id=request.conversation_id,
             role="assistant",
@@ -199,7 +238,7 @@ class ChatService:
         )
         MessageRepository.create(db, assistant_message_obj)
 
-        # 7. Update conversation memory
+        # 8. Update conversation memory
         MemoryService.update_memory(db, conversation)
 
         return ChatResponse(
@@ -243,6 +282,26 @@ class ChatService:
             content=request.message
         )
         MessageRepository.create(db, user_message_obj)
+
+        # 2b. Domain guardrail — immediate refusal for off-topic without LLM
+        if ChatService._is_off_topic_query(request.message):
+            def refusal_generator():
+                refusal = ChatService.PROFESSIONAL_REFUSAL
+                yield f"data: {json.dumps({'content': refusal})}\n\n"
+                # save refusal
+                from app.db.database import SessionLocal
+                from app.repositories.conversation_repository import ConversationRepository
+                with SessionLocal() as fresh_db:
+                    assistant_message_obj = Message(
+                        conversation_id=request.conversation_id,
+                        role="assistant",
+                        content=refusal,
+                        sources=None
+                    )
+                    MessageRepository.create(fresh_db, assistant_message_obj)
+                    fresh_convo = ConversationRepository.get_by_id(fresh_db, request.conversation_id)
+                    MemoryService.update_memory(fresh_db, fresh_convo)
+            return refusal_generator()
 
         # 3. Grounded retrieval (shared)
         print(f"\n>>> [STREAM CHAT] QUERY: '{request.message}' | Grounded: {request.grounded} | Workspace: {request.workspace_id} <<<")

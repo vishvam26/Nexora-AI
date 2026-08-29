@@ -65,21 +65,17 @@ class PromptService:
         system_content = cls.get_system_prompt()
         dev_content = cls.get_developer_prompt()
 
-        if grounded:
-            has_context = bool(retrieved_knowledge and retrieved_knowledge.strip())
-            
-            if has_context:
-                # Sanitize and enclose context with injection protection
-                sanitized_knowledge = PromptBuilder.sanitize_chunk(retrieved_knowledge)
-                enclosed_knowledge = PromptBuilder.enclose_context(sanitized_knowledge)
-                
-                # Build system grounding prompt
-                system_content = PromptBuilder.build_system_prompt(system_content, has_context=True)
-                retrieved_knowledge = enclosed_knowledge
-            else:
-                # No documents retrieved — do NOT override with rigid grounding policy.
-                # Let the model answer from its own knowledge normally.
-                retrieved_knowledge = ""
+        # ALWAYS enforce professional domain guardrail (personal college mode) — even without grounding
+        has_context = bool(retrieved_knowledge and retrieved_knowledge.strip()) if grounded else False
+        if has_context:
+            sanitized_knowledge = PromptBuilder.sanitize_chunk(retrieved_knowledge)
+            enclosed_knowledge = PromptBuilder.enclose_context(sanitized_knowledge)
+            system_content = PromptBuilder.build_system_prompt(system_content, has_context=True)
+            retrieved_knowledge = enclosed_knowledge
+        else:
+            # No context but still enforce STRICT domain guardrail — do not allow off-topic
+            system_content = PromptBuilder.build_system_prompt(system_content, has_context=False)
+            retrieved_knowledge = "" if grounded else retrieved_knowledge
 
         # Format history as a list of dicts with role and content keys
         history_dicts = [{"role": msg.role, "content": msg.content} for msg in history]

@@ -105,9 +105,13 @@ trainer.train()
 - **Data Preprocessing**: Handling missing values, automatic ID exclusion, and scaling.
 - **Model Training**: AutoML Random Forest Classifier for instant predictions.
 - **Evaluation**: Accuracy, Precision, Recall, and F1-Score metrics."""
-        off_topic_words = ["movie", "actor", "hero", "heroine", "song", "film", "game", "gossip", "celebrity"]
+        off_topic_words = ["movie", "movies", "film", "films", "bollywood", "hollywood", "tollywood", "netflix", "web series", "series", "actor", "actress", "hero", "heroine", "celebrity", "gossip", "song", "songs", "lyrics", "music", "game", "gaming", "joke", "meme", "astrology", "horoscope", "bigg boss"]
         if any(w in p for w in off_topic_words):
-            return "I am Nexora AI, specialized strictly for Study, Business, Data Science, Coding, and Technical tasks. Please ask an educational, professional, or business-related question!"
+            # allow if professional hint present
+            if any(k in p for k in ["study", "business", "data", "ml", "python", "sql", "code", "analytics", "report", "research"]):
+                pass
+            else:
+                return "I am Nexora AI, specialized strictly for Study, Business, Data Science, Coding, and Technical tasks. Please ask an educational, professional, or business-related question!"
 
         return f"### 🤖 Nexora AI Knowledge Hub\n\nRegarding: **'{prompt[:150]}'**\n\n**Response Summary:**\nRetrieval-Augmented Generation (RAG) and ML vector pipelines have verified the input prompt against active knowledge collections."
 
