@@ -93,15 +93,20 @@ class AnalyticsEngine:
                 missing_pct = round((missing_count / total_rows) * 100, 2)
                 unique_count = int(col_series.nunique())
 
-                # Classification
+                # Classification — fix StringDtype (pandas 2.x) : np.issubdtype fails on StringDtype
                 col_type = "categorical"
-                if np.issubdtype(col_series.dtype, np.number):
-                    col_type = "numeric"
-                    numeric_cols.append(col)
-                elif np.issubdtype(col_series.dtype, np.datetime64) or "date" in col.lower():
-                    col_type = "datetime"
-                    datetime_cols.append(col)
-                else:
+                try:
+                    import pandas.api.types as ptypes
+                    if ptypes.is_numeric_dtype(col_series.dtype):
+                        col_type = "numeric"
+                        numeric_cols.append(col)
+                    elif ptypes.is_datetime64_any_dtype(col_series.dtype) or "date" in col.lower():
+                        col_type = "datetime"
+                        datetime_cols.append(col)
+                    else:
+                        categorical_cols.append(col)
+                except Exception:
+                    # Fallback safe: treat as categorical on unknown dtype
                     categorical_cols.append(col)
 
                 columns_info.append({

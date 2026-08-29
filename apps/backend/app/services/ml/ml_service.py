@@ -71,7 +71,11 @@ class MLService:
             for col in df.columns:
                 unique_cnt = int(df[col].nunique())
                 non_null_cnt = int(df[col].dropna().count())
-                is_numeric = np.issubdtype(df[col].dtype, np.number)
+                try:
+                    import pandas.api.types as ptypes
+                    is_numeric = ptypes.is_numeric_dtype(df[col].dtype)
+                except Exception:
+                    is_numeric = False
                 
                 col_lower = col.lower().strip()
                 is_id = (
@@ -179,8 +183,12 @@ class MLService:
             X = df[feature_cols]
             y = df[target_col]
 
-            # 1. Detect task type
-            is_target_numeric = np.issubdtype(y.dtype, np.number)
+            # 1. Detect task type — fix StringDtype
+            try:
+                import pandas.api.types as ptypes
+                is_target_numeric = ptypes.is_numeric_dtype(y.dtype)
+            except Exception:
+                is_target_numeric = False
             target_cardinality = y.nunique()
 
             # Classification if categorical or numeric with low cardinality
@@ -194,8 +202,12 @@ class MLService:
                 y_classes = []
                 y_encoded = y.astype(float)
 
-            # 2. Setup Column Transformer Preprocessing
-            numeric_features = [col for col in feature_cols if np.issubdtype(X[col].dtype, np.number)]
+            # 2. Setup Column Transformer Preprocessing — fix StringDtype
+            try:
+                import pandas.api.types as ptypes
+                numeric_features = [col for col in feature_cols if ptypes.is_numeric_dtype(X[col].dtype)]
+            except Exception:
+                numeric_features = []
             categorical_features = [col for col in feature_cols if col not in numeric_features]
 
             numeric_transformer = Pipeline(steps=[
