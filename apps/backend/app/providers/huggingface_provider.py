@@ -43,7 +43,7 @@ class HuggingFaceProvider(AIProviderInterface):
                 "return_full_text": False
             }
         }
-        resp = requests.post(self.direct_url, headers=self.headers, json=payload, timeout=30)
+        resp = requests.post(self.direct_url, headers=self.headers, json=payload, timeout=10)
         if resp.status_code == 200:
             res = resp.json()
             if isinstance(res, list) and len(res) > 0 and "generated_text" in res[0]:

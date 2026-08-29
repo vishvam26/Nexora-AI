@@ -41,7 +41,9 @@ class KeywordService:
             from app.models.user import User
             user = db.query(User).filter(User.id == user_id).first()
             if user:
-                if user.company_role in ["OWNER", "ADMIN"]:
+                # Fix: user may not have company_role if DB is old sqlite fallback
+                company_role = getattr(user, "company_role", "EMPLOYEE") or "EMPLOYEE"
+                if company_role in ["OWNER", "ADMIN"]:
                     is_manager = True
                 else:
                     from app.models.workspace_member import WorkspaceMember
@@ -50,7 +52,7 @@ class KeywordService:
                         WorkspaceMember.user_id == user_id,
                         WorkspaceMember.is_active == True
                     ).first()
-                    if member and member.workspace_role == "MANAGER":
+                    if member and getattr(member, "workspace_role", "EMPLOYEE") == "MANAGER":
                         is_manager = True
 
         keywords = QueryService.extract_keywords(query)

@@ -29,6 +29,12 @@ class User(Base):
         Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
 
+    company_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("companies.id", ondelete="SET NULL"), nullable=True, default=1
+    )
+
+    company_role: Mapped[str] = mapped_column(String(20), nullable=False, default="EMPLOYEE")
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     updated_at: Mapped[datetime] = mapped_column(
