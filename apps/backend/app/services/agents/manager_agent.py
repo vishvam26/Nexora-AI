@@ -60,17 +60,18 @@ class ManagerAgent:
         Free tier: prefers Gemini for reasoning, falls back to rule-based if no key.
         """
         from app.config import settings
+        # Planning: use OpenAI if key present, else rule-based fallback (Gemini planning via OpenAI shim is invalid)
+        openai_key = os.environ.get("OPENAI_API_KEY", "") or settings.OPENAI_API_KEY
         gemini_key = os.environ.get("GOOGLE_API_KEY", "") or settings.GOOGLE_API_KEY
-        # Prefer Gemini for planning; if not set, try HF/OpenAI via AIService fallback
-        if not gemini_key and settings.AI_PROVIDER.lower().strip() not in ("huggingface", "hf", "gemini", "mock"):
-            logger.warning("[ManagerAgent] No GOOGLE_API_KEY and AI_PROVIDER not HF/mock — using fallback plan")
-            return self._fallback_plan(context)
-        # If Gemini missing but provider is huggingface/mock, still use fallback plan (rule-based) to avoid HF 503 loop
-        if not gemini_key:
-            logger.info("[ManagerAgent] GOOGLE_API_KEY not set — using fallback plan (HF chat will still work)")
+        # If no OpenAI key, use deterministic fallback (avoids Gemini-as-OpenAI bug + HF 503 loop)
+        if not openai_key or openai_key == "CHANGE_THIS_LATER_IN_ENV" or "YOUR_" in openai_key:
+            if not gemini_key:
+                logger.info("[ManagerAgent] No OPENAI_API_KEY — using fallback plan (HF chat + Gemini synthesis still work)")
+            else:
+                logger.info("[ManagerAgent] OPENAI_API_KEY not set — using fallback plan (Gemini synthesis will handle copilot)")
             return self._fallback_plan(context)
 
-        api_key = gemini_key
+        api_key = openai_key
 
         try:
             import openai
