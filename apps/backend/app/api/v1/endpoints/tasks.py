@@ -16,6 +16,12 @@ from app.security.dependencies import get_current_user
 from app.schemas.task import TaskCreate, TaskUpdate, TaskResponse, WorkspaceProgressResponse
 from app.services.permission_service import PermissionService
 from app.services.activity_service import ActivityService
+from app.config import settings
+
+def _ensure_personal_block():
+    if settings.APP_MODE == "PERSONAL":
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Team tasks — Coming Soon (Personal mode only, deployed as normal user platform)")
 
 router = APIRouter(
     prefix="/workspaces/{workspace_id}/tasks",
@@ -33,6 +39,7 @@ def create_task(
     """
     Creates a new task within a workspace. Enforces EDITOR/ADMIN/OWNER roles.
     """
+    _ensure_personal_block()
     PermissionService.check_permission(db, current_user.id, workspace_id, "edit_folder") # Tasks creation matches folder permissions
     
     # Check if assigned user is a member of the workspace
@@ -85,6 +92,7 @@ def list_tasks(
     """
     Lists all tasks inside a workspace. Enforces workspace membership.
     """
+    _ensure_personal_block()
     PermissionService.validate_workspace_access(db, current_user.id, workspace_id)
     
     query = db.query(Task).filter(Task.workspace_id == workspace_id)
@@ -106,6 +114,7 @@ def update_task(
     """
     Updates task properties, assignment, or status.
     """
+    _ensure_personal_block()
     PermissionService.validate_workspace_access(db, current_user.id, workspace_id)
     
     task = db.query(Task).filter(Task.id == task_id, Task.workspace_id == workspace_id).first()
@@ -166,6 +175,7 @@ def get_ai_pm_recommendation(
     Fetches the tasks in the workspace, calculates completion metrics,
     and returns a simulated AI status recommendation.
     """
+    _ensure_personal_block()
     PermissionService.validate_workspace_access(db, current_user.id, workspace_id)
 
     tasks = db.query(Task).filter(Task.workspace_id == workspace_id).all()

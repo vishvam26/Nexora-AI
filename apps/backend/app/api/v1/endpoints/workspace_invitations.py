@@ -12,6 +12,12 @@ from app.schemas.workspace_invitation import (
 )
 from app.schemas.workspace_member import WorkspaceMemberResponse
 from app.services.workspace_invitation_service import WorkspaceInvitationService
+from app.config import settings
+
+def _ensure_personal_block():
+    if settings.APP_MODE == "PERSONAL":
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Team invitations — Coming Soon (Personal mode only)")
 
 router = APIRouter(
     tags=["Workspace Invitations"]
@@ -32,6 +38,7 @@ def invite_user(
     """
     Sends/Creates an invitation to join a workspace. Requires Manager privileges.
     """
+    _ensure_personal_block()
     return WorkspaceInvitationService.create_invitation(
         db=db,
         user_id=current_user.id,

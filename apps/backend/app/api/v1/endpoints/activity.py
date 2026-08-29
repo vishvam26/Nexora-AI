@@ -12,6 +12,12 @@ from app.models.user import User
 from app.models.activity_log import ActivityLog
 from app.security.dependencies import get_current_user
 from app.services.permission_service import PermissionService
+from app.config import settings
+
+def _ensure_personal_block():
+    if settings.APP_MODE == "PERSONAL":
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Activity feed — Coming Soon (Personal mode only)")
 
 router = APIRouter(
     prefix="/workspaces/{workspace_id}/activity",
@@ -29,6 +35,7 @@ def get_workspace_activity_feed(
     """
     Returns a GitHub-like activity feed/timeline of recent events in the team workspace.
     """
+    _ensure_personal_block()
     PermissionService.validate_workspace_access(db, current_user.id, workspace_id)
 
     logs = db.query(ActivityLog).filter(

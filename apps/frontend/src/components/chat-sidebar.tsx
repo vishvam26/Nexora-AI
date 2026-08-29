@@ -105,7 +105,13 @@ export default function ChatSidebar() {
 
   const isMasterAdmin = user?.company_role === "OWNER" || user?.company_role === "ADMIN" || user?.email?.toLowerCase() === (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "p.vishu2685@gmail.com").toLowerCase();
 
-  const visibleNavItems = NAV_ITEMS.filter(item => !(item as any).adminOnly || isMasterAdmin);
+  // Clean personal mode: hide Team/Eval/Admin Coming Soon — code still exists but deployed UI clean for normal user/college
+  const isPersonalMode = true; // APP_MODE=PERSONAL forced for deployed platform
+  const visibleNavItems = NAV_ITEMS.filter(item => {
+    if ((item as any).comingSoon && isPersonalMode) return false;
+    if ((item as any).adminOnly && !isMasterAdmin) return false;
+    return true;
+  });
 
   const groupedNav = {
     main:   visibleNavItems.filter(n => n.group === "main"),
@@ -174,15 +180,7 @@ export default function ChatSidebar() {
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Admin Console — Personal mode: Coming Soon (keep DB but hide) */}
-        <button
-          onClick={() => {}}
-          disabled
-          className="flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 border mb-2 shrink-0 opacity-50 cursor-not-allowed text-zinc-550 border-transparent"
-          title="Admin Console — Coming Soon (Personal only)"
-        >
-          <ShieldCheck className="h-4.5 w-4.5" />
-        </button>
+        {/* Admin Console hidden in personal clean mode — code kept for future enterprise */}
 
         {/* Theme toggle */}
         <button
