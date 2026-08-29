@@ -73,24 +73,40 @@ class PythonAgent(BaseAgent):
         wrapper_code = f"""
 import pandas as pd
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+try:
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    _mpl_available = True
+except ImportError:
+    plt = None
+    _mpl_available = False
 
 DF_PATH = "{formatted_df_path}"
-df = pd.read_csv(DF_PATH)
+# Support both CSV and Excel
+try:
+    if DF_PATH.lower().endswith(('.xlsx','.xls')):
+        df = pd.read_excel(DF_PATH)
+    else:
+        df = pd.read_csv(DF_PATH)
+except Exception as read_err:
+    raise RuntimeError(f"Failed to load dataset at {{DF_PATH}}: {{read_err}}")
 
 # Override plt.show to redirect plot outputs to a static image
-def show_override():
-    plt.savefig("{chart_filepath.replace("\\", "/")}", bbox_inches='tight', dpi=150)
-    plt.close()
-plt.show = show_override
+if _mpl_available:
+    def show_override():
+        plt.savefig("{chart_filepath.replace("\\", "/")}", bbox_inches='tight', dpi=150)
+        plt.close()
+    plt.show = show_override
+else:
+    def show_override():
+        pass
 
 # User generated code:
 {code_to_run}
 
 # Auto-save plot if figures exist and plt.show wasn't called explicitly
-if len(plt.get_fignums()) > 0:
+if _mpl_available and len(plt.get_fignums()) > 0:
     show_override()
 """
 
