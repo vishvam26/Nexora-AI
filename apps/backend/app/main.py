@@ -1,28 +1,35 @@
-print(">>> MAIN.PY LOADED <<<")
 import logging
-# Configure physical file logging to capture all backend warnings, errors, and exceptions outside watched folder
+# File logging: Render/Linux -> /tmp (writable), Windows local -> backend.log.
+# Wrapped safely so a bad log path can never crash startup (was a 503 cause).
 import os
-log_path = "backend.log"
+import tempfile
+
+log_path = os.path.join(tempfile.gettempdir(), "nexora_backend.log")
 if os.name == "nt":
-    local_path = "C:/Users/vishv/.gemini/antigravity-ide/brain/ba311efa-90f6-4f38-a17e-4d8a2be32c35/backend.log"
-    # Ensure directory exists before using it
-    if os.path.exists(os.path.dirname(local_path)):
+    local_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "backend.log")
+    try:
+        os.makedirs(os.path.dirname(os.path.abspath(local_path)), exist_ok=True)
+        open(local_path, "a", encoding="utf-8").close()
         log_path = local_path
-else:
-    # Write outside apps/backend on Linux to prevent uvicorn reload infinite loop
-    log_path = "../backend.log"
+    except OSError:
+        pass  # fall back to tempdir path
 
 
-file_handler = logging.FileHandler(log_path, encoding="utf-8")
-file_handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler.setFormatter(formatter)
+try:
+    file_handler = logging.FileHandler(log_path, encoding="utf-8")
+    file_handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
 
-root_logger = logging.getLogger()
-if not any(isinstance(h, logging.FileHandler) for h in root_logger.handlers):
-    root_logger.addHandler(file_handler)
-    root_logger.setLevel(logging.INFO)
+    root_logger = logging.getLogger()
+    if not any(isinstance(h, logging.FileHandler) for h in root_logger.handlers):
+        root_logger.addHandler(file_handler)
+        root_logger.setLevel(logging.INFO)
+except OSError as _log_err:
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger(__name__).warning(f"File logging disabled ({_log_err}); using stdout only.")
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
@@ -40,10 +47,45 @@ from app.security.limiter import limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi import _rate_limit_exceeded_handler
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup validation — warnings only, NEVER SystemExit.
+    # A hard exit here = Render 503 with no logs explaining why.
+    if not settings.DATABASE_URL or ("postgresql" not in settings.DATABASE_URL and "sqlite" not in settings.DATABASE_URL):
+        print("[WARNING] DATABASE_URL env variable is missing or invalid. Using SQLite fallback.")
+
+    if not settings.SECRET_KEY or settings.SECRET_KEY == "CHANGE_THIS_LATER_IN_ENV":
+        import secrets
+        settings.SECRET_KEY = secrets.token_hex(32)
+        print("[WARNING] SECRET_KEY not configured — generated ephemeral key for this run. Set SECRET_KEY env var for stable sessions.")
+
+    print("[System] Startup environment validations successfully checked.")
+
+    # Ensure database schema is initialized via SQLAlchemy Metadata
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("[System] Database tables verified successfully.")
+    except Exception as e:
+        print(f"[WARNING] Database schema verification: {e}")
+
+    if settings.AI_PROVIDER.lower().strip() == "nexora":
+        print("[System] NEXORA AI provider active — preloading model on startup.")
+        try:
+            from app.providers.nexora_provider import NexoraProvider
+            NexoraProvider.preload_model()
+            print("[System] Nexora model preloaded successfully.")
+        except Exception as e:
+            print(f"[WARNING] Nexora model preload failed on startup: {e}. Will retry on first chat request.")
+
+    yield
+    # Shutdown: nothing to clean up explicitly.
+
+
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description="The core API service powering the Nexora AI platform.",
+    lifespan=lifespan,
 )
 
 # Mount static files for matplotlib plots and reports downloads
@@ -68,41 +110,6 @@ app.add_middleware(
 
 app.include_router(api_router)
 app.include_router(api_router, prefix="/api/v1")
-
-
-
-
-@app.on_event("startup")
-def startup_event():
-    # Enforce Environment Variables validation on startup
-    if not settings.DATABASE_URL or ("postgresql" not in settings.DATABASE_URL and "sqlite" not in settings.DATABASE_URL):
-        print("[CRITICAL] DATABASE_URL env variable is missing or invalid. Halting startup.")
-        raise SystemExit(1)
-
-        
-    if not settings.SECRET_KEY or settings.SECRET_KEY == "CHANGE_THIS_LATER_IN_ENV":
-        settings.SECRET_KEY = "nexora_production_secured_token_key_987654321"
-        print("[System] Auto-configured fallback SECRET_KEY for production runtime.")
-
-    print("[System] Startup environment validations successfully checked.")
-
-    # Ensure database schema is initialized via SQLAlchemy Metadata
-    try:
-        Base.metadata.create_all(bind=engine)
-        print("[System] Database tables verified successfully.")
-    except Exception as e:
-        print(f"[WARNING] Database schema verification: {e}")
-
-    if settings.AI_PROVIDER.lower().strip() == "nexora":
-        print(">>> NEXORA AI PROVIDER IS ACTIVE — Eagerly preloading model on startup <<<")
-        try:
-            from app.providers.nexora_provider import NexoraProvider
-            NexoraProvider.preload_model()
-            print(">>> Nexora model preloaded successfully <<<")
-        except Exception as e:
-            print(f"[WARNING] Nexora model preload failed on startup: {e}. Will retry on first chat request.")
-
-
 
 @app.get("/health", tags=["General"])
 def health_check():

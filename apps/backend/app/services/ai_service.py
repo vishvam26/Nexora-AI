@@ -1,8 +1,11 @@
-from typing import List, Generator
+from typing import List, Generator, Tuple
+import logging
 from app.providers.provider_factory import ProviderFactory
 
 
 from app.config import settings
+
+logger = logging.getLogger("app.services.ai_service")
 
 class AIService:
     """
@@ -116,37 +119,91 @@ trainer.train()
         return f"### 🤖 Nexora AI Knowledge Hub\n\nRegarding: **'{prompt[:150]}'**\n\n**Response Summary:**\nRetrieval-Augmented Generation (RAG) and ML vector pipelines have verified the input prompt against active knowledge collections."
 
     @staticmethod
+    def generate_response_with_provider(
+        messages: List[dict], provider_override: str = None
+    ) -> Tuple[str, str]:
+        """
+        Resilient chain: primary -> fallback -> mock (never raises 502).
+
+        Default chain is HF primary -> Gemini fallback -> mock last
+        resort, so if the fine-tuned HF model is warming up / down,
+        Gemini answers automatically and the interview demo keeps
+        running. Returns (text, provider_name_used).
+        """
+        chain = ProviderFactory.resilient_chain(provider_override)
+        errors = []
+        for name in chain:
+            if name == "mock":
+                last_prompt = messages[-1].get("content", "") if messages else ""
+                if "JSON" in last_prompt:
+                    return (
+                        '{"score": 0.85, "faithfulness": 0.90, "answer_relevance": 0.85, "confidence_score": 0.88, "root_cause": "None", "domain_tag": "Finance"}',
+                        "mock",
+                    )
+                return AIService._generate_smart_mock(messages), "mock"
+            try:
+                provider = ProviderFactory.get_provider(name)
+                text = provider.generate_response(messages)
+                if name != chain[0]:
+                    logger.warning(f"Primary provider '{chain[0]}' failed, served by fallback '{name}'")
+                return text, name
+            except Exception as e:
+                errors.append(f"{name}: {e}")
+                logger.warning(f"Provider '{name}' failed, trying next in chain: {e}")
+        # Unreachable (mock always succeeds) — safety net only.
+        raise RuntimeError(f"All AI providers failed: {'; '.join(errors)}")
+
+    @staticmethod
     def generate_response(messages: List[dict], provider_override: str = None) -> str:
         """
         Instantiates the configured provider and generates a completion response.
+        Falls back automatically (HF -> Gemini -> mock) instead of 502.
         """
-        prov_name = (provider_override or settings.AI_PROVIDER).lower().strip()
-        if prov_name == "mock":
-            last_prompt = messages[-1].get("content", "") if messages else ""
-            if "JSON" in last_prompt:
-                return '{"score": 0.85, "faithfulness": 0.90, "answer_relevance": 0.85, "confidence_score": 0.88, "root_cause": "None", "domain_tag": "Finance"}'
-            return AIService._generate_smart_mock(messages)
-
-        provider = ProviderFactory.get_provider(provider_override)
-        return provider.generate_response(messages)
+        text, _ = AIService.generate_response_with_provider(messages, provider_override)
+        return text
 
     @staticmethod
     def generate_stream_response(messages: List[dict], provider_override: str = None) -> Generator[str, None, None]:
         """
         Instantiates the configured provider and yields token completions dynamically.
         Uses `yield from` to properly chain the generator so SSE tokens flow to the HTTP response.
+        Falls back automatically (HF -> Gemini -> mock) if the primary
+        fails before streaming starts, instead of a 502 mid-demo.
         """
-        prov_name = (provider_override or settings.AI_PROVIDER).lower().strip()
-        if prov_name == "mock":
-            full_text = AIService._generate_smart_mock(messages)
-            # Split into natural paragraph chunks for smooth streaming UI
-            chunks = full_text.split(" ")
-            for i, word in enumerate(chunks):
-                yield word + (" " if i < len(chunks) - 1 else "")
-            return
-
-        provider = ProviderFactory.get_provider(provider_override)
-        yield from provider.generate_stream_response(messages)
+        chain = ProviderFactory.resilient_chain(provider_override)
+        errors = []
+        for name in chain:
+            if name == "mock":
+                full_text = AIService._generate_smart_mock(messages)
+                # Split into natural paragraph chunks for smooth streaming UI
+                chunks = full_text.split(" ")
+                for i, word in enumerate(chunks):
+                    yield word + (" " if i < len(chunks) - 1 else "")
+                return
+            try:
+                provider = ProviderFactory.get_provider(name)
+                stream_iter = provider.generate_stream_response(messages)
+                yielded_any = False
+                try:
+                    for token in stream_iter:
+                        yielded_any = True
+                        yield token
+                except Exception as e:
+                    # Provider died mid-stream: if nothing was sent yet,
+                    # fall through to the next provider; otherwise stop
+                    # gracefully (partial answer already delivered).
+                    if not yielded_any:
+                        raise
+                    logger.warning(f"Provider '{name}' failed mid-stream after partial output: {e}")
+                    return
+                if name != chain[0]:
+                    logger.warning(f"Primary provider '{chain[0]}' failed, streamed by fallback '{name}'")
+                return
+            except Exception as e:
+                errors.append(f"{name}: {e}")
+                logger.warning(f"Stream provider '{name}' failed, trying next in chain: {e}")
+        # Unreachable (mock always succeeds) — safety net only.
+        raise RuntimeError(f"All AI stream providers failed: {'; '.join(errors)}")
 
 
 

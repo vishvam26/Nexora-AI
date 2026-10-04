@@ -226,8 +226,9 @@ class ChatService:
             grounded=request.grounded,
         )
 
-        # 6. Generate AI reply — auto Gemini for email JSON draft + fallback to mock on 502 (prevents 502 for college demo)
-        # If message looks like email JSON draft and Gemini key set, prefer Gemini for better JSON
+        # 6. Generate AI reply — resilient chain (HF -> Gemini -> mock).
+        # AIService tries fallbacks automatically; this except is a final
+        # safety net so the API returns 200, never 502, during live demos.
         provider_override = request.provider
         if not provider_override:
             from app.config import settings as _s
@@ -332,7 +333,7 @@ class ChatService:
             grounded=request.grounded,
         )
 
-        # 5. Yield dynamic token streams — same Gemini-auto + mock fallback as sync
+        # 5. Yield dynamic token streams — resilient chain (HF -> Gemini -> mock).
         provider_override = request.provider
         if not provider_override:
             from app.config import settings as _s2
