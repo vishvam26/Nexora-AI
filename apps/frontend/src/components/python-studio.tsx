@@ -215,7 +215,22 @@ export default function PythonStudio() {
     if (!naturalLanguage.trim()) return;
     setGeneratingCode(true);
     try {
-      const prompt = `Convert this natural language data request to a clean Pandas/Matplotlib script. The load path is automatically set as global DF_PATH variable. Load dataframe as: df = pd.read_csv(DF_PATH). Task: "${naturalLanguage}". Reply ONLY with the python script code block. No markdown backticks.`;
+      // Fetch real column schema so generated code uses EXACT column names
+      // (guessing names caused KeyError crashes, e.g. 'plan' vs 'plan_type').
+      let schemaLine = "";
+      if (selectedDocId) {
+        try {
+          const optRes = await fetch(`${API_BASE}/ml/options/${selectedDocId}`, { headers: headers() });
+          if (optRes.ok) {
+            const optData = await optRes.json();
+            const cols = (optData.columns || []).map((c: any) => `${c.name} (${c.type})`);
+            if (cols.length > 0) {
+              schemaLine = ` The dataframe df is ALREADY loaded with EXACTLY these columns (name and dtype): ${cols.join(", ")}.`;
+            }
+          }
+        } catch { /* schema optional — fall back to generic prompt */ }
+      }
+      const prompt = `Convert this natural language data request to a clean Pandas/Matplotlib script. The dataframe df plus pd, np and plt are ALREADY loaded — do NOT reload, do NOT create dummy data, do NOT call to_csv or write any files.${schemaLine} Rules: use ONLY the listed exact column names; no os/sys/subprocess/open/eval/exec imports; print all results; end plots with plt.show(). Task: "${naturalLanguage}". Reply ONLY with the python script code block. No markdown backticks.`;
       
       const convoId = await getOrCreateConversationId();
       const res = await fetch(`${API_BASE}/chat`, {
