@@ -51,7 +51,9 @@ class AIInsightEngine:
             "Guidelines:\n"
             "1. Ground your answers strictly on the provided column statistics, rows, and correlations.\n"
             "2. Highlight concrete numbers (e.g. average, outliers count, or correlations) in each insight.\n"
-            "3. Format each insight as a bullet point with a bold title (e.g., '1. **Strong Correlation between X and Y**').\n"
+            "3. Format: for each insight write a '### N. Short Title' heading line, then 2-3 plain sentences below it. "
+            "Put column names in backticks. Do NOT nest bullet lists, do NOT wrap whole lines in bold, "
+            "and do NOT use stray symbols like '/-'.\n"
             "4. Keep it concise, professional, and actionable. Do not hallucinate or speculate on fields not present."
         )
 

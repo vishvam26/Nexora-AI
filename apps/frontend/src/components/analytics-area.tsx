@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useChatStore } from "../stores/chat-store";
 import { apiService } from "../services/api-service";
 import { KnowledgeDocument } from "../types/chat";
@@ -973,8 +975,23 @@ export default function AnalyticsArea() {
                   Senior Business Analyst is running regression/correlations and writing insights...
                 </div>
               ) : insights ? (
-                <div className="text-sm leading-relaxed text-zinc-300 whitespace-pre-wrap pt-2 max-w-4xl">
-                  {insights}
+                <div className="prose prose-sm prose-zinc dark:prose-invert max-w-4xl pt-2
+                  prose-headings:font-bold prose-headings:text-white prose-headings:mt-4 prose-headings:mb-2
+                  prose-h1:text-lg prose-h2:text-base prose-h3:text-sm prose-h4:text-sm
+                  prose-p:text-sm prose-p:leading-relaxed prose-p:my-1.5 prose-p:text-zinc-300
+                  prose-li:text-sm prose-li:text-zinc-300 prose-li:my-0.5
+                  prose-ul:pl-5 prose-ul:my-2 prose-ol:pl-5 prose-ol:my-2
+                  prose-strong:text-white prose-strong:font-semibold
+                  prose-em:text-zinc-300
+                  prose-code:text-indigo-400 prose-code:bg-zinc-900 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono prose-code:before:content-none prose-code:after:content-none
+                  prose-pre:bg-zinc-950 prose-pre:border prose-pre:border-zinc-800 prose-pre:rounded-lg prose-pre:p-4 prose-pre:overflow-x-auto
+                  prose-blockquote:border-l-indigo-500 prose-blockquote:text-zinc-400 prose-blockquote:italic
+                  prose-table:text-sm prose-th:text-white prose-td:text-zinc-400
+                  prose-hr:border-zinc-800
+                ">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {insights}
+                  </ReactMarkdown>
                 </div>
               ) : (
                 <p className="text-xs text-zinc-500 italic py-6">Could not load dataset insights.</p>
