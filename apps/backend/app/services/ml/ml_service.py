@@ -85,11 +85,27 @@ class MLService:
                 )
 
                 rec_target = False
-                # Do not recommend empty or ID columns
-                if non_null_cnt > 0 and not is_id and any(x in col_lower for x in ["winner", "result", "target", "label", "class", "status", "price", "revenue", "churn", "sales"]):
+                # Do not recommend empty, ID, person-name, or date columns.
+                # Token match (not substring) so "salesperson" does NOT match
+                # keyword "sales" — that false positive once suggested an
+                # unpredictable target and produced ~7% accuracy in a demo.
+                import re as _re
+                tokens = set(_re.split(r"[_\s]+", col_lower))
+                is_person_or_date = (
+                    col_lower.endswith("person") or col_lower.endswith("name")
+                    or tokens.intersection({"date", "time", "day", "month", "year",
+                                            "name", "person", "email", "phone"})
+                )
+                target_keywords = {"winner", "result", "target", "label", "class",
+                                   "status", "price", "revenue", "churn", "sales"}
+                if (non_null_cnt > 0 and not is_id and not is_person_or_date
+                        and bool(tokens.intersection(target_keywords))):
                     rec_target = True
 
-                if not is_id and non_null_cnt > best_non_null and 1 < unique_cnt < (len(df) * 0.9):
+                # Fallback candidate: most-filled non-ID, non-person, non-date
+                # column (dates/names as fallback targets also train garbage).
+                if (not is_id and not is_person_or_date and non_null_cnt > best_non_null
+                        and 1 < unique_cnt < (len(df) * 0.9)):
                     best_target_cand = col
                     best_non_null = non_null_cnt
 
