@@ -17,6 +17,7 @@ interface ColumnOption {
   unique_count: number;
   recommended_target: boolean;
   is_id?: boolean;
+  sample_values?: string[];
 }
 
 interface TrainResult {
@@ -161,7 +162,10 @@ export default function MLArea() {
     }
     const initInputs: Record<string, string> = {};
     featureCols.forEach(col => {
-      initInputs[col] = "";
+      // Pre-select first known category so predictions never start blank;
+      // dropdowns guarantee exact training-time spelling (no typos).
+      const colOpt = columns.find(c => c.name === col);
+      initInputs[col] = colOpt?.sample_values?.length ? colOpt.sample_values[0] : "";
     });
     setPredictInputs(initInputs);
     setPrediction(null);
@@ -567,17 +571,31 @@ export default function MLArea() {
                 <form onSubmit={handlePredict} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 text-xs">
                   {featureCols.map(col => {
                     const colOpt = columns.find(c => c.name === col);
+                    const dropdownOpts = colOpt?.sample_values ?? [];
+                    const isDropdown = colOpt?.type !== "numeric" && dropdownOpts.length > 0;
                     return (
                       <div key={col} className="space-y-1.5">
                         <label className="block text-zinc-500 font-semibold uppercase">{col}</label>
-                        <input
-                          type={colOpt?.type === "numeric" ? "number" : "text"}
-                          step="any"
-                          value={predictInputs[col] || ""}
-                          onChange={(e) => setPredictInputs({ ...predictInputs, [col]: e.target.value })}
-                          placeholder={colOpt?.type === "numeric" ? "Input number (e.g. 14.5)" : "Input text category"}
-                          className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3.5 py-2.5 text-white outline-none focus:border-indigo-500 transition"
-                        />
+                        {isDropdown ? (
+                          <select
+                            value={predictInputs[col] || ""}
+                            onChange={(e) => setPredictInputs({ ...predictInputs, [col]: e.target.value })}
+                            className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3.5 py-2.5 text-white outline-none focus:border-indigo-500 transition"
+                          >
+                            {dropdownOpts.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type={colOpt?.type === "numeric" ? "number" : "text"}
+                            step="any"
+                            value={predictInputs[col] || ""}
+                            onChange={(e) => setPredictInputs({ ...predictInputs, [col]: e.target.value })}
+                            placeholder={colOpt?.type === "numeric" ? "Input number (e.g. 14.5)" : "Input text category"}
+                            className="w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3.5 py-2.5 text-white outline-none focus:border-indigo-500 transition"
+                          />
+                        )}
                       </div>
                     );
                   })}
@@ -612,11 +630,14 @@ export default function MLArea() {
                   let displayLabel = String(prediction.prediction);
                   let isNegative = false;
 
-                  if (rawPred === "N" || rawPred === "NO" || rawPred === "0" || rawPred === "REJECTED") {
+                  if (rawPred === "N" || rawPred === "NO" || rawPred === "0" || rawPred === "REJECTED" || rawPred === "REJECT") {
                     displayLabel = "REJECTED (N)";
                     isNegative = true;
                   } else if (rawPred === "Y" || rawPred === "YES" || rawPred === "1" || rawPred === "APPROVED") {
                     displayLabel = "APPROVED (Y)";
+                    isNegative = false;
+                  } else if (rawPred === "ACCEPT" || rawPred === "ACCEPTED") {
+                    displayLabel = "ACCEPTED";
                     isNegative = false;
                   }
 

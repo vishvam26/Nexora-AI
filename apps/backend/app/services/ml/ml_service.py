@@ -93,13 +93,24 @@ class MLService:
                     best_target_cand = col
                     best_non_null = non_null_cnt
 
+                # Sample distinct values for categorical columns so the
+                # frontend can render dropdowns (no typos -> no silent
+                # handle_unknown='ignore' zero-vectors at predict time).
+                sample_values = []
+                if not is_numeric and 1 < unique_cnt <= 50:
+                    try:
+                        sample_values = sorted(str(v) for v in df[col].dropna().unique())
+                    except Exception:
+                        sample_values = []
+
                 columns.append({
                     "name": col,
                     "type": "numeric" if is_numeric else "categorical",
                     "unique_count": unique_cnt,
                     "non_null_count": non_null_cnt,
                     "is_id": is_id,
-                    "recommended_target": rec_target
+                    "recommended_target": rec_target,
+                    "sample_values": sample_values
                 })
 
             # If no keyword matched, recommend the best candidate with valid rows
@@ -228,13 +239,17 @@ class MLService:
             )
 
             # 3. Model Definition
+            # class_weight="balanced" counters majority-class bias on
+            # imbalanced targets (e.g. Won 159 vs Lost 76) so minority
+            # outcomes stay predictable with honest confidence scores.
+            # (GradientBoosting has no class_weight param — left as-is.)
             if task_type == "classification":
                 if algorithm == "linear":
-                    model = LogisticRegression(max_iter=1000, random_state=42)
+                    model = LogisticRegression(max_iter=1000, random_state=42, class_weight="balanced")
                 elif algorithm == "gradient_boosting":
                     model = GradientBoostingClassifier(n_estimators=100, max_depth=5, random_state=42)
                 else:  # random_forest
-                    model = RandomForestClassifier(n_estimators=100, max_depth=6, random_state=42)
+                    model = RandomForestClassifier(n_estimators=100, max_depth=6, random_state=42, class_weight="balanced")
             else:  # regression
                 if algorithm == "linear":
                     model = LinearRegression()
