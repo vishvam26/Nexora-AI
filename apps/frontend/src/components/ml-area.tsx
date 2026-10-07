@@ -502,15 +502,15 @@ export default function MLArea() {
                     {trainResult.task_type === "classification" ? (
                       <>
                         <div className="flex justify-between">
-                          <span className="text-zinc-500">Precision (Macro)</span>
+                          <span className="text-zinc-500">Precision</span>
                           <span className="text-white font-semibold font-mono">{trainResult.metrics.precision}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-zinc-500">Recall (Macro)</span>
+                          <span className="text-zinc-500">Recall</span>
                           <span className="text-white font-semibold font-mono">{trainResult.metrics.recall}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-zinc-500">F1-Score (Macro)</span>
+                          <span className="text-zinc-500">F1-Score</span>
                           <span className="text-white font-semibold font-mono">{trainResult.metrics.f1_score}</span>
                         </div>
                       </>
