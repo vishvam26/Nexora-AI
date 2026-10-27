@@ -26,7 +26,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/py/:path*",
-        destination: `http://${process.env.BACKEND_HOST || "localhost:8000"}/api/v1/:path*`,
+        destination: `http://${process.env.BACKEND_HOST || "13.211.27.79:8000"}/api/v1/:path*`,
       },
     ];
   },

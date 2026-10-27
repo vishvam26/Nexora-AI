@@ -1,5 +1,11 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "rewrites": [
+    {
+      "source": "/api/py/:path*",
+      "destination": "http://13.211.27.79:8000/api/v1/:path*"
+    }
+  ]
 }
