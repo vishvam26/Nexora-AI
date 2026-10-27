@@ -22,6 +22,14 @@ const nextConfig: NextConfig = {
     "decode-named-character-reference",
     "character-entities",
   ],
+  async rewrites() {
+    return [
+      {
+        source: "/api/py/:path*",
+        destination: `http://${process.env.BACKEND_HOST || "localhost:8000"}/api/v1/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
