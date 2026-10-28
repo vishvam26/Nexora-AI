@@ -183,53 +183,88 @@ export const apiService = {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error(`Chat stream request failed: ${response.statusText}`);
-      }
+      let receivedAny = false;
+      if (response.ok) {
+        const reader = response.body?.getReader();
+        if (reader) {
+          const decoder = new TextDecoder("utf-8");
+          let buffer = "";
 
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error("Response body reader unavailable");
-      }
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
 
-      const decoder = new TextDecoder("utf-8");
-      let buffer = "";
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed) continue;
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed) continue;
-
-          if (trimmed.startsWith("data: ")) {
-            const jsonStr = trimmed.slice(6);
-            try {
-              const data = JSON.parse(jsonStr);
-              if (data.error) {
-                onError(data.error);
-                return;
+              if (trimmed.startsWith("data: ")) {
+                const jsonStr = trimmed.slice(6);
+                try {
+                  const data = JSON.parse(jsonStr);
+                  if (data.error) {
+                    onError(data.error);
+                    return;
+                  }
+                  if (data.sources) {
+                    onSources(data.sources);
+                  }
+                  if (data.content) {
+                    receivedAny = true;
+                    onToken(data.content);
+                  }
+                } catch {
+                  // Ignore partial JSON parsing errors
+                }
               }
-              if (data.sources) {
-                onSources(data.sources);
-              }
-              if (data.content) {
-                onToken(data.content);
-              }
-            } catch (e) {
-              // Ignore partial JSON parsing errors during transfer
             }
           }
         }
       }
+
+      // Seamless fallback: if streaming yielded no tokens or failed, call standard /chat
+      if (!receivedAny) {
+        console.warn("Stream returned empty, falling back to standard /chat endpoint...");
+        const syncRes = await apiClient.post<{ assistant_message: { content: string; sources?: any[] } }>("/chat", {
+          conversation_id: conversationId,
+          message: messageText,
+          workspace_id: workspaceId,
+          knowledge_base_id: knowledgeBaseId,
+          grounded: grounded,
+        });
+        const reply = syncRes.data?.assistant_message?.content || "";
+        const sources = syncRes.data?.assistant_message?.sources || [];
+        if (sources.length > 0) onSources(sources);
+        if (reply) {
+          onToken(reply);
+        } else {
+          onError("Empty response received from AI model.");
+        }
+      }
     } catch (err: any) {
-      logger.error("Error during streaming execution:", err);
-      onError(err.message || "Network request failed");
+      console.warn("Stream failed, attempting fallback to /chat:", err);
+      try {
+        const syncRes = await apiClient.post<{ assistant_message: { content: string; sources?: any[] } }>("/chat", {
+          conversation_id: conversationId,
+          message: messageText,
+          workspace_id: workspaceId,
+          knowledge_base_id: knowledgeBaseId,
+          grounded: grounded,
+        });
+        const reply = syncRes.data?.assistant_message?.content || "";
+        const sources = syncRes.data?.assistant_message?.sources || [];
+        if (sources.length > 0) onSources(sources);
+        if (reply) {
+          onToken(reply);
+          return;
+        }
+      } catch (fallbackErr: any) {
+        onError(fallbackErr.message || "Failed to generate response");
+      }
     } finally {
       store.setIsStreaming(false);
       // Reload conversation history after completion to sync message IDs and timestamps

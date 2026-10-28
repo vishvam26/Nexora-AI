@@ -53,7 +53,15 @@ def chat_stream(
     token-by-token, and save the full assistant response to the database once completed.
     """
     generator = ChatService.handle_chat_stream(db, current_user.id, payload)
-    return StreamingResponse(generator, media_type="text/event-stream")
+    return StreamingResponse(
+        generator,
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )
 
 
 
