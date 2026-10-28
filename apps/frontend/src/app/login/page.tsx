@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useChatStore } from "../../stores/chat-store";
 import { apiService } from "../../services/api-service";
-import { LogIn, UserPlus, ShieldAlert, Eye, EyeOff, Lock, Mail, User, ChevronRight, Activity, Globe, Compass, ArrowLeft } from "lucide-react";
+import { LogIn, UserPlus, ShieldAlert, Eye, EyeOff, Lock, Mail, User, ChevronRight, Activity, Globe, Compass, ArrowLeft, Sparkles } from "lucide-react";
 
 // ── Boid interface for 3D bird animation ────────────────────────────
 interface Boid {
@@ -14,7 +14,7 @@ interface Boid {
   size: number; color: string;
 }
 
-export default function LoginPage() {
+export default function LoginPage({ isAdminRoute = false }: { isAdminRoute?: boolean }) {
   const router = useRouter();
   const { token, setToken } = useChatStore();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -31,13 +31,57 @@ export default function LoginPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [loginMode, setLoginMode] = useState<"normal" | "admin">("normal");
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [loginMode, setLoginMode] = useState<"normal" | "admin">(isAdminRoute ? "admin" : "normal");
+  const [isAdminModeAllowed, setIsAdminModeAllowed] = useState(isAdminRoute);
 
   const handleModeSwitch = (mode: "normal" | "admin") => {
     setLoginMode(mode);
     setError(null);
     if (mode === "admin") {
       setIsRegister(false);
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const path = window.location.pathname.toLowerCase();
+      const params = new URLSearchParams(window.location.search);
+      if (isAdminRoute || path.endsWith("/admin") || path.endsWith("/admine") || params.get("admin") === "true") {
+        setLoginMode("admin");
+        setIsAdminModeAllowed(true);
+      }
+    }
+  }, [isAdminRoute]);
+
+  const handleDemoLogin = async () => {
+    setError(null);
+    setDemoLoading(true);
+    const demoEmail = "demo@nexora.ai";
+    const demoPassword = "DemoUser@2026";
+    const demoName = "Demo Guest User";
+
+    try {
+      try {
+        await apiService.login(demoEmail, demoPassword);
+      } catch (loginErr: any) {
+        // Auto-register demo account if not exists
+        try {
+          await apiService.register(demoName, demoEmail, demoPassword);
+          await apiService.login(demoEmail, demoPassword);
+        } catch {
+          throw loginErr;
+        }
+      }
+      await apiService.fetchCurrentUser();
+      router.push("/chat");
+    } catch (err: any) {
+      setError(
+        err.response?.data?.detail ||
+          "Demo login failed. Please ensure your backend is running."
+      );
+    } finally {
+      setDemoLoading(false);
     }
   };
 
@@ -290,35 +334,43 @@ export default function LoginPage() {
           </div>
 
           <div className="px-8 py-10 pt-10 md:px-10">
-            {/* 2-Part Mode Switcher Tabs */}
-            <div className="flex bg-zinc-950 border border-zinc-850 p-1 rounded-xl mb-6 shadow-inner">
-              <button
-                type="button"
-                onClick={() => handleModeSwitch("normal")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
-                  loginMode === "normal"
-                    ? "bg-indigo-600 text-white shadow-md font-bold"
-                    : "text-zinc-400 hover:text-white hover:bg-zinc-900/50"
-                }`}
-              >
-                <User className="h-3.5 w-3.5" />
-                <span>User Login</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleModeSwitch("admin")}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
-                  loginMode === "admin"
-                    ? "bg-gradient-to-r from-amber-500 to-indigo-600 text-white shadow-md font-bold"
-                    : "text-zinc-400 hover:text-amber-400 hover:bg-zinc-900/50"
-                }`}
-              >
-                <ShieldAlert className="h-3.5 w-3.5 text-amber-400" />
-                <span>Master Admin</span>
-              </button>
-            </div>
+            {/* 2-Part Mode Switcher Tabs — ONLY visible on /login/admine or /login/admin */}
+            {isAdminModeAllowed && (
+              <div className="flex bg-zinc-950 border border-amber-500/25 p-1 rounded-xl mb-6 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => handleModeSwitch("normal")}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
+                    loginMode === "normal"
+                      ? "bg-indigo-600 text-white shadow-md font-bold"
+                      : "text-zinc-400 hover:text-white hover:bg-zinc-900/50"
+                  }`}
+                >
+                  <User className="h-3.5 w-3.5" />
+                  <span>User Login</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleModeSwitch("admin")}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
+                    loginMode === "admin"
+                      ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md font-bold"
+                      : "text-zinc-400 hover:text-amber-400 hover:bg-zinc-900/50"
+                  }`}
+                >
+                  <ShieldAlert className="h-3.5 w-3.5 text-amber-400" />
+                  <span>Master Admin</span>
+                </button>
+              </div>
+            )}
 
             <div className="mb-6">
+              {loginMode === "admin" && (
+                <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                  <ShieldAlert className="h-3.5 w-3.5" />
+                  <span>Restricted Master Admin Node</span>
+                </div>
+              )}
               <h2 className="text-xl font-bold tracking-tight text-white font-playfair md:text-2xl" style={{ fontFamily: "'Playfair Display', serif" }}>
                 {loginMode === "admin" ? "Master Admin Portal" : isRegister ? "Sign Up" : "Sign In"}
               </h2>
@@ -440,6 +492,38 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
+
+            {/* 1-Click Demo Login for Evaluators / Presentations */}
+            {!isRegister && loginMode === "normal" && (
+              <div className="mt-5 space-y-2.5">
+                <div className="relative flex items-center justify-center">
+                  <div className="border-t border-zinc-800/80 w-full" />
+                  <span className="bg-[#09090b] px-3 text-[10px] uppercase tracking-wider text-zinc-500 font-bold absolute">
+                    or quick demo
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleDemoLogin}
+                  disabled={demoLoading || loading}
+                  className="w-full relative group overflow-hidden rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/60 via-purple-950/40 to-indigo-950/60 p-3 text-xs font-bold text-indigo-200 hover:text-white hover:border-indigo-400 transition-all shadow-[0_0_20px_rgba(99,102,241,0.15)] hover:shadow-[0_0_30px_rgba(99,102,241,0.3)] flex items-center justify-center gap-2.5 disabled:opacity-50"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {demoLoading ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-400 border-t-transparent" />
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 text-cyan-400 animate-pulse" />
+                      <span>Explore Demo Account (1-Click Login)</span>
+                    </>
+                  )}
+                </button>
+                <p className="text-[10px] text-center text-zinc-600">
+                  ⚡ Pre-loaded sandbox to test AI models, RAG & agent workspaces
+                </p>
+              </div>
+            )}
 
             <div className="mt-6 text-center text-xs text-zinc-500">
               {isRegister ? "Already have an account?" : "Don't have an account?"}{" "}
