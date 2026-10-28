@@ -181,7 +181,7 @@ class ChatService:
         ws_id = conversation.workspace_id or request.workspace_id
         if ws_id:
             from app.services.permission_service import PermissionService
-            PermissionService.get_member_role(db, user_id, ws_id)
+            PermissionService.validate_workspace_access(db, user_id, ws_id)
 
         # 2. Save user message
         user_message_obj = Message(
@@ -285,7 +285,7 @@ class ChatService:
         ws_id = conversation.workspace_id or request.workspace_id
         if ws_id:
             from app.services.permission_service import PermissionService
-            PermissionService.get_member_role(db, user_id, ws_id)
+            PermissionService.validate_workspace_access(db, user_id, ws_id)
 
         # 2. Save user message
         user_message_obj = Message(
