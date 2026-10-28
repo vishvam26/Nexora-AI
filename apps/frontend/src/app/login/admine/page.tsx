@@ -1,7 +1,5 @@
-"use client";
-
-import LoginPage from "../page";
+import LoginForm from "../login-form";
 
 export default function AdmineLoginPage() {
-  return <LoginPage isAdminRoute={true} />;
+  return <LoginForm isAdminRoute={true} />;
 }
