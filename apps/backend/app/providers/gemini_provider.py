@@ -1,9 +1,12 @@
 import json
+import logging
 import requests
 from typing import List, Generator
 from fastapi import HTTPException, status
 from app.config import settings
 from app.providers.provider_interface import AIProviderInterface
+
+logger = logging.getLogger("app.providers.gemini_provider")
 
 
 class GeminiProvider(AIProviderInterface):
@@ -80,37 +83,53 @@ class GeminiProvider(AIProviderInterface):
             )
 
     def generate_stream_response(self, messages: List[dict]) -> Generator[str, None, None]:
+        yielded_any = False
         try:
             payload = self._build_payload(messages)
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:streamGenerateContent?key={self.api_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:streamGenerateContent?alt=sse&key={self.api_key}"
             
-            res = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, stream=True)
-            if res.status_code != 200:
-                raise Exception(f"HTTP {res.status_code}: {res.text}")
-                
-            for line in res.iter_lines():
-                if line:
-                    decoded = line.decode("utf-8").strip()
-                    if decoded.startswith("["):
-                        decoded = decoded[1:]
-                    if decoded.endswith("]"):
-                        decoded = decoded[:-1]
-                    if decoded.startswith(","):
-                        decoded = decoded[1:]
-                        
-                    decoded = decoded.strip()
-                    if not decoded:
-                        continue
-                        
-                    try:
-                        data = json.loads(decoded)
-                        text = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                        if text:
-                            yield text
-                    except Exception:
-                        pass
+            res = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, stream=True, timeout=30)
+            if res.status_code == 200:
+                for line in res.iter_lines():
+                    if line:
+                        decoded = line.decode("utf-8").strip()
+                        if decoded.startswith("data: "):
+                            decoded = decoded[6:].strip()
+                        elif decoded.startswith("[") or decoded.startswith(",") or decoded.startswith("]"):
+                            decoded = decoded.lstrip("[, ]").rstrip("]")
+                            
+                        if not decoded or decoded == "[DONE]":
+                            continue
+                            
+                        try:
+                            data = json.loads(decoded)
+                            candidates = data.get("candidates", [])
+                            if candidates:
+                                parts = candidates[0].get("content", {}).get("parts", [])
+                                if parts:
+                                    text = parts[0].get("text", "")
+                                    if text:
+                                        yielded_any = True
+                                        yield text
+                        except Exception:
+                            pass
+            else:
+                logger.warning(f"Gemini streamGenerateContent HTTP {res.status_code}: {res.text}")
         except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"Gemini stream error: {str(e)}"
-            )
+            logger.warning(f"Gemini streaming exception: {e}")
+
+        # Robust fallback: if SSE produced no tokens, call generate_response and yield words
+        if not yielded_any:
+            logger.info("Gemini SSE returned no tokens, falling back to direct generateContent for streaming")
+            try:
+                full_text = self.generate_response(messages)
+                if full_text:
+                    words = full_text.split(" ")
+                    for i, w in enumerate(words):
+                        yield w + (" " if i < len(words) - 1 else "")
+                    return
+            except Exception as e:
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=f"Gemini API error: {str(e)}"
+                )

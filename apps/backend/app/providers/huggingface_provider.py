@@ -20,7 +20,7 @@ class HuggingFaceProvider(AIProviderInterface):
         self.api_key = settings.HF_TOKEN
         self.model = settings.NEXORA_MODEL_ID or "vishvam26/nexora-qwen3.5-4b-merged"
         self.router_url = "https://router.huggingface.co/v1"
-        self.direct_url = f"https://api-inference.huggingface.co/models/{self.model}"
+        self.direct_url = f"https://router.huggingface.co/hf-inference/models/{self.model}"
 
         if not self.api_key or "hf_" not in self.api_key:
             raise HTTPException(

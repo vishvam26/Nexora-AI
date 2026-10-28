@@ -91,7 +91,16 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = "noreply@nexora.ai"
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    _backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    model_config = SettingsConfigDict(
+        env_file=[
+            os.path.join(_backend_dir, ".env"),
+            os.path.join(os.path.dirname(_backend_dir), ".env"),
+            os.path.join(os.path.dirname(_backend_dir), "nexora-api.env"),
+            ".env"
+        ],
+        extra="ignore"
+    )
 
     # ─────────────────────────────────────────────────────
     # Derived Feature Flags (auto-computed from APP_MODE)
@@ -109,6 +118,7 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+print(f"[Nexora AI Config] AI_PROVIDER: {settings.AI_PROVIDER} | GEMINI_MODEL: {settings.GEMINI_MODEL} | GOOGLE_KEY_CONFIGURED: {bool(settings.GOOGLE_API_KEY)}")
 
 if settings.HF_TOKEN:
     os.environ["HF_TOKEN"] = settings.HF_TOKEN

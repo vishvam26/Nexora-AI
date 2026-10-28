@@ -195,7 +195,8 @@ trainer.train()
                     if not yielded_any:
                         raise
                     logger.warning(f"Provider '{name}' failed mid-stream after partial output: {e}")
-                    return
+                if not yielded_any:
+                    raise RuntimeError(f"Provider '{name}' returned an empty stream.")
                 if name != chain[0]:
                     logger.warning(f"Primary provider '{chain[0]}' failed, streamed by fallback '{name}'")
                 return

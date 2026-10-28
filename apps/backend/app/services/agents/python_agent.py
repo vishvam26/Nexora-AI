@@ -66,8 +66,9 @@ class PythonAgent(BaseAgent):
         if not os.path.isabs(file_path):
             file_path = os.path.abspath(os.path.join("storage", file_path))
 
-        # Format DF_PATH using forward slashes for safety
+        # Format paths using forward slashes for safety
         formatted_df_path = file_path.replace("\\", "/")
+        formatted_chart_path = chart_filepath.replace("\\", "/")
 
         # Prepare code wrapper to auto-load dataset and override savefig target
         wrapper_code = f"""
@@ -95,7 +96,7 @@ except Exception as read_err:
 # Override plt.show to redirect plot outputs to a static image
 if _mpl_available:
     def show_override():
-        plt.savefig("{chart_filepath.replace("\\", "/")}", bbox_inches='tight', dpi=150)
+        plt.savefig("{formatted_chart_path}", bbox_inches='tight', dpi=150)
         plt.close()
     plt.show = show_override
 else:
